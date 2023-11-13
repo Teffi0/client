@@ -1,175 +1,161 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, PanResponder, ScrollView } from 'react-native';
-import { startOfWeek, endOfWeek, addDays, format, isSameDay, parseISO, subWeeks, addWeeks } from 'date-fns';
-import { ru } from 'date-fns/locale';
+import React, { useState, useMemo, useRef } from 'react';
+import { ScrollView, View, PanResponder, Animated, Dimensions } from 'react-native';
+import { startOfWeek, endOfWeek, addDays, subWeeks, addWeeks, format, parseISO } from 'date-fns';
 import styles from '../styles/styles';
-import TaskComponent from './TaskComponent';
-import { ExpandIcon, CollapseIcon } from '../icons';
+import DayDotsComponent from './DayDotsComponent';
+import TasksForSelectedDateComponent from './TasksForSelectedDateComponent';
+
+const screenWidth = Dimensions.get('window').width;
 
 const CustomCalendar = ({ selectedDate, onDateChange, tasks, taskDates }) => {
-  const days = [];
-  const start = startOfWeek(selectedDate, { weekStartsOn: 1 });
-  const end = endOfWeek(selectedDate, { weekStartsOn: 1 });
 
-  for (let day = start; day <= end; day = addDays(day, 1)) {
-    days.push(day);
-  }
+
+  const [expandedClients, setExpandedClients] = useState([]);
+  const translateX = useRef(new Animated.Value(0)).current;
+  const currentWeekRef = useRef();
+
+  const weeks = useMemo(() => {
+    const weekStart = startOfWeek(selectedDate, { weekStartsOn: 1 });
+    const previousWeekStart = subWeeks(weekStart, 1);
+    const nextWeekStart = addWeeks(weekStart, 1);
+
+    return [previousWeekStart, weekStart, nextWeekStart].map(weekStart => {
+      const daysArray = [];
+      for (let day = weekStart; day <= endOfWeek(weekStart, { weekStartsOn: 1 }); day = addDays(day, 1)) {
+        daysArray.push(day);
+      }
+      return daysArray;
+    });
+  }, [selectedDate]);
+  
+  const weekWidth = screenWidth * weeks.length;
+
+  const days = useMemo(() => {
+    const daysArray = [];
+    const start = startOfWeek(selectedDate, { weekStartsOn: 1 });
+    const end = endOfWeek(selectedDate, { weekStartsOn: 1 });
+
+    for (let day = start; day <= end; day = addDays(day, 1)) {
+      daysArray.push(day);
+    }
+    return daysArray;
+  }, [selectedDate]);
 
   const panResponder = PanResponder.create({
     onMoveShouldSetPanResponder: (evt, gestureState) => {
       const { dx } = gestureState;
       return Math.abs(dx) > 10;
     },
+    onPanResponderGrant: () => {
+      translateX.setOffset(translateX._value);
+      translateX.setValue(0);
+    },
+    onPanResponderMove: (evt, gestureState) => {
+      translateX.setValue(gestureState.dx);
+    },
     onPanResponderRelease: (evt, gestureState) => {
-      if (gestureState.dx > 10) {
-        onDateChange(subWeeks(selectedDate, 1));
-      } else if (gestureState.dx < -10) {
-        onDateChange(addWeeks(selectedDate, 1));
+      translateX.flattenOffset();
+      let newDate = selectedDate;
+      let toValue = 0;
+
+      if (gestureState.dx > 50) {
+        newDate = subWeeks(selectedDate, 1);
+        toValue = screenWidth; // Сдвиг вправо
+      } else if (gestureState.dx < -50) {
+        newDate = addWeeks(selectedDate, 1);
+        toValue = -screenWidth; // Сдвиг влево
       }
+
+      Animated.timing(translateX, {
+        toValue: toValue,
+        duration: 250,
+        useNativeDriver: true,
+      }).start(() => {
+        translateX.setValue(0); // Сброс позиции для следующего свайпа
+        if (toValue !== 0) {
+          onDateChange(newDate); // Обновление даты только если был свайп
+        }
+      });
     },
   });
-  const isSameDate = (date1, date2) => isSameDay(date1, date2);
 
-  const formatDate = (date) => format(date, 'yyyy-MM-dd');
-
-  const hasTasksForDay = (date) => {
-    const formattedDate = format(date, 'yyyy-MM-dd');
-    return taskDates.includes(formattedDate); // Используйте индекс дат для проверки
-  };
-
-  const getTwoLetterDayName = (date) => {
-    const day = format(date, 'eeee', { locale: ru });
-    switch (day) {
-      case 'понедельник': return 'Пн';
-      case 'вторник': return 'Вт';
-      case 'среда': return 'Ср';
-      case 'четверг': return 'Чт';
-      case 'пятница': return 'Пт';
-      case 'суббота': return 'Сб';
-      case 'воскресенье': return 'Вс';
-      default: return '';
-    }
-  };
-
-  const isToday = (date) => {
-    const today = new Date();
-    return isSameDay(date, today);
-  };
-
-  const renderDayDots = () => {
-    return days.map((day) => {
-      const hasTasks = hasTasksForDay(day);
-
-      return (
-        <TouchableOpacity
-          key={format(day, 'yyyy-MM-dd')}
-          onPress={() => onDateChange(day)}
-          style={{
-            alignItems: 'center',
-            justifyContent: 'center',
-            paddingVertical: 5,
-            paddingHorizontal: 5,
-            margin: 2,
-            borderWidth: 1,
-            borderColor: 'white', // или другой цвет по вашему выбору
-            borderRadius: 10, // скругление углов
-            backgroundColor: '#f9f9f9', // фоновый цвет
-            width: 52,
-            borderColor: isToday(day) ? 'red' : 'white', // Голубая граница для сегодняшнего дня
-            borderWidth: isToday(day) ? 1 : 1, // Утолщенная граница для сегодняшнего дня
-          }}
-        >
-          <Text style={{ fontSize: isSameDate(day, selectedDate) ? 16 : 14, color: isSameDate(day, selectedDate) ? 'red' : 'black' }}>
-            {getTwoLetterDayName(day)}
-          </Text>
-          <Text
-            style={
-              isSameDate(day, selectedDate)
-                ? { fontWeight: 'bold', fontSize: 22, color: 'red' }
-                : { fontSize: 20, color: 'black' }
-            }
-          >
-            {format(day, 'd', { locale: ru })}
-          </Text>
-          <View style={{ backgroundColor: hasTasks ? 'red' : 'transparent', width: 4, height: 4, borderRadius: 2, marginBottom: 2 }} />
-        </TouchableOpacity>
-      );
-    });
-  };
-
-
-
-  const [expandedClients, setExpandedClients] = useState([]);
-
-  const toggleClient = (client) => {
-    if (expandedClients.includes(client)) {
-      setExpandedClients(expandedClients.filter((c) => c !== client));
+  const handleDateChange = (day) => {
+    if (currentWeekRef.current.includes(day)) {
+      onDateChange(day);
     } else {
-      setExpandedClients([...expandedClients, client]);
+      // Если выбранная дата не из текущей недели, найдите, это предыдущая или следующая
+      const isPreviousWeek = currentWeekRef.current[0] > day;
+      const newWeek = isPreviousWeek ? subWeeks(day, 1) : addWeeks(day, 1);
+      onDateChange(newWeek);
     }
   };
 
-  const isClientExpanded = (client) => expandedClients.includes(client);
+  const currentWeek = useMemo(() => {
+    const start = startOfWeek(selectedDate, { weekStartsOn: 1 });
+    const end = endOfWeek(selectedDate, { weekStartsOn: 1 });
+    const daysArray = [];
+    for (let day = start; day <= end; day = addDays(day, 1)) {
+      daysArray.push(day);
+    }
+    currentWeekRef.current = daysArray;
+    return daysArray;
+  }, [selectedDate]);
 
-  const renderTasksForSelectedDate = () => {
+  const tasksByClient = useMemo(() => {
     const selectedTasks = tasks.filter(task =>
-      formatDate(parseISO(task.start_date)) === formatDate(selectedDate)
+      format(parseISO(task.start_date), 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd')
     );
 
-    if (selectedTasks.length > 0) {
-      const tasksByClient = {};
+    return selectedTasks.reduce((acc, task) => {
+      const client = task.fullname_client;
+      if (!acc[client]) {
+        acc[client] = [];
+      }
+      acc[client].push(task);
+      return acc;
+    }, {});
+  }, [tasks, selectedDate]);
 
-      selectedTasks.forEach((task) => {
-        const client = task.fullname_client;
-        if (!tasksByClient[client]) {
-          tasksByClient[client] = [];
-        }
-        tasksByClient[client].push(task);
-      });
 
-      return Object.keys(tasksByClient).map((client) => (
-        <View key={client}>
-          <View style={styles.taskFIO}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.clientName}>{client}</Text>
-            </View>
-            <View style={styles.taskHeaderRight}>
-              <TouchableOpacity onPress={() => toggleClient(client)}>
-                {isClientExpanded(client) ? (
-                  <CollapseIcon />
-                ) : (
-                  <ExpandIcon />
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
-          {isClientExpanded(client) && (
-            tasksByClient[client].map((task) => (
-              <TaskComponent
-                key={task.id}
-                status={task.status}
-                start_time={task.start_time}
-                service={task.service}
-                address_client={task.address_client}
-                employees={task.employees}
-                taskId={task.id}
-              />
-            ))
-          )}
-        </View>
-      ));
-    } else {
-      return <Text style={styles.noTasksText}>Нет задач.</Text>;
-    }
+  const toggleClient = (client) => {
+    setExpandedClients((current) =>
+      current.includes(client)
+        ? current.filter((c) => c !== client)
+        : [...current, client]
+    );
   };
 
   return (
-    <ScrollView style={{ flex: 1 }}>
-      <View {...panResponder.panHandlers}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>{renderDayDots()}</View>
-      </View>
-      <View style={{ marginTop: 16, marginBottom: 120 }}>{renderTasksForSelectedDate()}</View>
-    </ScrollView>
+    <View>
+      <Animated.View
+        {...panResponder.panHandlers}
+        style={{
+          width: screenWidth, // Теперь анимированный View будет только шириной одной недели
+          flexDirection: 'row',
+          transform: [{ translateX }]
+        }}
+      >
+        <View style={{ width: screenWidth, flexDirection: 'row' }}>
+          <DayDotsComponent
+            days={currentWeek}
+            onDateChange={handleDateChange}
+            selectedDate={selectedDate}
+            taskDates={taskDates}
+          />
+        </View>
+      </Animated.View>
+
+      <ScrollView showsVerticalScrollIndicator={false} style={{ marginBottom: 200 }}>
+        <View style={styles.tasksContainer}>
+          <TasksForSelectedDateComponent
+            tasksByClient={tasksByClient}
+            expandedClients={expandedClients}
+            toggleClient={toggleClient}
+          />
+        </View>
+
+      </ScrollView>
+    </View>
   );
 };
 

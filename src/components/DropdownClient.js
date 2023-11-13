@@ -32,7 +32,7 @@ function DropdownClient({ label, options, selectedValue, onValueChange }) {
           style={styles.dropdownInput}
           placeholder="Найти клиента"
           value={selectedOption}
-          editable={false} // Теперь это поле только для чтения
+          editable={false}
           onChangeText={(text) => setSearchText(text)}
         />
         <ChooseIcon />

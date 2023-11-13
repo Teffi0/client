@@ -5,11 +5,10 @@ import { formatISO, parseISO, isBefore, format } from 'date-fns';
 import styles from '../styles/styles';
 
 const validateFormData = (formData) => {
-    // Проверка наличия обязательных полей
     const requiredFields = ['service', 'paymentMethod', 'cost', 'startDate', 'endDate', 'startDateTime', 'endDateTime', 'selectedEmployee', 'selectedResponsible', 'fullnameClient', 'description'];
     for (let field of requiredFields) {
         if (!formData[field]) {
-            alert(`Пожалуйста, заполните поле ${field}.`); // Замените alert на вашу систему уведомлений
+            alert(`Пожалуйста, заполните поле ${field}.`); 
             return false;
         }
     }
@@ -68,13 +67,6 @@ export const fetchOptions = async (dispatchFormData) => {
         console.error('Ошибка при получении данных:', error);
     }
 };
-
-export const handleDateChange = (dateType, date, dispatchFormData) => {
-    dispatchFormData({
-      type: 'UPDATE_FORM',
-      payload: { [dateType]: date }
-    });
-  };
 
 export const handleSaveTask = async (formData, setIsSuccessModalVisible) => {
     if (validateFormData(formData)) {

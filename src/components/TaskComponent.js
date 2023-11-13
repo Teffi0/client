@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text } from 'react-native';
 import { FollowIcon, ProfileIcon, LocationIcon } from '../icons';
-import styles from '../styles/styles'; // Импортируем стили
+import styles from '../styles/styles'; 
 import { TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 

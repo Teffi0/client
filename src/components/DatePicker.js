@@ -17,7 +17,6 @@ const DatePicker = ({ selectedDateCallback }) => {
         console.log("A date has been picked: ", date);
         hideDatePicker();
 
-        //send back to parent component
         selectedDateCallback(date);
     };
 

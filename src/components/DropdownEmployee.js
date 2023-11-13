@@ -16,7 +16,6 @@ function DropdownEmployee({ label, options, selectedValues, onValueChange }) {
         }
         setSelectedOptions(newSelectedOptions);
 
-        // Проверка, является ли onValueChange функцией перед вызовом
         if (typeof onValueChange === 'function') {
             onValueChange(newSelectedOptions);
         }

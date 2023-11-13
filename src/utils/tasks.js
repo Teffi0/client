@@ -1,5 +1,4 @@
 import { format } from 'date-fns';
-import { ru } from 'date-fns/locale';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -20,18 +19,17 @@ export const fetchTaskDates = async (setTaskDates) => {
       await AsyncStorage.setItem('taskDates', JSON.stringify(formattedDates));
     } catch (e) {
       console.error('Ошибка при загрузке индекса дат задач: ', e);
-      setTasks([]);
+      setTaskDates([]);
     }
   };
 
-export const fetchTasksForSelectedDate = async (selectedDate, setTasks, setHeaderTitle) => {
+export const fetchTasksForSelectedDate = async (selectedDate, setTasks) => {
     try {
       const formattedDate = format(selectedDate, 'yyyy-MM-dd');
       const response = await axios.get(`${SERVER_URL}/tasks`, { params: { date: formattedDate } });
       setTasks(response.data);
-      setHeaderTitle(isToday(selectedDate) ? 'Сегодня' : format(selectedDate, 'd MMMM', { locale: ru }));
     } catch (e) {
       console.error('Не удалось загрузить задачи для выбранной даты: ', e);
-      setTaskDates([]);
+      setTasks([]);
     }
   };

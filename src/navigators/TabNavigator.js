@@ -4,7 +4,7 @@ import TasksScreen from '../screens/TasksScreen';
 import FeedScreen from '../screens/FeedScreen';
 import FinanceScreen from '../screens/FinanceScreen';
 import ProfileStackNavigator from './ProfileStackNavigator';
-import TabIconLabel from '../components/TabIconLabel'; // Импорт нового компонента
+import TabIconLabel from '../components/TabIconLabel';
 import styles from '../styles/styles';
 import { TasksIcon, FeedIcon, FinanceIcon, ProfileIcon } from '../icons';
 

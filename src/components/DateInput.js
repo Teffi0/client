@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, TextInput, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, TextInput } from 'react-native';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { format } from 'date-fns';
 import { CalendarIcon } from '../icons';
 import styles from '../styles/styles';
-import { fetchOptions, handleDateChange, handleSaveTask, SuccessModal, WarningModal } from '../utils/taskScreenHelpers';
 
 const DateInput = ({ date, placeholder, onDateChange, dateType, minDate, maxDate }) => {
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);

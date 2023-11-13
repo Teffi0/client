@@ -8,7 +8,7 @@ export default function App() {
   const [fontError, setFontError] = useState(null);
 
   const handleFontsLoaded = error => {
-    if (error) {
+    if (error instanceof Error) {
       setFontError(error);
     } else {
       setFontsLoaded(true);

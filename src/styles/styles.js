@@ -14,18 +14,49 @@ const { width: screenWidth } = Dimensions.get('window');
 
 const baseScreenWidth = 375;
 
-const scale = (size) => (screenWidth / baseScreenWidth) * size;
+const scale = (size, minSize = 8, maxSize = 30) => {
+  const scaledSize = (screenWidth / baseScreenWidth) * size;
+  return Math.max(minSize, Math.min(scaledSize, maxSize));
+};
 
-const baseSizes = {
-  xs: scale(9),
-  s: scale(10),
-  m: scale(12),
-  l: scale(14),
-  xl: scale(16),
-  xxl: scale(18),
-  xxxl: scale(20),
-  xxxxl: scale(22),
-  xxxxxl: scale(26),
+const sizes = {
+  paddingExtraSmall: 4,
+  paddingSmall: 8,
+  paddingMedium: 16,
+  paddingLarge: 24,
+  paddingExtraLarge: 32,
+
+  marginExtraSmall: 4,
+  marginSmall: 8,
+  marginMedium: 16,
+  marginLarge: 24,
+  marginExtraLarge: 32,
+
+  borderRadiusSmall: 4,
+  borderRadiusMedium: 8,
+  borderRadiusLarge: 16,
+  borderRadiusExtraLarge: 24,
+
+  fontSizeExtraSmall: scale(9),
+  fontSizeSmall: scale(10),
+  fontSizeMedium: scale(12),
+  fontSizeLarge: scale(14),
+  fontSizeExtraLarge: scale(16),
+  fontSizeXXLarge: scale(18),
+  fontSizeXXXLarge: scale(20),
+  fontSizeXXXXLarge: scale(22),
+  fontSizeXXXXXLarge: scale(26),
+
+  lineHeightSmall: 16,
+  lineHeightMedium: 20,
+  lineHeightLarge: 28,
+  lineHeightExtraLarge: 36,
+  lineHeightXXLarge: 40,
+
+  letterSpacingSmall: 0.1,
+  letterSpacingMedium: 0.16,
+  letterSpacingLarge: 0.25,
+  letterSpacingExtraLarge: 0.5,
 };
 
 const colors = {
@@ -57,56 +88,56 @@ const { height, width } = Dimensions.get('window');
 const styles = StyleSheet.create({
   headlineLarge: {
     ...baseTextStyles,
-    fontSize: baseSizes.xxxxxl,
-    lineHeight: 40,
+    fontSize: sizes.fontSizeXXXXXLarge,
+    lineHeight: sizes.lineHeightXXLarge,
   },
   headlineMedium: {
     ...baseTextStyles,
-    fontSize: baseSizes.xxxxl,
-    lineHeight: 36,
+    fontSize: sizes.fontSizeXXXXLarge,
+    lineHeight: sizes.lineHeightExtraLarge,
   },
   titleLarge: {
     ...baseTextStyles,
-    fontSize: baseSizes.xxl,
-    lineHeight: 28,
+    fontSize: sizes.fontSizeXXLarge,
+    lineHeight: sizes.lineHeightLarge,
   },
   titleMedium: {
     ...baseTextStyles,
-    fontSize: baseSizes.xxl,
-    lineHeight: 28,
-    letterSpacing: 0.15,
+    fontSize: sizes.fontSizeXXLarge,
+    lineHeight: sizes.lineHeightLarge,
+    letterSpacing: sizes.letterSpacingMedium,
     textAlign: 'center',
   },
   titleSmall: {
     ...baseTextStyles,
-    fontSize: baseSizes.m,
-    lineHeight: 20,
-    letterSpacing: 0.1,
+    fontSize: sizes.fontSizeMedium,
+    lineHeight: sizes.lineHeightMedium,
+    letterSpacing: sizes.letterSpacingSmall,
   },
   labelMedium: {
     ...baseTextStyles,
-    fontSize: baseSizes.s,
-    letterSpacing: 0.5,
+    fontSize: sizes.fontSizeSmall,
+    letterSpacing: sizes.letterSpacingExtraLarge,
   },
   labelSmall: {
     ...baseTextStyles,
-    fontSize: baseSizes.xs,
-    letterSpacing: 0.5,
+    fontSize: sizes.fontSizeExtraSmall,
+    letterSpacing: sizes.letterSpacingExtraLarge,
   },
   bodyLarge: {
     ...baseTextStyles,
-    fontSize: baseSizes.l,
-    letterSpacing: 0.5,
+    fontSize: sizes.fontSizeLarge,
+    letterSpacing: sizes.letterSpacingExtraLarge,
   },
   bodyMedium: {
     ...baseTextStyles,
-    fontSize: baseSizes.m,
-    letterSpacing: 0.25,
+    fontSize: sizes.fontSizeMedium,
+    letterSpacing: sizes.letterSpacingLarge,
   },
   bodySmall: {
     ...baseTextStyles,
-    fontSize: baseSizes.s,
-    letterSpacing: 0.16,
+    fontSize: sizes.fontSizeSmall,
+    letterSpacing: sizes.letterSpacingMedium,
   },
   primaryColor: {
     color: colors.primary,
@@ -141,43 +172,43 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     flex: 1,
-    padding: 16,
-    marginTop: 56,
+    padding: sizes.paddingMedium,
+    marginTop: sizes.marginLarge,
   },
   contentContainerTask: {
     flex: 1,
-    padding: 16,
+    padding: sizes.paddingMedium,
   },
   taskHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: sizes.marginLarge,
   },
   title: {
     color: colors.darkGrey,
-    fontSize: baseSizes.s,
+    fontSize: sizes.fontSizeSmall,
     ...boldTextStyles,
-    lineHeight: 16,
-    letterSpacing: 0.5,
+    lineHeight: sizes.lineHeightSmall,
+    letterSpacing: sizes.letterSpacingExtraLarge,
     textAlign: 'center',
-    marginTop: 4,
-    marginRight: 8,
+    marginTop: sizes.marginExtraSmall,
+    marginRight: sizes.marginSmall,
   },
   calendarBlock: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   calendar: {
-    marginBottom: 12,
+    marginBottom: sizes.marginMedium,
     color: colors.black,
   },
   selectedDate: {
     backgroundColor: colors.white,
-    borderRadius: 50,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    margin: 4,
+    borderRadius: sizes.borderRadiusExtraLarge,
+    paddingHorizontal: sizes.paddingSmall,
+    paddingVertical: sizes.paddingExtraSmall,
+    margin: sizes.marginExtraSmall,
   },
   tabBar: {
     borderTopWidth: 12,
@@ -186,12 +217,11 @@ const styles = StyleSheet.create({
     height: 70,
     elevation: 24,
   },
-
   tabText: {
     color: colors.darkGrey,
-    fontSize: baseSizes.xs,
-    lineHeight: 16,
-    letterSpacing: 0.5,
+    fontSize: sizes.fontSizeExtraSmall,
+    lineHeight: sizes.lineHeightSmall,
+    letterSpacing: sizes.letterSpacingExtraLarge,
     textAlign: 'center',
   },
   tabItem: {
@@ -204,17 +234,17 @@ const styles = StyleSheet.create({
   },
   addButton: {
     position: 'absolute',
-    bottom: 16,
-    left: 16,
-    right: 16,
+    bottom: sizes.paddingMedium,
+    left: sizes.paddingMedium,
+    right: sizes.paddingMedium,
     height: 60,
     backgroundColor: colors.primary,
-    borderRadius: 16,
+    borderRadius: sizes.borderRadiusLarge,
     alignItems: 'center',
     justifyContent: 'center',
   },
   addButtonText: {
-    fontSize: baseSizes.l,
+    fontSize: sizes.fontSizeLarge,
     ...boldTextStyles,
     color: colors.white,
   },
@@ -222,59 +252,59 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
   },
   addButtonTextPressed: {
+    // Стили для нажатой кнопки
   },
   task: {
     width: '100%',
-    borderRadius: 20,
+    borderRadius: sizes.borderRadiusLarge,
     backgroundColor: colors.white,
     borderWidth: 1,
     borderColor: colors.finishedStatus,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
+    paddingHorizontal: sizes.paddingSmall,
+    paddingVertical: sizes.paddingSmall,
     flexDirection: 'column',
     justifyContent: 'space-between',
-    marginBottom: 10,
+    marginBottom: sizes.marginSmall,
   },
   taskFIO: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 16,
+    marginBottom: sizes.marginLarge,
   },
   taskHeaderLeft: {
-    paddingLeft: 4,
+    paddingLeft: sizes.paddingExtraSmall,
   },
   taskHeaderRight: {},
   taskTime: {
-    fontSize: baseSizes.m,
+    fontSize: sizes.fontSizeMedium,
     ...boldTextStyles,
     color: colors.darkGrey,
   },
   taskStatus: {
     backgroundColor: colors.finishedStatus,
     height: 28,
-    borderRadius: 50,
+    borderRadius: sizes.borderRadiusExtraLarge,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
   },
 
   taskStatusText: {
-    fontSize: baseSizes.s,
+    fontSize: sizes.fontSizeSmall,
     ...boldTextStyles,
     color: colors.white,
-    paddingHorizontal: 8,
+    paddingHorizontal: sizes.paddingExtraSmall,
   },
-
   taskContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: sizes.marginExtraSmall,
   },
   taskTitle: {
     ...baseTextStyles,
-    fontSize: baseSizes.xxxl,
+    fontSize: sizes.fontSizeXXXLarge,
   },
   taskStatusIcon: {
     width: 24,
@@ -283,41 +313,39 @@ const styles = StyleSheet.create({
   taskFooter: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 16,
+    marginTop: sizes.marginLarge,
   },
-
   taskFooterBlock: {
     height: 28,
-    borderRadius: 8,
+    borderRadius: sizes.borderRadiusSmall,
     flexDirection: 'row',
     alignItems: 'center',
     borderColor: colors.darkGrey,
     borderWidth: 1,
-    paddingLeft: 4,
-    paddingRight: 8,
-    marginRight: 8,
+    paddingLeft: sizes.paddingExtraSmall,
+    paddingRight: sizes.paddingSmall,
+    marginRight: sizes.marginSmall,
   },
-
   taskFooterText: {
-    fontSize: baseSizes.s,
+    fontSize: sizes.fontSizeSmall,
     ...baseTextStyles,
-    marginLeft: 4,
+    marginLeft: sizes.marginExtraSmall,
   },
   noTasksText: {
-    fontSize: baseSizes.l,
+    fontSize: sizes.fontSizeLarge,
     color: colors.darkGrey,
     textAlign: 'center',
-    marginTop: 20,
+    marginTop: sizes.marginLarge,
   },
   monthContainer: {
     width: '100%',
-    paddingVertical: 16,
+    paddingVertical: sizes.paddingLarge,
   },
   monthName: {
-    fontSize: baseSizes.xl,
+    fontSize: sizes.fontSizeExtraLarge,
     color: colors.black,
     textAlign: 'left',
-    marginBottom: 8,
+    marginBottom: sizes.marginSmall,
   },
   weekContainer: {
     flexDirection: 'row',
@@ -329,12 +357,94 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  calendarContainer: {
+    flex: 1,
+    // Другие свойства для контейнера календаря
+  },
+  daysRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    // Дополнительные стили для строки дней
+  },
+  todayButton: {
+    borderColor: 'red',
+    borderWidth: 1,
+    // Дополнительные стили для кнопки текущего дня
+  },
+  selectedDayButton: {
+    // Стили для выбранного дня
+  },
+
+  dayName: {
+    fontSize: 14,
+    color: 'black',
+    // Дополнительные стили для имени дня
+  },
+
+  selectedDayText: {
+    fontWeight: 'bold',
+    color: 'red',
+    // Стили для текста выбранного дня
+  },
+
+  dayNumber: {
+    fontSize: 20,
+    color: 'black',
+    // Дополнительные стили для номера дня
+  },
+
+  taskDot: {
+    backgroundColor: 'transparent',
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    marginBottom: 2,
+    // Стили для индикатора задачи
+  },
+
+  taskDotActive: {
+    backgroundColor: 'red',
+    // Стили для активного индикатора задачи
+  },
+
+  tasksContainer: {
+    marginTop: 16,
+    marginBottom: 120,
+    // Дополнительные стили для контейнера задач
+  },
+
+  taskFIO: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    // Стили для шапки задачи
+  },
+
+  clientName: {
+    // Стили для названия клиента
+  },
+
+  noTasksText: {
+    // Стили для текста "Нет задач"
+  },
+  dayButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 5,
+    paddingHorizontal: 5,
+    margin: 2,
+    borderWidth: 1,
+    borderColor: 'white',
+    borderRadius: 10,
+    backgroundColor: '#f9f9f9',
+    width: 52,
+  },
   dayText: {
-    fontSize: baseSizes.l,
+    fontSize: sizes.fontSizeLarge,
     color: colors.black,
   },
   emptyDayText: {
-    fontSize: baseSizes.l,
+    fontSize: sizes.fontSizeLarge,
     color: 'transparent',
   },
   today: {
@@ -344,9 +454,9 @@ const styles = StyleSheet.create({
     height: '100%',
     marginTop: 'auto',
     backgroundColor: colors.white,
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    padding: 20,
+    borderTopLeftRadius: sizes.borderRadiusExtraLarge,
+    borderTopRightRadius: sizes.borderRadiusExtraLarge,
+    padding: sizes.paddingMedium,
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: {
@@ -357,229 +467,201 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5,
   },
-  centeredView: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
   clientName: {
-    fontSize: baseSizes.xxxl,
-    marginBottom: 12,
+    fontSize: sizes.fontSizeXXXLarge,
+    marginBottom: sizes.marginMedium,
   },
   header: {
-    marginTop: 28,
-    marginBottom: 28,
+    marginTop: sizes.marginExtraLarge,
+    marginBottom: sizes.marginExtraLarge,
   },
   headerItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 8,
+    marginVertical: sizes.marginSmall,
   },
   headerItemText: {
     color: colors.black,
-    fontSize: baseSizes.xxxl,
+    fontSize: sizes.fontSizeXXXLarge,
   },
   dateInput: {
     backgroundColor: colors.white,
-    borderRadius: 4,
-    borderWidth: 0.5,
+    borderRadius: sizes.borderRadiusSmall,
+    borderWidth: 1,
     borderColor: colors.grey,
-    padding: 4,
+    padding: sizes.paddingExtraSmall,
   },
-
   dateInputText: {
     flex: 1,
-    fontSize: baseSizes.l,
-    padding: 8,
+    fontSize: sizes.fontSizeLarge,
+    padding: sizes.paddingMedium,
     ...baseTextStyles,
   },
-
   dateButton: {
     backgroundColor: colors.lightGrey,
-    borderRadius: 4,
-    borderWidth: 0.5,
+    borderRadius: sizes.borderRadiusSmall,
+    borderWidth: 1,
     borderColor: colors.grey,
   },
-
   dateButtonText: {
     textAlign: 'center',
     color: colors.black,
   },
-
   dateInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    fontSize: baseSizes.l,
+    fontSize: sizes.fontSizeLarge,
     color: colors.black,
     backgroundColor: colors.white,
     minHeight: 48,
     maxHeight: 48,
-    borderRadius: 4,
-    borderWidth: 0.5,
+    borderRadius: sizes.borderRadiusSmall,
+    borderWidth: 1,
     borderColor: colors.grey,
-    paddingHorizontal: 12,
+    paddingHorizontal: sizes.paddingMedium,
   },
-
   dropdownContainer: {
-    fontSize: baseSizes.l,
+    fontSize: sizes.fontSizeLarge,
     color: colors.black,
     backgroundColor: colors.white,
     minHeight: 48,
     maxHeight: 48,
-    borderRadius: 4,
-    borderWidth: 0.5,
+    borderRadius: sizes.borderRadiusSmall,
+    borderWidth: 1,
     borderColor: colors.grey,
     flexDirection: 'row',
     alignItems: 'center',
   },
-
   dropdownList: {
-    fontSize: baseSizes.l,
+    fontSize: sizes.fontSizeLarge,
     color: colors.black,
     backgroundColor: colors.white,
-    padding: 10,
-    borderRadius: 4,
-    borderWidth: 0.5,
+    padding: sizes.paddingMedium,
+    borderRadius: sizes.borderRadiusSmall,
+    borderWidth: 1,
     borderColor: colors.grey,
   },
-
   dropdownInput: {
     flex: 1,
-    fontSize: baseSizes.l,
-    padding: 8,
+    fontSize: sizes.fontSizeLarge,
+    padding: sizes.paddingMedium,
     ...baseTextStyles,
   },
-
-
   searchContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    fontSize: baseSizes.l,
+    fontSize: sizes.fontSizeLarge,
     color: colors.black,
     backgroundColor: colors.white,
     minHeight: 48,
     maxHeight: 48,
-    borderRadius: 4,
-    borderWidth: 0.5,
+    borderRadius: sizes.borderRadiusSmall,
+    borderWidth: 1,
     borderColor: colors.grey,
-    paddingHorizontal: 8,
+    paddingHorizontal: sizes.paddingSmall,
   },
-
   commentContainer: {
+    // Стили для контейнера комментариев
   },
   selectedItemContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    padding: 10,
-    marginVertical: 5,
+    padding: sizes.paddingMedium,
+    marginVertical: sizes.marginExtraSmall,
   },
   selectedItemTouchable: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 10,
-    marginVertical: 5,
+    padding: sizes.paddingMedium,
+    marginVertical: sizes.marginExtraSmall,
     flex: 1,
   },
   selectedItemText: {
     flex: 1,
-    fontSize: baseSizes.l,
+    fontSize: sizes.fontSizeLarge,
     ...baseTextStyles,
   },
   selectedItemDelete: {
-    fontSize: baseSizes.l,
+    fontSize: sizes.fontSizeLarge,
     color: colors.black,
-    marginLeft: 10,
+    marginLeft: sizes.marginExtraSmall,
   },
-
   chooseIconContainer: {
-    padding: 10,
+    padding: sizes.paddingMedium,
   },
   label: {
-    fontSize: baseSizes.l,
+    fontSize: sizes.fontSizeLarge,
     ...boldTextStyles,
-    marginBottom: 8,
+    marginBottom: sizes.marginSmall,
   },
   timeInputContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 24,
+    marginBottom: sizes.marginLarge,
   },
   timeInput: {
     flex: 1,
     backgroundColor: colors.white,
-    borderRadius: 4,
-    borderWidth: 0.5,
+    borderRadius: sizes.borderRadiusSmall,
+    borderWidth: 1,
     borderColor: colors.grey,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    fontSize: baseSizes.l,
+    paddingVertical: sizes.paddingMedium,
+    paddingHorizontal: sizes.paddingMedium,
+    fontSize: sizes.fontSizeLarge,
     ...baseTextStyles,
     textAlign: 'center',
   },
   commentInput: {
-    fontSize: baseSizes.l,
+    fontSize: sizes.fontSizeLarge,
     color: colors.black,
     backgroundColor: colors.white,
-    padding: 12,
+    padding: sizes.paddingMedium,
     minHeight: 48,
-    borderRadius: 8,
-    borderWidth: 0.5,
+    borderRadius: sizes.borderRadiusMedium,
+    borderWidth: 1,
     borderColor: colors.grey,
     textAlignVertical: 'top',
   },
-
+  
   costInput: {
-    fontSize: baseSizes.l,
+    fontSize: sizes.fontSizeLarge,
     color: colors.black,
     backgroundColor: colors.white,
-    padding: 8,
+    padding: sizes.paddingSmall,
     minHeight: 48,
     maxHeight: 48,
-    borderRadius: 4,
-    borderWidth: 0.5,
+    borderRadius: sizes.borderRadiusSmall,
+    borderWidth: 1,
     borderColor: colors.grey,
   },
   centeredView: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 22
-  },
-  modalView: {
-    margin: 20,
-    backgroundColor: "white",
-    borderRadius: 20,
-    padding: 35,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5
+    marginTop: sizes.marginLarge,
   },
   modalText: {
-    marginBottom: 15,
+    marginBottom: sizes.marginMedium,
     textAlign: "center",
-    // Дополнительные стили для текста
+    // Дополнительные стили для текста в модальном окне
   },
   buttonClose: {
-    backgroundColor: "#2196F3", // Или другой цвет по вашему выбору
-    borderRadius: 20,
-    padding: 10,
-    elevation: 2
+    backgroundColor: colors.black,
+    borderRadius: sizes.borderRadiusLarge,
+    padding: sizes.paddingSmall,
+    elevation: 2,
   },
   textStyle: {
-    color: "white",
+    color: colors.white,
     fontWeight: "bold",
-    textAlign: "center"
+    textAlign: "center",
   },
-
-});
-
-export default styles;
+  
+  });
+  
+  export default styles;
+  

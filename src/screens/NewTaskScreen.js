@@ -1,24 +1,26 @@
-import React, { useState, useReducer } from 'react';
+import React, { useState, useReducer, useEffect, useCallback } from 'react';
 import { View } from 'react-native';
 import TaskForm from '../components/TaskForm';
+import {SuccessModal} from '../components/SuccessModal';
+import {WarningModal} from '../components/WarningModal';
 import { formReducer, initialState } from '../reducers/formReducer';
-import { fetchOptions, SuccessModal, WarningModal } from '../utils/taskScreenHelpers';
+import { fetchOptions, handleSaveTask } from '../utils/taskScreenHelpers';
 
 function NewTaskScreen({ onClose }) {
   const [isSuccessModalVisible, setIsSuccessModalVisible] = useState(false);
   const [isWarningModalVisible, setIsWarningModalVisible] = useState(false);
   const [formData, dispatchFormData] = useReducer(formReducer, initialState);
 
-  const handleSave = () => {
-    setIsSuccessModalVisible(true);
-  };
+  const handleSave = useCallback(async () => {
+    const isValid = await handleSaveTask(formData, setIsSuccessModalVisible);
+  }, [formData]);
 
   const closeSuccessModal = () => {
     setIsSuccessModalVisible(false);
     onClose();
   };
 
-  useState(() => {
+  useEffect(() => {
     fetchOptions(dispatchFormData);
   }, []);
 
