@@ -1,46 +1,76 @@
+// Этот файл содержит компонент TaskComponent, который используется для отображения информации о задаче.
+
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { FollowIcon, ProfileIcon, LocationIcon } from '../icons';
-import styles from '../styles/styles'; 
-import { TouchableOpacity } from 'react-native';
+import styles, { colors } from '../styles/styles';
 import { useNavigation } from '@react-navigation/native';
+import { formatTime, truncateService, formatAddress } from '../utils/utils'; // Импорт функций из utils.js
 
-const TaskComponent = ({ status, start_time, service, address_client, employees, taskId }) => {
+/**
+ * Компонент для отображения задачи в списке.
+ * @param {Object} props - Пропсы компонента.
+ * @param {string} props.status - Статус задачи.
+ * @param {string} props.start_time - Время начала задачи.
+ * @param {string} props.end_time - Время начала задачи.
+ * @param {string} props.service - Название услуги.
+ * @param {string} props.address_client - Адрес клиента.
+ * @param {number} props.employees - Количество сотрудников.
+ * @param {number} props.taskId - ID задачи.
+ */
 
-  const formattedTime = start_time.slice(0, 5);
-  const truncatedAssignedId = service.length > 36 ? service.slice(0, 35) + '...' : service;
+const getStatusColor = (status) => {
+  switch (status) {
+    case 'новая':
+      return colors.newStatus;
+    case 'в процессе':
+      return colors.inProcessStatus;
+    case 'выполнено':
+      return colors.finishedStatus;
+    default:
+      return colors.grey; // Цвет по умолчанию
+  }
+};
 
-  const indexOfUl = address_client.indexOf('ул.');
-  const addressText = (indexOfUl !== -1 ? address_client.substring(indexOfUl + 3) : address_client).split(',').slice(0, 2).join(',');
-  
-    const navigation = useNavigation();
-    const handleTaskPress = () => {
-        navigation.navigate('TaskDetail', { taskId });
-    };
+const TaskComponent = React.memo(({ status, start_time, end_time, service, address_client, employees, taskId }) => {
 
+  const statusColor = getStatusColor(status);
+  const navigation = useNavigation();
+
+  // Обработчик нажатия на задачу.
+  const handleTaskPress = React.useCallback(() => {
+    navigation.navigate('TaskDetail', { taskId });
+  }, [taskId, navigation]);
+
+  // Форматирование данных для отображения.
+  const formattedStartTime = formatTime(start_time);
+  const formattedEndTime = formatTime(end_time);
+  const truncatedServiceName = truncateService(service);
+  const addressText = formatAddress(address_client);
+
+  // JSX разметка компонента.
   return (
-    <TouchableOpacity onPress={handleTaskPress}>
-      <View style={styles.task}>
+    <TouchableOpacity onPress={handleTaskPress} accessibilityLabel={`Task ${truncatedServiceName}`}>
+      <View style={[styles.task, { borderColor: statusColor }]}>
         <View style={styles.taskHeader}>
           <View style={styles.taskHeaderLeft}>
-            <Text style={styles.taskTime}>{formattedTime}</Text>
+            <Text style={styles.taskTime}>{formattedStartTime}</Text>
+            <Text style={styles.taskTime}> - {formattedEndTime}</Text>
           </View>
           <View style={styles.taskHeaderRight}>
-            <View style={styles.taskStatus}>
+            <View style={[styles.taskStatus, { backgroundColor: statusColor }]}>
               <Text style={styles.taskStatusText}>{status}</Text>
             </View>
           </View>
         </View>
         <View style={styles.taskContent}>
-          <Text style={styles.taskTitle}>{truncatedAssignedId}</Text>
-          <Text style={styles.taskStatusIcon}>
-            <FollowIcon />
-          </Text>
+          <Text style={styles.taskTitle}>{truncatedServiceName}</Text>
+          <FollowIcon style={styles.taskStatusIcon} />
         </View>
         <View style={styles.taskFooter}>
           <View style={styles.taskFooterBlock}>
             <ProfileIcon />
-            <Text style={styles.taskFooterText}>{employees} участник</Text>
+            <Text style={styles.taskFooterText}>{`${employees} участник${employees > 1 ? 'ов' : ''}`}</Text>
           </View>
           <View style={styles.taskFooterBlock}>
             <LocationIcon />
@@ -50,6 +80,6 @@ const TaskComponent = ({ status, start_time, service, address_client, employees,
       </View>
     </TouchableOpacity>
   );
-}
+});
 
 export default TaskComponent;

@@ -52,6 +52,7 @@
     "react-native-swipe-list-view": "^3.2.9",
     "react-native-swiper": "^1.6.0",
     "react-native-web": "^0.18.12",
+    "react-native-webview": "^13.6.2",
     "styled-components": "^6.1.0"
   },
   "devDependencies": {

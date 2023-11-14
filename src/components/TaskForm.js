@@ -5,21 +5,32 @@ import DateInput from './DateInput';
 import Dropdown from './Dropdown';
 import DropdownClient from './DropdownClient';
 import DropdownEmployee from './DropdownEmployee';
+import YandexMap from './YandexMap';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { BackIcon, DeleteIcon } from '../icons';
 import { format } from 'date-fns';
 import SaveDraftModal from './SaveDraftModal';
 
 function TaskForm({ formData, dispatchFormData, onSave, setIsWarningModalVisible, onClose }) {
+    const [city, setCity] = useState('');
+    const [street, setStreet] = useState('');
+    const [house, setHouse] = useState('');
+    const [entrance, setEntrance] = useState('');
+    const [floor, setFloor] = useState('');
+    const [isMapVisible, setIsMapVisible] = useState(false);
+    const [address, setAddress] = useState('');
 
-    const [isPressed, setIsPressed] = useState(false);
 
-    const addButtonStyles = useMemo(() => ({
-        ...styles.addButton,
-        ...(isPressed && styles.addButtonPressed),
-    }), [isPressed]);
+    const onLocationSelect = (data) => {
+        setAddress(data.address);
+        setIsMapVisible(false);
+      };
 
-    const addButtonTextStyles = styles.addButtonText;
+
+    const updateAddressClient = () => {
+        const fullAddress = `${city}, ${street}, ${house}, подъезд ${entrance}, этаж ${floor}`;
+        setField('addressClient', fullAddress);
+    };
 
     const handleCostChange = text => {
         const newText = text.replace(/^0+/, '');
@@ -197,8 +208,86 @@ function TaskForm({ formData, dispatchFormData, onSave, setIsWarningModalVisible
                     label="Связанный клиент"
                     options={formData.fullnameClientOptions}
                     selectedValue={formData.fullnameClient}
-                    onValueChange={handleChange('fullnameClient')}
+                    onValueChange={(value) => {
+                        handleChange('fullnameClient')(value);
+                        // Сброс адреса при смене клиента
+                        setCity('');
+                        setStreet('');
+                        setHouse('');
+                        setEntrance('');
+                        setFloor('');
+                    }}
                 />
+                {formData.fullnameClient && (
+                    <View>
+                        <View style={{ flexDirection: 'row' }}>
+                            <View style={{ flex: 1 }}>
+                                <TextInput
+                                    placeholder="Город"
+                                    value={city}
+                                    onChangeText={text => setCity(text)}
+                                    style={styles.costInput}
+                                />
+                                <TextInput
+                                    placeholder="Улица"
+                                    value={street}
+                                    onChangeText={text => setStreet(text)}
+                                    style={styles.costInput}
+                                />
+                            </View>
+                            <View style={{ flex: 1 }}>
+                                <TextInput
+                                    placeholder="Дом/Квартира"
+                                    value={house}
+                                    onChangeText={text => setHouse(text)}
+                                    style={styles.costInput}
+                                />
+                                <TextInput
+                                    placeholder="Подъезд"
+                                    value={entrance}
+                                    onChangeText={text => setEntrance(text)}
+                                    style={styles.costInput}
+                                />
+                            </View>
+                            <TextInput
+                                placeholder="Этаж"
+                                value={floor}
+                                onChangeText={text => setFloor(text)}
+                                style={styles.costInput}
+                            />
+
+                        </View>
+                        <TouchableOpacity
+                            onPress={() => {
+                                console.log('Открытие карты');
+                                setIsMapVisible(true);
+                            }}
+                            style={styles.button}
+                        >
+                            <Text>Выбрать адрес на карте</Text>
+                        </TouchableOpacity>
+
+                        {isMapVisible && (
+                            <View style={{ height: 200, width: '100%' }}>
+                                <YandexMap onAddressSelected={onLocationSelect} />
+                            </View>
+                        )}
+                        <TextInput
+                            value={address}
+                            onChangeText={(text) => setAddress(text)}
+                            placeholder="Адрес"
+                        // Другие свойства TextInput...
+                        />
+                        <TouchableOpacity
+                            onPress={() => {
+                                updateAddressClient();
+                            }}
+                            style={styles.button}
+                        >
+                            <Text>Сохранить</Text>
+                        </TouchableOpacity>
+                    </View>
+                )}
             </View>
 
             <View style={{ marginBottom: 300 }}>
@@ -216,9 +305,7 @@ function TaskForm({ formData, dispatchFormData, onSave, setIsWarningModalVisible
                 </View>
             </View>
 
-            <TouchableOpacity style={addButtonStyles} onPress={onSave}>
-                <Text style={addButtonTextStyles}>Добавить задачу</Text>
-            </TouchableOpacity>
+
         </ScrollView>
     );
 }

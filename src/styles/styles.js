@@ -59,7 +59,7 @@ const sizes = {
   letterSpacingExtraLarge: 0.5,
 };
 
-const colors = {
+export const colors = {
   primary: '#C00000',
   black: '#2D2D2D',
   white: '#FFFFFF',
@@ -274,6 +274,7 @@ const styles = StyleSheet.create({
   },
   taskHeaderLeft: {
     paddingLeft: sizes.paddingExtraSmall,
+    flexDirection: 'row',
   },
   taskHeaderRight: {},
   taskTime: {
@@ -303,8 +304,10 @@ const styles = StyleSheet.create({
     marginBottom: sizes.marginExtraSmall,
   },
   taskTitle: {
+    flex: 1,
     ...baseTextStyles,
     fontSize: sizes.fontSizeXXXLarge,
+    marginRight: sizes.marginSmall,
   },
   taskStatusIcon: {
     width: 24,
@@ -425,7 +428,10 @@ const styles = StyleSheet.create({
   },
 
   noTasksText: {
-    // Стили для текста "Нет задач"
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: colors.black,
+    fontSize: sizes.fontSizeXXLarge,
   },
   dayButton: {
     alignItems: 'center',
@@ -494,7 +500,6 @@ const styles = StyleSheet.create({
   dateInputText: {
     flex: 1,
     fontSize: sizes.fontSizeLarge,
-    padding: sizes.paddingMedium,
     ...baseTextStyles,
   },
   dateButton: {
@@ -523,7 +528,7 @@ const styles = StyleSheet.create({
   },
   dropdownContainer: {
     fontSize: sizes.fontSizeLarge,
-    color: colors.black,
+    color: colors.grey,
     backgroundColor: colors.white,
     minHeight: 48,
     maxHeight: 48,
@@ -535,7 +540,7 @@ const styles = StyleSheet.create({
   },
   dropdownList: {
     fontSize: sizes.fontSizeLarge,
-    color: colors.black,
+    color: colors.grey,
     backgroundColor: colors.white,
     padding: sizes.paddingMedium,
     borderRadius: sizes.borderRadiusSmall,
@@ -545,7 +550,7 @@ const styles = StyleSheet.create({
   dropdownInput: {
     flex: 1,
     fontSize: sizes.fontSizeLarge,
-    padding: sizes.paddingMedium,
+    color: colors.grey,
     ...baseTextStyles,
   },
   searchContainer: {
@@ -569,8 +574,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    padding: sizes.paddingMedium,
-    marginVertical: sizes.marginExtraSmall,
   },
   selectedItemTouchable: {
     flexDirection: 'row',

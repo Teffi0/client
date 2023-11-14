@@ -1,5 +1,5 @@
 export  const initialState = {
-    status: 'выполнено',
+    status: 'новая',
     service: '',
     paymentMethod: '',
     cost: '',
@@ -10,7 +10,7 @@ export  const initialState = {
     selectedResponsible: '',
     selectedEmployee: '',
     fullnameClient: '',
-    addressClient: 'где-то там, где-то тут, где-то здесь, 25к1',
+    addressClient: '',
     phoneClient: '+79999999999',
     description: '',
     serviceOptions: [],
