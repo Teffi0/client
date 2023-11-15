@@ -24,10 +24,19 @@ export const truncateService = (service, maxLength = 36) => {
   
 /**
  * Форматирует адрес, оставляя только важные части.
- * @param {string} address - Полный адрес.
+ * @param {string} fullAddress - Полный адрес.
  * @returns {string} - Форматированный адрес.
  */
-export const formatAddress = (address) => {
-  const indexOfUl = address.indexOf('ул.');
-  return (indexOfUl !== -1 ? address.substring(indexOfUl + 3) : address).split(',').slice(0, 2).join(',');
+export const formatAddress = (fullAddress) => {
+  const parts = fullAddress.split(',').map(part => part.trim());
+  const streetPart = parts.find(part => part.startsWith('улица'));
+  const housePart = parts.find(part => part.match(/^\d+/));
+
+  if (!streetPart || !housePart) return '';
+
+  const street = streetPart.replace('улица', '').trim();
+  const house = housePart.trim();
+
+  return `ул.${street}, ${house}`;
 };
+

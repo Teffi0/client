@@ -11,6 +11,7 @@ const fontFamilies = {
 };
 
 const { width: screenWidth } = Dimensions.get('window');
+const screenHeight = Dimensions.get('window').height;
 
 const baseScreenWidth = 375;
 
@@ -19,7 +20,7 @@ const scale = (size, minSize = 8, maxSize = 30) => {
   return Math.max(minSize, Math.min(scaledSize, maxSize));
 };
 
-const sizes = {
+export const sizes = {
   paddingExtraSmall: 4,
   paddingSmall: 8,
   paddingMedium: 16,
@@ -95,6 +96,8 @@ const styles = StyleSheet.create({
     ...baseTextStyles,
     fontSize: sizes.fontSizeXXXXLarge,
     lineHeight: sizes.lineHeightExtraLarge,
+    marginBottom: sizes.marginMedium,
+    marginTop: sizes.marginMedium,
   },
   titleLarge: {
     ...baseTextStyles,
@@ -133,6 +136,7 @@ const styles = StyleSheet.create({
     ...baseTextStyles,
     fontSize: sizes.fontSizeMedium,
     letterSpacing: sizes.letterSpacingLarge,
+    textAlign: 'justify',
   },
   bodySmall: {
     ...baseTextStyles,
@@ -178,6 +182,9 @@ const styles = StyleSheet.create({
   contentContainerTask: {
     flex: 1,
     padding: sizes.paddingMedium,
+  },
+  section: {
+    marginBottom: sizes.marginLarge,
   },
   taskHeader: {
     flexDirection: 'row',
@@ -240,13 +247,15 @@ const styles = StyleSheet.create({
     height: 60,
     backgroundColor: colors.primary,
     borderRadius: sizes.borderRadiusLarge,
+    paddingVertical: sizes.paddingMedium,
     alignItems: 'center',
     justifyContent: 'center',
   },
   addButtonText: {
+    ...baseTextStyles,
     fontSize: sizes.fontSizeLarge,
-    ...boldTextStyles,
     color: colors.white,
+    fontWeight: '600',
   },
   addButtonPressed: {
     backgroundColor: colors.primary,
@@ -254,6 +263,41 @@ const styles = StyleSheet.create({
   addButtonTextPressed: {
     // Стили для нажатой кнопки
   },
+  // Добавьте следующие стили в файл styles.js
+
+  section: {
+    marginBottom: sizes.marginLarge,
+  },
+  sectionTitle: {
+    fontSize: sizes.fontSizeExtraLarge,
+    marginBottom: sizes.marginMedium,
+    color: colors.primary,
+  },
+  sectionContent: {
+    paddingHorizontal: sizes.paddingMedium,
+  },
+  rowStyle: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: sizes.marginLarge,
+    alignItems: 'center',
+  },
+  rowTitle: {
+    ...sizes.titleMedium,
+    flex: 1,
+    color: colors.darkGrey,
+  },
+  rowValue: {
+    ...sizes.bodyMedium,
+    flex: 2,
+    textAlign: 'right',
+    color: colors.darkGrey,
+  },
+  scrollViewContent: {
+    paddingHorizontal: sizes.paddingMedium,
+    paddingTop: sizes.paddingSmall,
+  },
+
   task: {
     width: '100%',
     borderRadius: sizes.borderRadiusLarge,
@@ -629,7 +673,7 @@ const styles = StyleSheet.create({
     borderColor: colors.grey,
     textAlignVertical: 'top',
   },
-  
+
   costInput: {
     fontSize: sizes.fontSizeLarge,
     color: colors.black,
@@ -641,15 +685,44 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.grey,
   },
+  addressInput: {
+    fontSize: sizes.fontSizeLarge,
+    color: colors.black,
+    backgroundColor: colors.white,
+    padding: sizes.paddingSmall,
+    minHeight: 48,
+    maxHeight: 48,
+    borderRadius: sizes.borderRadiusSmall,
+    borderWidth: 1,
+    borderColor: colors.grey,
+    flex: 1,
+    justifyContent: 'space-between',
+    marginRight: sizes.marginMedium,
+
+  },
   centeredView: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     marginTop: sizes.marginLarge,
   },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  modalViewModal: {
+    height: screenHeight * 0.4,
+    backgroundColor: 'white',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   modalText: {
     marginBottom: sizes.marginMedium,
     textAlign: "center",
+    fontSize: sizes.fontSizeExtraLarge,
     // Дополнительные стили для текста в модальном окне
   },
   buttonClose: {
@@ -663,8 +736,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     textAlign: "center",
   },
-  
-  });
-  
-  export default styles;
-  
+
+});
+
+export default styles;

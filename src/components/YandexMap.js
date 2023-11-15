@@ -54,13 +54,13 @@ const YandexMap = ({ onLocationSelect }) => {
             source={{ html }}
             style={{ flex: 1 }}
             onMessage={(event) => {
-  const data = JSON.parse(event.nativeEvent.data);
-  if (typeof onLocationSelect === 'function') {
-    onLocationSelect(data);
-  } else {
-    console.error('onLocationSelect is not a function', onLocationSelect);
-  }
-}}
+                const data = JSON.parse(event.nativeEvent.data);
+                if (typeof onLocationSelect === 'function') {
+                    onLocationSelect(data);
+                } else {
+                    console.error('onLocationSelect is not a function', onLocationSelect);
+                }
+            }}
         />
     );
 };

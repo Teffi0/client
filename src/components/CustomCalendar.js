@@ -116,7 +116,6 @@ const CustomCalendar = ({ selectedDate, onDateChange, tasks, taskDates }) => {
     }, {});
   }, [tasks, selectedDate]);
 
-
   const toggleClient = (client) => {
     setExpandedClients((current) =>
       current.includes(client)

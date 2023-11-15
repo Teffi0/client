@@ -33,3 +33,13 @@ export const fetchTasksForSelectedDate = async (selectedDate, setTasks) => {
       setTasks([]);
     }
   };
+
+  export const fetchTasksForDetail = async (setTasks) => {
+    try {
+      const response = await axios.get(`${SERVER_URL}/tasks`);
+      setTasks(response.data);
+    } catch (e) {
+      console.error('Не удалось загрузить задачи для выбранной даты: ', e);
+      setTasks([]);
+    }
+  };

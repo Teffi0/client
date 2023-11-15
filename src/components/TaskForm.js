@@ -24,13 +24,14 @@ function TaskForm({ formData, dispatchFormData, onSave, setIsWarningModalVisible
     const onLocationSelect = (data) => {
         setAddress(data.address);
         setIsMapVisible(false);
-      };
+    };
 
 
     const updateAddressClient = () => {
-        const fullAddress = `${city}, ${street}, ${house}, подъезд ${entrance}, этаж ${floor}`;
+        const fullAddress = `город ${city}, улица ${street}, ${house}, подъезд ${entrance}, этаж ${floor}`;
         setField('addressClient', fullAddress);
     };
+    
 
     const handleCostChange = text => {
         const newText = text.replace(/^0+/, '');
@@ -220,71 +221,51 @@ function TaskForm({ formData, dispatchFormData, onSave, setIsWarningModalVisible
                 />
                 {formData.fullnameClient && (
                     <View>
-                        <View style={{ flexDirection: 'row' }}>
-                            <View style={{ flex: 1 }}>
+                        <View style={{ flexDirection: 'column', marginTop: 24 }}>
+                            <View>
                                 <TextInput
                                     placeholder="Город"
                                     value={city}
                                     onChangeText={text => setCity(text)}
-                                    style={styles.costInput}
+                                    style={[styles.costInput, {marginBottom: 24}]}
                                 />
                                 <TextInput
                                     placeholder="Улица"
                                     value={street}
                                     onChangeText={text => setStreet(text)}
-                                    style={styles.costInput}
+                                    style={[styles.costInput, {marginBottom: 24}]}
                                 />
                             </View>
-                            <View style={{ flex: 1 }}>
+                            <View style={{ flexDirection: 'row'}}>
                                 <TextInput
                                     placeholder="Дом/Квартира"
                                     value={house}
                                     onChangeText={text => setHouse(text)}
-                                    style={styles.costInput}
+                                    style={styles.addressInput}
                                 />
                                 <TextInput
                                     placeholder="Подъезд"
                                     value={entrance}
                                     onChangeText={text => setEntrance(text)}
-                                    style={styles.costInput}
+                                    style={styles.addressInput}
+                                />
+
+                                <TextInput
+                                    placeholder="Этаж"
+                                    value={floor}
+                                    onChangeText={text => setFloor(text)}
+                                    style={[styles.addressInput, {marginRight: 0, marginBottom: 24}]}
                                 />
                             </View>
-                            <TextInput
-                                placeholder="Этаж"
-                                value={floor}
-                                onChangeText={text => setFloor(text)}
-                                style={styles.costInput}
-                            />
 
                         </View>
                         <TouchableOpacity
                             onPress={() => {
-                                console.log('Открытие карты');
-                                setIsMapVisible(true);
-                            }}
-                            style={styles.button}
-                        >
-                            <Text>Выбрать адрес на карте</Text>
-                        </TouchableOpacity>
-
-                        {isMapVisible && (
-                            <View style={{ height: 200, width: '100%' }}>
-                                <YandexMap onAddressSelected={onLocationSelect} />
-                            </View>
-                        )}
-                        <TextInput
-                            value={address}
-                            onChangeText={(text) => setAddress(text)}
-                            placeholder="Адрес"
-                        // Другие свойства TextInput...
-                        />
-                        <TouchableOpacity
-                            onPress={() => {
                                 updateAddressClient();
                             }}
-                            style={styles.button}
+                            style={styles.buttonClose}
                         >
-                            <Text>Сохранить</Text>
+                            <Text style={styles.textStyle}>Сохранить</Text>
                         </TouchableOpacity>
                     </View>
                 )}

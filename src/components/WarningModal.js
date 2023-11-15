@@ -11,8 +11,8 @@ const WarningModalContent = ({ isVisible, onClose }) => {
       transparent={true}
       animationType="slide"
     >
-      <View style={styles.centeredView}>
-        <View style={styles.modalView}>
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalViewModal}>
           <Text style={styles.modalText}>Пока нельзя создать черновик</Text>
           <TouchableOpacity
             style={styles.buttonClose}

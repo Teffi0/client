@@ -1,5 +1,3 @@
-// Этот файл содержит компонент TaskComponent, который используется для отображения информации о задаче.
-
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { FollowIcon, ProfileIcon, LocationIcon } from '../icons';
@@ -16,7 +14,7 @@ import { formatTime, truncateService, formatAddress } from '../utils/utils'; // 
  * @param {string} props.service - Название услуги.
  * @param {string} props.address_client - Адрес клиента.
  * @param {number} props.employees - Количество сотрудников.
- * @param {number} props.taskId - ID задачи.
+ * @param {number} props.id - ID задачи.
  */
 
 const getStatusColor = (status) => {
@@ -32,23 +30,24 @@ const getStatusColor = (status) => {
   }
 };
 
-const TaskComponent = React.memo(({ status, start_time, end_time, service, address_client, employees, taskId }) => {
-
-  const statusColor = getStatusColor(status);
+const TaskComponent = React.memo((props) => {
+  const statusColor = getStatusColor(props.status);
   const navigation = useNavigation();
 
-  // Обработчик нажатия на задачу.
   const handleTaskPress = React.useCallback(() => {
-    navigation.navigate('TaskDetail', { taskId });
-  }, [taskId, navigation]);
+    navigation.navigate('TaskDetail', { 
+      screen: 'TaskDetailScreen',
+      params: { ...props }
+    });
+  }, [props, navigation]);
+  
 
-  // Форматирование данных для отображения.
-  const formattedStartTime = formatTime(start_time);
-  const formattedEndTime = formatTime(end_time);
-  const truncatedServiceName = truncateService(service);
-  const addressText = formatAddress(address_client);
 
-  // JSX разметка компонента.
+  const formattedStartTime = formatTime(props.start_time);
+  const formattedEndTime = formatTime(props.end_time);
+  const truncatedServiceName = truncateService(props.service);
+  const addressText = formatAddress(props.address_client);
+
   return (
     <TouchableOpacity onPress={handleTaskPress} accessibilityLabel={`Task ${truncatedServiceName}`}>
       <View style={[styles.task, { borderColor: statusColor }]}>
@@ -59,7 +58,7 @@ const TaskComponent = React.memo(({ status, start_time, end_time, service, addre
           </View>
           <View style={styles.taskHeaderRight}>
             <View style={[styles.taskStatus, { backgroundColor: statusColor }]}>
-              <Text style={styles.taskStatusText}>{status}</Text>
+              <Text style={styles.taskStatusText}>{props.status}</Text>
             </View>
           </View>
         </View>
@@ -70,7 +69,7 @@ const TaskComponent = React.memo(({ status, start_time, end_time, service, addre
         <View style={styles.taskFooter}>
           <View style={styles.taskFooterBlock}>
             <ProfileIcon />
-            <Text style={styles.taskFooterText}>{`${employees} участник${employees > 1 ? 'ов' : ''}`}</Text>
+            <Text style={styles.taskFooterText}>{`${props.employees} участник${props.employees > 1 ? 'ов' : ''}`}</Text>
           </View>
           <View style={styles.taskFooterBlock}>
             <LocationIcon />

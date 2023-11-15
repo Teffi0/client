@@ -4,6 +4,17 @@ import axios from 'axios';
 import { formatISO, parseISO, isBefore, format } from 'date-fns';
 import styles from '../styles/styles';
 
+export const updateTaskStatus = async (taskId, newStatus) => {
+    try {
+      const response = await axios.put(`http://31.129.101.174/tasks/${taskId}`, { status: newStatus });
+      console.log('Статус задачи успешно обновлен. Данные ответа:', response.data);
+      // Здесь можно добавить дополнительные действия, например, обновление состояния в приложении
+    } catch (error) {
+      console.error('Ошибка при обновлении статуса задачи:', error);
+    }
+  };
+
+
 const validateFormData = (formData) => {
     const requiredFields = ['service', 'paymentMethod', 'cost', 'startDate', 'endDate', 'startDateTime', 'endDateTime', 'selectedEmployee', 'selectedResponsible', 'fullnameClient', 'description'];
     for (let field of requiredFields) {

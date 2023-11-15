@@ -1,11 +1,11 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import TabNavigator from './navigators/TabNavigator'; // Импорт из нового местоположения файла
+import MainStackNavigator from './navigators/MainStackNavigator';
 
 export default function Navigation() {
   return (
     <NavigationContainer>
-      <TabNavigator />
+      <MainStackNavigator />
     </NavigationContainer>
   );
 }
