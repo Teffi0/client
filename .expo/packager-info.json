@@ -1,9 +1,9 @@
 {
-  "expoServerPort": null,
-  "packagerPort": null,
+  "expoServerPort": 19000,
+  "packagerPort": 19000,
   "packagerPid": null,
-  "expoServerNgrokUrl": null,
-  "packagerNgrokUrl": null,
-  "ngrokPid": null,
+  "expoServerNgrokUrl": "https://rp6iqby.mateniaku.client.exp.direct",
+  "packagerNgrokUrl": "https://rp6iqby.mateniaku.client.exp.direct",
+  "ngrokPid": 4032,
   "webpackServerPort": null
 }

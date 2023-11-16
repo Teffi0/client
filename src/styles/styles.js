@@ -96,8 +96,6 @@ const styles = StyleSheet.create({
     ...baseTextStyles,
     fontSize: sizes.fontSizeXXXXLarge,
     lineHeight: sizes.lineHeightExtraLarge,
-    marginBottom: sizes.marginMedium,
-    marginTop: sizes.marginMedium,
   },
   titleLarge: {
     ...baseTextStyles,
@@ -500,23 +498,6 @@ const styles = StyleSheet.create({
   today: {
     color: colors.primary,
   },
-  modalView: {
-    height: '100%',
-    marginTop: 'auto',
-    backgroundColor: colors.white,
-    borderTopLeftRadius: sizes.borderRadiusExtraLarge,
-    borderTopRightRadius: sizes.borderRadiusExtraLarge,
-    padding: sizes.paddingMedium,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
   clientName: {
     fontSize: sizes.fontSizeXXXLarge,
     marginBottom: sizes.marginMedium,
@@ -702,9 +683,57 @@ const styles = StyleSheet.create({
   },
   centeredView: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: sizes.marginLarge,
+  },
+  filtersContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 10, // отступы по бокам для скролла
+    paddingVertical: 10, // отступы сверху и снизу для скролла
+    alignItems: 'center',
+    backgroundColor: '#f0f2f5', // фон скролл-вью, если он нужен
+  },
+  filterChip: {
+    backgroundColor: '#ffffff', // белый фон чипса
+    borderRadius: 20, // скругление краев чипса
+    paddingHorizontal: 16, // горизонтальные отступы внутри чипса
+    marginHorizontal: 8, // горизонтальные отступы между чипсами
+    height: 32, // высота чипса
+    flexDirection: 'row', // элементы внутри чипса будут в ряд
+    alignItems: 'center', // центрирование элементов в чипсе по вертикали
+    justifyContent: 'center', // центрирование элементов в чипсе по горизонтали
+    elevation: 3, // тень под чипсом для эффекта приподнятости
+    shadowColor: 'rgba(0, 0, 0, 0.1)', // цвет тени
+    shadowOffset: { width: 0, height: 2 }, // смещение тени
+    shadowOpacity: 1, // прозрачность тени
+    shadowRadius: 4, // радиус размытия тени
+    marginLeft: 4, // отступ слева
+    marginRight: 4, // отступ справа
+  },
+  filterChipText: {
+    color: '#000', // черный текст
+    fontSize: 14, // размер шрифта
+    marginHorizontal: 4, // отступы текста от иконки крестика
+  },
+  filterChipIcon: {
+    // Если используется иконка для закрытия чипса:
+    marginLeft: 4, // отступ иконки от текста
+  },
+  filtersContentContainer: {
+    flexDirection: 'row',
+  },
+  modalView: {
+    marginTop: 'auto',
+    backgroundColor: colors.white,
+    borderTopLeftRadius: sizes.borderRadiusExtraLarge,
+    borderTopRightRadius: sizes.borderRadiusExtraLarge,
+    padding: sizes.paddingMedium,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   modalOverlay: {
     flex: 1,
