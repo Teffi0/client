@@ -3,23 +3,24 @@ import { View, Text, TouchableOpacity, Modal } from 'react-native';
 import axios from 'axios';
 import { formatISO, parseISO, isBefore, format } from 'date-fns';
 import styles from '../styles/styles';
+import { SERVER_URL } from '../utils/tasks';
 
 export const updateTaskStatus = async (taskId, newStatus) => {
     try {
-      const response = await axios.put(`http://31.129.101.174/tasks/${taskId}`, { status: newStatus });
-      console.log('Статус задачи успешно обновлен. Данные ответа:', response.data);
-      // Здесь можно добавить дополнительные действия, например, обновление состояния в приложении
+        const response = await axios.put(`http://31.129.101.174/tasks/${taskId}`, { status: newStatus });
+        console.log('Статус задачи успешно обновлен. Данные ответа:', response.data);
+        // Здесь можно добавить дополнительные действия, например, обновление состояния в приложении
     } catch (error) {
-      console.error('Ошибка при обновлении статуса задачи:', error);
+        console.error('Ошибка при обновлении статуса задачи:', error);
     }
-  };
+};
 
 
 const validateFormData = (formData) => {
     const requiredFields = ['service', 'paymentMethod', 'cost', 'startDate', 'endDate', 'startDateTime', 'endDateTime', 'selectedEmployee', 'selectedResponsible', 'fullnameClient', 'description'];
     for (let field of requiredFields) {
         if (!formData[field]) {
-            alert(`Пожалуйста, заполните поле ${field}.`); 
+            alert(`Пожалуйста, заполните поле ${field}.`);
             return false;
         }
     }
@@ -58,10 +59,11 @@ const formatTaskData = (formData) => {
 
 export const fetchOptions = async (dispatchFormData) => {
     try {
-        const [servicesResponse, paymentMethodsResponse, employeesResponse, clientsResponse] = await Promise.all([
+        const [servicesResponse, paymentMethodsResponse, employeesResponse, responsiblesResponse, clientsResponse] = await Promise.all([
             axios.get('http://31.129.101.174/services'),
             axios.get('http://31.129.101.174/paymentmethods'),
             axios.get('http://31.129.101.174/employees'),
+            axios.get('http://31.129.101.174/responsibles'),
             axios.get('http://31.129.101.174/clients')
         ]);
         dispatchFormData({
@@ -69,7 +71,7 @@ export const fetchOptions = async (dispatchFormData) => {
             payload: {
                 serviceOptions: servicesResponse.data,
                 paymentMethodOptions: paymentMethodsResponse.data,
-                responsibleOptions: employeesResponse.data,
+                responsibleOptions: responsiblesResponse.data,
                 employeesOptions: employeesResponse.data,
                 fullnameClientOptions: clientsResponse.data.map(client => client.full_name)
             }
@@ -81,8 +83,16 @@ export const fetchOptions = async (dispatchFormData) => {
 
 export const handleSaveTask = async (formData, setIsSuccessModalVisible) => {
     if (validateFormData(formData)) {
+        const formattedData = formatTaskData(formData); // Форматируем данные задачи
+
+        // Формируем массив идентификаторов выбранных участников
+        const employees = formData.employeesOptions.map(employee => employee.id);
+        console.log(formData);
+        // Добавляем массив идентификаторов участников в объект данных задачи
+        formattedData.employees = employees;
+        console.log(employees);
         try {
-            const response = await axios.post('http://31.129.101.174/tasks', formatTaskData(formData));
+            const response = await axios.post(`${SERVER_URL}/tasks`, formattedData);
             console.log('Задача успешно добавлена. Данные ответа:', response.data);
             setIsSuccessModalVisible(true);
         } catch (error) {
@@ -90,6 +100,7 @@ export const handleSaveTask = async (formData, setIsSuccessModalVisible) => {
         }
     }
 };
+
 
 export const SuccessModal = React.memo(({ isVisible, onClose }) => {
     if (!isVisible) return null;

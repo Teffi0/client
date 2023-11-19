@@ -1,77 +1,90 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Modal, FlatList } from 'react-native';
-import { ChooseIcon } from '../icons';
+import { View, Text, TouchableOpacity, FlatList, TextInput } from 'react-native';
+import { ChooseIcon, CancelIcon } from '../icons';
 import styles from '../styles/styles';
 
 function DropdownEmployee({ label, options, selectedValues, onValueChange }) {
-    const [modalVisible, setModalVisible] = useState(false);
+    const [showOptions, setShowOptions] = useState(false);
+    // Теперь selectedOptions будет хранить id выбранных сотрудников
     const [selectedOptions, setSelectedOptions] = useState(selectedValues || []);
+    const [searchText, setSearchText] = useState('');
+    // Фильтрация теперь по full_name
+    const filteredOptions = options.filter((option) =>
+        option.full_name && option.full_name.toLowerCase().includes(searchText.toLowerCase())
+    );
 
     const handleSelectOption = (option) => {
-        let newSelectedOptions = [...selectedOptions];
-        if (newSelectedOptions.includes(option)) {
-            newSelectedOptions = newSelectedOptions.filter((currentOption) => currentOption !== option);
-        } else {
-            newSelectedOptions.push(option);
-        }
+        const newSelectedOptions = selectedOptions.includes(option.id)
+            ? selectedOptions.filter(id => id !== option.id)
+            : [...selectedOptions, option.id];
         setSelectedOptions(newSelectedOptions);
+        onValueChange(newSelectedOptions); // Теперь передаём массив идентификаторов
 
-        if (typeof onValueChange === 'function') {
-            onValueChange(newSelectedOptions);
-        }
+        // Логирование текущих выбранных значений
+        console.log('Выбранные сотрудники:', newSelectedOptions);
     };
-
-    const renderSelectedItem = (item, index) => (
+    // Изменение renderItem для отображения full_name
+    const renderItem = ({ item }) => (
         <TouchableOpacity
-            key={index}
-            style={styles.selectedItemTouchable}
             onPress={() => handleSelectOption(item)}
+            style={styles.dropdownOption}
         >
-            <Text style={styles.selectedItemText}>{item}</Text>
-            <Text style={styles.selectedItemDelete}>×</Text>
+            <Text>{item.full_name}</Text>
+            {selectedOptions.includes(item.id) ? <CancelIcon /> : <ChooseIcon />}
         </TouchableOpacity>
     );
+
+    // Изменение renderSelectedItem для отображения full_name
+    const renderSelectedItem = ({ item }) => {
+        const selectedItem = options.find(option => option.id === item);
+        return (
+            <View style={styles.selectedItemContainer}>
+                <Text style={styles.selectedItemText}>{selectedItem.full_name}</Text>
+                <TouchableOpacity onPress={() => handleSelectOption(selectedItem)}>
+                    <CancelIcon />
+                </TouchableOpacity>
+            </View>
+        );
+    };
+
     return (
         <View style={styles.container}>
             <Text style={styles.label}>{label}</Text>
             <TouchableOpacity
+                onPress={() => setShowOptions(!showOptions)}
                 style={styles.searchContainer}
-                onPress={() => setModalVisible(true)}
             >
-                <Text style={styles.dropdownInput}>
-                    {selectedOptions.length > 0 ? 'Выбранные участники' : 'Выбрать участников'}
-                </Text>
+                <TextInput
+                    style={styles.dropdownInput}
+                    placeholder="Поиск..."
+                    value={searchText}
+                    onChangeText={(text) => {
+                        setSearchText(text);
+                        setShowOptions(true);
+                    }}
+                    onFocus={() => setShowOptions(true)}
+                />
                 <ChooseIcon />
             </TouchableOpacity>
-
-            <View style={styles.selectedItemsContainer}>
-                {selectedOptions.map(renderSelectedItem)}
-            </View>
-
-            <Modal
-                animationType="slide"
-                transparent={true}
-                visible={modalVisible}
-                onRequestClose={() => setModalVisible(false)}
-            >
-            
-                <View style={styles.modalView}>
+            {showOptions && (
+                <View style={styles.dropdownList}>
                     <FlatList
-                        data={options}
-                        keyExtractor={(item) => item}
-                        renderItem={({ item }) => (
-                            <TouchableOpacity onPress={() => handleSelectOption(item)}>
-                                <View style={styles.modalTextItemContainer}>
-                                    <Text style={styles.modalTextItem}>{item}</Text>
-                                    <Text style={selectedOptions.includes(item) ? styles.modalTextItemSelected : styles.modalTextItemSelect}>
-                                        {selectedOptions.includes(item) ? '✓' : '+'}
-                                    </Text>
-                                </View>
-                            </TouchableOpacity>
-                        )}
+                        data={filteredOptions}
+                        keyExtractor={(item) => item.id.toString()} // где `item.id` — это уникальный идентификатор
+                        renderItem={renderItem}
+                        scrollEnabled={false}
                     />
                 </View>
-            </Modal>
+            )}
+            <FlatList
+                data={selectedOptions}
+                keyExtractor={(item) => item.toString()} // `item` уже является идентификатором
+                renderItem={renderSelectedItem}
+                style={styles.selectedItemsList}
+                horizontal={true}
+                scrollEnabled={false}
+            />
+
         </View>
     );
 }

@@ -29,14 +29,20 @@ export const truncateService = (service, maxLength = 36) => {
  */
 export const formatAddress = (fullAddress) => {
   const parts = fullAddress.split(',').map(part => part.trim());
-  const streetPart = parts.find(part => part.startsWith('улица'));
-  const housePart = parts.find(part => part.match(/^\d+/));
+  
+  // Ищем часть с улицей
+  const streetPart = parts.find(part => /улица/i.test(part)) || parts.find(part => /ул\./i.test(part));
 
-  if (!streetPart || !housePart) return '';
+  // Ищем часть с номером дома, предполагается, что номер дома идет после названия улицы
+  const houseIndex = streetPart ? parts.indexOf(streetPart) + 1 : -1;
+  const housePart = houseIndex > -1 && houseIndex < parts.length ? parts[houseIndex] : null;
+  
+  if (!streetPart || !housePart) return 'Адрес не найден';
 
-  const street = streetPart.replace('улица', '').trim();
-  const house = housePart.trim();
+  // Очищаем названия улицы и номер дома от лишних слов
+  const street = streetPart.replace(/улица/i, '').replace(/ул\./i, '').trim();
+  const house = housePart.replace(/дом/i, '').replace(/д\./i, '').trim();
 
-  return `ул.${street}, ${house}`;
+  return `ул.${street}, д.${house}`;
 };
 

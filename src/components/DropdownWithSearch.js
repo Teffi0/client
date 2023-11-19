@@ -1,65 +1,77 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, FlatList, TouchableOpacity } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
+import {
+  View,
+  Text,
+  TextInput,
+  FlatList,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  Keyboard
+} from 'react-native';
 import { ChooseIcon } from '../icons';
 import styles from '../styles/styles';
 
 function DropdownWithSearch({ label, options, selectedValue, onValueChange }) {
-  const [searchText, setSearchText] = useState('');
+  const [searchText, setSearchText] = useState(selectedValue || '');
   const [showOptions, setShowOptions] = useState(false);
   const [selectedOption, setSelectedOption] = useState(selectedValue);
 
   const maxVisibleItems = 4;
-
   const filteredOptions = options
-    .filter((option) => option.toLowerCase().includes(searchText.toLowerCase()))
+    .filter((option) => typeof option === 'string' ? option.toLowerCase().includes(searchText.toLowerCase()) : option.label.toLowerCase().includes(searchText.toLowerCase()))
     .slice(0, maxVisibleItems);
+
 
   useEffect(() => {
     setSelectedOption(selectedValue);
   }, [selectedValue]);
 
-  return (
-    <View style={styles.container}>
-      <Text style={styles.label}>{label}</Text>
-
-      <View style={styles.searchContainer}>
-        <TextInput
-          style={styles.dropdownInput}
-          placeholder="Search..."
-          value={searchText}
-          onChangeText={(text) => {
-            setSearchText(text);
-          }}
-          onFocus={() => setShowOptions(true)}
-        />
-        <ChooseIcon />
+  const renderItem = ({ item }) => (
+    <TouchableOpacity
+      onPress={() => {
+        setSelectedOption(item);
+        onValueChange(item);
+        setSearchText(item);
+        setShowOptions(false);
+        Keyboard.dismiss();
+      }}
+    >
+      <View style={styles.dropdownOption}>
+        <Text>{item}</Text>
       </View>
-
-      {showOptions && (
-        <View style={styles.dropdownList}>
-          <View style={styles.dropdownOptionsContainer}>
+    </TouchableOpacity>
+  );
+  return (
+    <TouchableWithoutFeedback onPress={() => setShowOptions(false)}>
+      <View style={[styles.container, { marginBottom: 36 }]}>
+        <Text style={styles.label}>{label}</Text>
+        <View style={styles.searchContainer}>
+          <TextInput
+            style={styles.dropdownInput}
+            placeholder=""
+            value={searchText}
+            onChangeText={(text) => {
+              setSearchText(text);
+              setShowOptions(true);
+            }}
+            onFocus={() => setShowOptions(true)}
+          />
+          <TouchableOpacity onPress={() => setShowOptions(!showOptions)}>
+            <ChooseIcon />
+          </TouchableOpacity>
+        </View>
+        {showOptions && (
+          <View style={styles.dropdownList}>
             <FlatList
               data={filteredOptions}
               keyExtractor={(item) => item}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  onPress={() => {
-                    setSelectedOption(item);
-                    setSearchText(item);
-                    setShowOptions(false);
-                  }}
-                >
-                  <View style={styles.dropdownOption}>
-                    <Text>{item}</Text>
-                  </View>
-                </TouchableOpacity>
-              )}
+              renderItem={renderItem}
+              scrollEnabled={false}
             />
           </View>
-        </View>
-      )}
-    </View>
+        )}
+      </View>
+    </TouchableWithoutFeedback>
   );
 }
 
