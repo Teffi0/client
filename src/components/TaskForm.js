@@ -5,14 +5,11 @@ import DateInput from './DateInput';
 import Dropdown from './Dropdown';
 import DropdownClient from './DropdownClient';
 import DropdownEmployee from './DropdownEmployee';
-import YandexMap from './YandexMap';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { BackIcon, DeleteIcon } from '../icons';
 import { format } from 'date-fns';
 import SaveDraftModal from './SaveDraftModal';
 import DropdownWithSearch from './DropdownWithSearch';
-import axios from 'axios';
-import { SERVER_URL } from '../utils/tasks';
 
 function TaskForm({ formData, dispatchFormData, onSave, setIsWarningModalVisible, onClose }) {
     const [city, setCity] = useState('');

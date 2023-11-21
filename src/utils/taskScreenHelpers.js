@@ -5,15 +5,22 @@ import { formatISO, parseISO, isBefore, format } from 'date-fns';
 import styles from '../styles/styles';
 import { SERVER_URL } from '../utils/tasks';
 
-export const updateTaskStatus = async (taskId, newStatus) => {
+export async function updateTaskStatus(taskId, newStatus) {
     try {
-        const response = await axios.put(`http://31.129.101.174/tasks/${taskId}`, { status: newStatus });
-        console.log('Статус задачи успешно обновлен. Данные ответа:', response.data);
-        // Здесь можно добавить дополнительные действия, например, обновление состояния в приложении
+      const response = await fetch(`http://31.129.101.174/tasks/${taskId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      return response; // Возвращает объект ответа fetch
     } catch (error) {
-        console.error('Ошибка при обновлении статуса задачи:', error);
+      console.error('Ошибка при обновлении статуса задачи:', error);
+      throw error; // В случае ошибки пробрасываем исключение
     }
-};
+  }
+  
 
 
 const validateFormData = (formData) => {

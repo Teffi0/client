@@ -765,7 +765,30 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     textAlign: "center",
   },
-
+  rowStyle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  itemName: {
+    fontSize: 16,
+    flex: 3, // выделяем больше места для названия товара
+  },
+  quantityInput: {
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    padding: 8,
+    width: 50, // фиксированная ширина для поля ввода
+    textAlign: 'center',
+  },
+  stockInfo: {
+    fontSize: 14,
+    flex: 2, // выделяем место для информации о стоке
+  },
 });
 
 export default styles;

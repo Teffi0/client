@@ -47,7 +47,6 @@ const TaskComponent = React.memo((props) => {
   const formattedEndTime = formatTime(props.end_time);
   const truncatedServiceName = truncateService(props.service);
   const addressText = formatAddress(props.address_client);
-  console.log(addressText);
 
   return (
     <TouchableOpacity onPress={handleTaskPress} accessibilityLabel={`Task ${truncatedServiceName}`}>
