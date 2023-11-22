@@ -259,9 +259,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
   },
   addButtonTextPressed: {
-    // Стили для нажатой кнопки
   },
-  // Добавьте следующие стили в файл styles.js
 
   section: {
     marginBottom: sizes.marginLarge,
@@ -404,38 +402,31 @@ const styles = StyleSheet.create({
   },
   calendarContainer: {
     flex: 1,
-    // Другие свойства для контейнера календаря
   },
   daysRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    // Дополнительные стили для строки дней
   },
   todayButton: {
     borderColor: 'red',
     borderWidth: 1,
-    // Дополнительные стили для кнопки текущего дня
   },
   selectedDayButton: {
-    // Стили для выбранного дня
   },
 
   dayName: {
     fontSize: 14,
     color: 'black',
-    // Дополнительные стили для имени дня
   },
 
   selectedDayText: {
     fontWeight: 'bold',
     color: 'red',
-    // Стили для текста выбранного дня
   },
 
   dayNumber: {
     fontSize: 20,
     color: 'black',
-    // Дополнительные стили для номера дня
   },
 
   taskDot: {
@@ -444,29 +435,24 @@ const styles = StyleSheet.create({
     height: 4,
     borderRadius: 2,
     marginBottom: 2,
-    // Стили для индикатора задачи
   },
 
   taskDotActive: {
     backgroundColor: 'red',
-    // Стили для активного индикатора задачи
   },
 
   tasksContainer: {
     marginTop: 16,
     marginBottom: 120,
-    // Дополнительные стили для контейнера задач
   },
 
   taskFIO: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    // Стили для шапки задачи
   },
 
   clientName: {
-    // Стили для названия клиента
   },
 
   noTasksText: {
@@ -566,7 +552,6 @@ const styles = StyleSheet.create({
   dropdownList: {
     fontSize: sizes.fontSizeLarge,
     color: colors.grey,
-    backgroundColor: colors.white,
     padding: sizes.paddingMedium,
     borderRadius: sizes.borderRadiusSmall,
     borderWidth: 1,
@@ -593,12 +578,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: sizes.paddingSmall,
   },
   commentContainer: {
-    // Стили для контейнера комментариев
   },
   selectedItemContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    fontSize: sizes.fontSizeMedium,
+    color: colors.black,
+    paddingVertical: sizes.paddingMedium,
+    paddingHorizontal: sizes.paddingMedium,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.grey,
   },
   selectedItemTouchable: {
     flexDirection: 'row',
@@ -609,7 +596,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   selectedItemText: {
-    flex: 1,
     fontSize: sizes.fontSizeLarge,
     ...baseTextStyles,
   },
@@ -620,6 +606,24 @@ const styles = StyleSheet.create({
   },
   chooseIconContainer: {
     padding: sizes.paddingMedium,
+  },
+  quantityControl: {
+    flexDirection: 'row', 
+    alignItems: 'center',
+    justifyContent: 'space-between', 
+    borderWidth: 1,
+    borderColor: colors.grey,
+    borderRadius: sizes.borderRadiusSmall, 
+  },
+  minusButton: {
+    padding: 8,
+    width: 40,
+    textAlign: 'center',
+  },
+  plusButton: {
+    padding: 8,
+    width: 40,
+    textAlign: 'center',
   },
   label: {
     fontSize: sizes.fontSizeLarge,
@@ -686,73 +690,62 @@ const styles = StyleSheet.create({
   },
   filtersContainer: {
     flexDirection: 'row',
-    paddingHorizontal: 10, // отступы по бокам для скролла
-    paddingVertical: 10, // отступы сверху и снизу для скролла
+    paddingHorizontal: 10,
+    paddingVertical: 10, 
     alignItems: 'center',
-    backgroundColor: '#f0f2f5', // фон скролл-вью, если он нужен
+    backgroundColor: '#f0f2f5', 
   },
   filterChip: {
-    backgroundColor: '#ffffff', // белый фон чипса
-    borderRadius: 20, // скругление краев чипса
-    paddingHorizontal: 16, // горизонтальные отступы внутри чипса
-    marginHorizontal: 8, // горизонтальные отступы между чипсами
-    height: 32, // высота чипса
-    flexDirection: 'row', // элементы внутри чипса будут в ряд
-    alignItems: 'center', // центрирование элементов в чипсе по вертикали
-    justifyContent: 'center', // центрирование элементов в чипсе по горизонтали
-    elevation: 3, // тень под чипсом для эффекта приподнятости
-    shadowColor: 'rgba(0, 0, 0, 0.1)', // цвет тени
-    shadowOffset: { width: 0, height: 2 }, // смещение тени
-    shadowOpacity: 1, // прозрачность тени
-    shadowRadius: 4, // радиус размытия тени
-    marginLeft: 4, // отступ слева
-    marginRight: 4, // отступ справа
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    marginHorizontal: 8,
+    height: 32, 
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center', 
+    elevation: 3, 
+    shadowColor: 'rgba(0, 0, 0, 0.1)', 
+    shadowOffset: { width: 0, height: 2 }, 
+    shadowOpacity: 1, 
+    shadowRadius: 4, 
+    marginLeft: 4, 
+    marginRight: 4, 
   },
   filterChipText: {
-    color: '#000', // черный текст
-    fontSize: 14, // размер шрифта
-    marginHorizontal: 4, // отступы текста от иконки крестика
+    color: '#000', 
+    fontSize: 14,
+    marginHorizontal: 4,
   },
   filterChipIcon: {
-    // Если используется иконка для закрытия чипса:
-    marginLeft: 4, // отступ иконки от текста
+    marginLeft: 4,
   },
   filtersContentContainer: {
     flexDirection: 'row',
   },
   modalView: {
-    marginTop: 'auto',
+    flex: 1,
     backgroundColor: colors.white,
     borderTopLeftRadius: sizes.borderRadiusExtraLarge,
     borderTopRightRadius: sizes.borderRadiusExtraLarge,
     padding: sizes.paddingMedium,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
     elevation: 5,
   },
   modalOverlay: {
     flex: 1,
-    justifyContent: 'flex-end',
+    justifyContent: 'flex-start',
+    backgroundColor: 'white',
   },
   modalViewModal: {
-    height: screenHeight * 0.4,
+    top: screenHeight * 0.4,
     backgroundColor: 'white',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    padding: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   modalText: {
     marginBottom: sizes.marginMedium,
     textAlign: "center",
     fontSize: sizes.fontSizeExtraLarge,
-    // Дополнительные стили для текста в модальном окне
   },
   buttonClose: {
     backgroundColor: colors.black,
@@ -770,24 +763,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: 8,
-    paddingHorizontal: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
   },
   itemName: {
     fontSize: 16,
-    flex: 3, // выделяем больше места для названия товара
+    flex: 3,
   },
   quantityInput: {
     borderWidth: 1,
     borderColor: '#E0E0E0',
     padding: 8,
-    width: 50, // фиксированная ширина для поля ввода
+    width: 50, 
     textAlign: 'center',
   },
   stockInfo: {
     fontSize: 14,
-    flex: 2, // выделяем место для информации о стоке
+    flex: 2, 
   },
 });
 

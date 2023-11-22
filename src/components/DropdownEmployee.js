@@ -27,7 +27,7 @@ function DropdownEmployee({ label, options, selectedValues, onValueChange }) {
     const renderItem = ({ item }) => (
         <TouchableOpacity
             onPress={() => handleSelectOption(item)}
-            style={styles.dropdownOption}
+            style={styles.rowStyle}
         >
             <Text>{item.full_name}</Text>
             {selectedOptions.includes(item.id) ? <CancelIcon /> : <ChooseIcon />}

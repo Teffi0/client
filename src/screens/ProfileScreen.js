@@ -19,21 +19,9 @@ function ProfileScreen() {
         <View style={styles.header}>
           <TouchableOpacity
             style={styles.headerItem}
-            onPress={() => handleHeaderItemClick('ClientData')} // Changed to the route name
-          >
-            <Text style={styles.headerItemText}>Данные клиента</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.headerItem}
             onPress={() => handleHeaderItemClick('ClientBase')} // Changed to the route name
           >
             <Text style={styles.headerItemText}>Клиентская база</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.headerItem}
-            onPress={() => handleHeaderItemClick('Finance')} // Changed to the route name
-          >
-            <Text style={styles.headerItemText}>Финансы</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.headerItem}
@@ -41,17 +29,18 @@ function ProfileScreen() {
           >
             <Text style={styles.headerItemText}>Складской учёт</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.headerItem}
-            onPress={() => handleHeaderItemClick('Notifications')} // Changed to the route name
-          >
-            <Text style={styles.headerItemText}>Уведомления</Text>
-          </TouchableOpacity>
+          
           <TouchableOpacity
             style={styles.headerItem}
             onPress={() => handleHeaderItemClick('Employees')} // Changed to the route name
           >
             <Text style={styles.headerItemText}>Сотрудники</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.headerItem}
+            onPress={() => handleHeaderItemClick('Notifications')} // Changed to the route name
+          >
+            <Text style={styles.headerItemText}>Уведомления</Text>
           </TouchableOpacity>
         </View>
       </View>

@@ -28,6 +28,7 @@ function DropdownWithSearch({ label, options, selectedValue, onValueChange }) {
 
   const renderItem = ({ item }) => (
     <TouchableOpacity
+      style={styles.rowStyle}
       onPress={() => {
         setSelectedOption(item);
         onValueChange(item);

@@ -82,6 +82,7 @@ const TasksScreen = () => {
             selectedDate={selectedDate}
             onDateChange={setSelectedDate}
             tasks={tasks}
+            taskDates={taskDates}
             viewMode={viewMode}
           />
         )}

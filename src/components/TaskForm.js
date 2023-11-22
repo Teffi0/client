@@ -207,7 +207,7 @@ function TaskForm({ formData, dispatchFormData, onSave, setIsWarningModalVisible
 
                     <View style={{ marginTop: 80 }}>
                         <Text style={[styles.headlineMedium, { marginBottom: 24 }]}>Данные клиента</Text>
-                        <DropdownClient
+                        <DropdownWithSearch
                             label="Связанный клиент"
                             options={formData.fullnameClientOptions}
                             selectedValue={formData.fullnameClient}

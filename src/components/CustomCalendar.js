@@ -60,10 +60,10 @@ const CustomCalendar = ({ selectedDate, onDateChange, tasks, taskDates }) => {
 
       if (gestureState.dx > 50) {
         newDate = subWeeks(selectedDate, 1);
-        toValue = screenWidth; // Сдвиг вправо
+        toValue = screenWidth;
       } else if (gestureState.dx < -50) {
         newDate = addWeeks(selectedDate, 1);
-        toValue = -screenWidth; // Сдвиг влево
+        toValue = -screenWidth;
       }
 
       Animated.timing(translateX, {
@@ -71,9 +71,9 @@ const CustomCalendar = ({ selectedDate, onDateChange, tasks, taskDates }) => {
         duration: 250,
         useNativeDriver: true,
       }).start(() => {
-        translateX.setValue(0); // Сброс позиции для следующего свайпа
+        translateX.setValue(0);
         if (toValue !== 0) {
-          onDateChange(newDate); // Обновление даты только если был свайп
+          onDateChange(newDate);
         }
       });
     },
@@ -83,7 +83,6 @@ const CustomCalendar = ({ selectedDate, onDateChange, tasks, taskDates }) => {
     if (currentWeekRef.current.includes(day)) {
       onDateChange(day);
     } else {
-      // Если выбранная дата не из текущей недели, найдите, это предыдущая или следующая
       const isPreviousWeek = currentWeekRef.current[0] > day;
       const newWeek = isPreviousWeek ? subWeeks(day, 1) : addWeeks(day, 1);
       onDateChange(newWeek);
@@ -129,7 +128,7 @@ const CustomCalendar = ({ selectedDate, onDateChange, tasks, taskDates }) => {
       <Animated.View
         {...panResponder.panHandlers}
         style={{
-          width: screenWidth, // Теперь анимированный View будет только шириной одной недели
+          width: screenWidth,
           flexDirection: 'row',
           transform: [{ translateX }]
         }}

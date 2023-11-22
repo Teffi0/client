@@ -1,90 +1,124 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, TouchableOpacity, FlatList, TextInput } from 'react-native';
-import { ChooseIcon, CancelIcon, DeleteIcon } from '../icons';
+import { ChooseIcon, DeleteIcon } from '../icons';
 import styles from '../styles/styles';
 
 function DropdownItem({ label, options, onValueChange }) {
     const [showOptions, setShowOptions] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
     const [selectedItems, setSelectedItems] = useState([]);
 
-    const handleSelectOption = (option, quantity) => {
-        setSelectedItems(currentSelectedItems => {
-            const index = currentSelectedItems.findIndex(item => item.id === option.id);
-            let updatedSelectedItems = [...currentSelectedItems];
-            if (index > -1) {
-                updatedSelectedItems[index] = { ...option, quantity };
-            } else {
-                updatedSelectedItems = [...currentSelectedItems, { ...option, quantity }];
-            }
-            // Call onValueChange with the updated state
-            onValueChange(updatedSelectedItems);
-            return updatedSelectedItems;
-        });
+    const filteredOptions = useMemo(() =>
+        options.filter(option => option.name.toLowerCase().includes(searchQuery.toLowerCase())).slice(0, 4),
+        [options, searchQuery]
+    );
+
+    const handleSelectOption = (option) => {
+        setShowOptions(false);
+        setSearchQuery('');
+        const existingItem = selectedItems.find(item => item.id === option.id);
+        setSelectedItems(current =>
+            existingItem
+                ? current.map(item => item.id === option.id ? { ...item, quantity: item.quantity + 1 } : item)
+                : [...current, { ...option, quantity: 1 }]
+        );
+    };
+
+    const handleQuantityChange = (item, delta) => {
+        setSelectedItems(current =>
+            current.map(ci => ci.id === item.id ? { ...ci, quantity: Math.max(1, ci.quantity + delta) } : ci)
+        );
     };
 
     const handleRemoveItem = (id) => {
         setSelectedItems(currentSelectedItems => {
             const updatedSelectedItems = currentSelectedItems.filter(item => item.id !== id);
-            // Call onValueChange with the updated state
-            onValueChange(updatedSelectedItems);
             return updatedSelectedItems;
         });
     };
 
-
     const renderItem = ({ item }) => (
-        <View style={styles.rowStyle}>
-            <Text style={styles.itemName}>{`${item.name}, ${item.measure}`}</Text>
-            <TextInput
-                style={styles.quantityInput}
-                placeholder="0"
-                keyboardType="numeric"
-                onChangeText={(quantity) => handleSelectOption(item, parseInt(quantity, 10) || 0)}
-            />
-            <Text style={styles.stockInfo}>{`Остаток в складе: ${item.stock} ${item.measure}`}</Text>
-            {selectedItems.some(selectedItem => selectedItem.id === item.id) && (
-                <TouchableOpacity onPress={() => handleRemoveItem(item.id)} style={styles.deleteButton}>
-                    <DeleteIcon />
-                </TouchableOpacity>
-            )}
-        </View>
+        <TouchableOpacity style={styles.rowStyle} onPress={() => handleSelectOption(item)}>
+            <Text style={styles.itemName}>{`${item.name} - ${item.measure}`}</Text>
+        </TouchableOpacity>
     );
 
     const renderSelectedItem = ({ item }) => (
         <View style={styles.selectedItemContainer}>
-            <Text style={styles.selectedItemText}>{`${item.name} - ${item.quantity} ${item.measure}`}</Text>
-            <TouchableOpacity onPress={() => handleRemoveItem(item.id)}>
-                <CancelIcon />
-            </TouchableOpacity>
+            <View style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: 20,
+            }}>
+                <Text style={styles.selectedItemText}>{`${item.name}`}</Text>
+                <TouchableOpacity onPress={() => handleRemoveItem(item.id)}>
+                    <DeleteIcon />
+                </TouchableOpacity>
+            </View>
+            <View style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+            }}>
+                <View style={[styles.quantityControl, { marginRight: 4 }]}>
+                    <TouchableOpacity onPress={() => handleQuantityChange(item, -1)} style={styles.minusButton}>
+                        <Text>-</Text>
+                    </TouchableOpacity>
+                    <TextInput
+                        style={styles.quantityInput}
+                        value={item.quantity.toString()}
+                        onChangeText={(quantity) => handleQuantityChange(item, parseInt(quantity, 10) - item.quantity)}
+                        keyboardType="numeric"
+                    />
+                    <TouchableOpacity onPress={() => handleQuantityChange(item, 1)} style={styles.plusButton}>
+                        <Text>+</Text>
+                    </TouchableOpacity>
+                </View>
+
+                <Text style={styles.bodyMedium}>{`Остаток в складе: ${item.stock}`}</Text>
+            </View>
+
         </View>
     );
 
     return (
-        <View style={styles.container}>
+        <View>
             <Text style={styles.label}>{label}</Text>
-            <TouchableOpacity
-                onPress={() => setShowOptions(!showOptions)}
-                style={styles.searchContainer}
-            >
-                <Text>Выбрать инвентарь</Text>
-                <ChooseIcon />
-            </TouchableOpacity>
+            <View style={styles.searchContainer}>
+                <TextInput
+                    placeholder='Поиск...'
+                    value={searchQuery}
+                    style={styles.searchInput}
+                    onChangeText={(text) => {
+                        {
+                            setSearchQuery(text);
+                            setShowOptions(true);
+                        }
+                    }}
+                    onFocus={() => setShowOptions(true)}
+                />
+                <TouchableOpacity onPress={() => setShowOptions(!showOptions)}>
+                    <ChooseIcon />
+                </TouchableOpacity>
+            </View>
             {showOptions && (
                 <FlatList
-                    data={options}
-                    keyExtractor={(item) => item.id.toString()}
+                    data={filteredOptions}
+                    keyExtractor={(item) => `option-${item.id}`}
                     renderItem={renderItem}
                     style={styles.dropdownList}
                     scrollEnabled={true}
+                    ListEmptyComponent={<Text style={styles.noItemsText}>Нет результатов</Text>}
                 />
             )}
             <FlatList
                 data={selectedItems}
-                keyExtractor={(item) => item.id.toString()}
+                keyExtractor={(item) => `selected-${item.id}`}
                 renderItem={renderSelectedItem}
                 style={styles.selectedItemsList}
-                horizontal={true}
                 scrollEnabled={true}
+                ListEmptyComponent={<Text style={styles.noItemsText}>Нет выбранных элементов</Text>}
             />
         </View>
     );
