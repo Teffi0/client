@@ -25,6 +25,8 @@ const getStatusColor = (status) => {
       return colors.inProcessStatus;
     case 'выполнено':
       return colors.finishedStatus;
+    case 'черновик':
+      return colors.grey;
     default:
       return colors.grey; // Цвет по умолчанию
   }
@@ -43,10 +45,11 @@ const TaskComponent = React.memo((props) => {
   
 
 
-  const formattedStartTime = formatTime(props.start_time);
-  const formattedEndTime = formatTime(props.end_time);
-  const truncatedServiceName = truncateService(props.service);
-  const addressText = formatAddress(props.address_client);
+  const formattedStartTime = props.start_time ? formatTime(props.start_time) : 'Не указано';
+  const formattedEndTime = props.end_time ? formatTime(props.end_time) : 'Не указано';
+  const truncatedServiceName = props.service ? truncateService(props.service) : 'Услуга не указана';
+  const addressText = props.address_client ? formatAddress(props.address_client) : 'Адрес не указан';
+  const employeesText = props.employees ? `${props.employees} участник${props.employees > 1 ? 'ов' : ''}` : 'Участники не указаны';
 
   return (
     <TouchableOpacity onPress={handleTaskPress} accessibilityLabel={`Task ${truncatedServiceName}`}>
@@ -69,7 +72,7 @@ const TaskComponent = React.memo((props) => {
         <View style={styles.taskFooter}>
           <View style={styles.taskFooterBlock}>
             <ProfileIcon />
-            <Text style={styles.taskFooterText}>{`${props.employees} участник${props.employees > 1 ? 'ов' : ''}`}</Text>
+            <Text style={styles.taskFooterText}>{employeesText}</Text>
           </View>
           <View style={styles.taskFooterBlock}>
             <LocationIcon />

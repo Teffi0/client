@@ -25,9 +25,15 @@ export  const initialState = {
 
   
   export const formReducer = (state, action) => {
-    if (action.type === 'UPDATE_FORM') {
-      return { ...state, ...action.payload };
+    switch (action.type) {
+        case 'UPDATE_FORM':
+            return { ...state, ...action.payload };
+        case 'RESET_FORM':
+            return { ...initialState };
+        case 'SET_FORM':
+            return { ...state, ...action.payload };
+        default:
+            return state;
     }
-    return state;
-  };
+};
   

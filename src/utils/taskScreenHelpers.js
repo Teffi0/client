@@ -47,7 +47,7 @@ const formatTaskData = (formData) => {
         service: formData.service,
         payment: formData.paymentMethod,
         cost: formData.cost,
-        start_date: formData.startDate ? format(formData.startDate, 'yyyy-MM-dd') : null,
+        start_date: formData.startDate ? format(new Date(formData.startDate), 'yyyy-MM-dd') : null,
         end_date: formData.endDate ? format(formData.endDate, 'yyyy-MM-dd') : null,
         start_time: formData.startDateTime ? format(formData.startDateTime, 'HH:mm') : null,
         end_time: formData.endDateTime ? format(formData.endDateTime, 'HH:mm') : null,
@@ -88,25 +88,24 @@ export const fetchOptions = async (dispatchFormData) => {
     }
 };
 
-export const handleSaveTask = async (formData, setIsSuccessModalVisible) => {
-    if (validateFormData(formData)) {
-        const formattedData = formatTaskData(formData); // Форматируем данные задачи
+export const handleSaveTask = async (formData) => {
+    // Если статус не "черновик", проводим валидацию
+    if (formData.status !== 'черновик' && !validateFormData(formData)) {
+        return; // Если валидация не пройдена, прекращаем выполнение функции
+    }
 
-        // Формируем массив идентификаторов выбранных участников
-        const employees = formData.employeesOptions.map(employee => employee.id);
-        console.log(formData);
-        // Добавляем массив идентификаторов участников в объект данных задачи
-        formattedData.employees = employees;
-        console.log(employees);
-        try {
-            const response = await axios.post(`${SERVER_URL}/tasks`, formattedData);
-            console.log('Задача успешно добавлена. Данные ответа:', response.data);
-            setIsSuccessModalVisible(true);
-        } catch (error) {
-            console.error('Ошибка при добавлении задачи:', error);
-        }
+    const formattedData = formatTaskData(formData); 
+    const employees = formData.employeesOptions.map(employee => employee.id);
+    formattedData.employees = employees;
+    
+    try {
+        const response = await axios.post(`${SERVER_URL}/tasks`, formattedData);
+        console.log('Задача успешно добавлена. Данные ответа:', response.data);
+    } catch (error) {
+        console.error('Ошибка при добавлении задачи:', error);
     }
 };
+
 
 
 export const SuccessModal = React.memo(({ isVisible, onClose }) => {

@@ -1,6 +1,11 @@
 {
   "name": "MyApp",
   "expo": {
-    "userInterfaceStyle": "automatic"
+    "userInterfaceStyle": "automatic",
+    "extra": {
+      "eas": {
+        "projectId": "e43a04ea-f40d-4a19-abd7-42dfb694f139"
+      }
+    }
   }
 }

@@ -1,73 +1,102 @@
-import React, { memo } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
-import { format, isSameDay, startOfMonth, endOfMonth, getDaysInMonth, addDays, isSameMonth } from 'date-fns';
+import React, { memo, useMemo, useCallback } from 'react';
+import { View, Text, TouchableOpacity, VirtualizedList } from 'react-native';
+import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSameMonth, isSameDay } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import styles from '../styles/styles';
 import PropTypes from 'prop-types';
 
-const isSameDate = (date1, date2) => isSameDay(date1, date2);
+const areEqual = (prevProps, nextProps) => {
+    return prevProps.day === nextProps.day &&
+        JSON.stringify(prevProps.taskDates) === JSON.stringify(nextProps.taskDates);
+};
 
-const RenderMonth = memo(({ date, handleDatePress, taskDates }) => {
-    const monthStart = startOfMonth(date);
-    const monthEnd = endOfMonth(date);
-    const monthName = format(date, 'MMMM', { locale: ru });
-    const weeks = [];
-    let currentWeek = [];
+const Day = memo(({ day, handleDatePress, taskDates }) => {
+    const isSelectedDay = day && isSameDay(day, new Date());
+    const dayButtonStyle = day ? styles.dayButton : null;
 
-    let daysToAdd = 1 - monthStart.getDay();
-    if (daysToAdd > 0) daysToAdd -= 7;
-
-    for (let i = daysToAdd; i <= getDaysInMonth(date); i++) {
-        const day = addDays(monthStart, i);
-        if (isSameMonth(day, date)) {
-            currentWeek.push(day);
-        } else {
-            currentWeek.push(null);
+    const onPress = useCallback(() => {
+        if (day) {
+            handleDatePress(day);
         }
-
-        if (currentWeek.length === 7) {
-            weeks.push(currentWeek);
-            currentWeek = [];
-        }
-    }
-
-    if (monthEnd.getDay() < 6) {
-        for (let i = 0; i < 6 - monthEnd.getDay(); i++) {
-            currentWeek.push(null);
-        }
-    }
-    
-    
-    if (currentWeek.some(day => day !== null)) {
-        weeks.push(currentWeek);
-    }
+    }, [day, handleDatePress]);
 
     return (
-        <View key={date.toString()} style={styles.monthContainer}>
-            <Text style={styles.monthName}>{monthName}</Text>
-            {weeks.map((week, weekIndex) => (
-                <View key={weekIndex} style={styles.weekContainer}>
-                    {week.map((day, dayIndex) => (
-                        <View key={dayIndex} style={styles.dayContainer}>
-                            {day ? (
-                                <>
-                                    <TouchableOpacity onPress={() => handleDatePress(day)}>
-                                        <Text style={[styles.dayText, isSameDate(day, new Date()) ? styles.today : null]}>
-                                            {format(day, 'd', { locale: ru })}
-                                        </Text>
-                                    </TouchableOpacity>
-                                    {taskDates.includes(format(day, 'yyyy-MM-dd')) && (
-                                        <View style={styles.taskDotActive} />
-                                    )}
-                                </>
-                            ) : null}
-                        </View>
-                    ))}
-                </View>
-            ))}
+        <View style={styles.dayContainer}>
+            <TouchableOpacity
+                style={dayButtonStyle}
+                onPress={onPress}
+                disabled={!day}
+            >
+                {day && (
+                    <>
+                        <Text style={[styles.dayText, isSelectedDay ? styles.today : null]}>
+                            {format(day, 'd', { locale: ru })}
+                        </Text>
+                        <View style={[styles.taskDot, taskDates.includes(format(day, 'yyyy-MM-dd')) && styles.taskDotActive]} />
+                    </>
+                )}
+            </TouchableOpacity>
         </View>
     );
-});
+}, areEqual);
+
+Day.propTypes = {
+    day: PropTypes.instanceOf(Date),
+    handleDatePress: PropTypes.func.isRequired,
+    taskDates: PropTypes.array.isRequired,
+};
+
+const RenderMonth = ({ date, handleDatePress, taskDates }) => {
+    const memoizedHandleDatePress = useCallback(handleDatePress, []);
+    const memoizedTaskDates = useMemo(() => taskDates, [taskDates]);
+
+    const weeks = useMemo(() => {
+        const weeksArray = [];
+        let currentWeek = [];
+        let currentDay = startOfWeek(startOfMonth(date));
+
+        while (currentDay <= endOfWeek(endOfMonth(date))) {
+            for (let i = 0; i < 7; i++) {
+                currentWeek.push(isSameMonth(currentDay, date) ? currentDay : null);
+                currentDay = addDays(currentDay, 1);
+            }
+
+            weeksArray.push(currentWeek);
+            currentWeek = [];
+        }
+
+        return weeksArray;
+    }, [date]);
+
+    const renderItem = useCallback(({ item: week }) => (
+        <View style={styles.weekContainer}>
+            {week.map((day) => (
+                <Day
+                    key={day ? format(day, 'yyyy-MM-dd') : Math.random().toString()}
+                    day={day}
+                    handleDatePress={memoizedHandleDatePress}
+                    taskDates={memoizedTaskDates}
+                />
+            ))}
+        </View>
+    ), [memoizedHandleDatePress, memoizedTaskDates]);
+
+    const getItemCount = () => weeks.length;
+    const getItem = (data, index) => weeks[index];
+
+    return (
+        <View style={styles.monthContainer}>
+            <Text style={styles.monthName}>{format(date, 'MMMM', { locale: ru })}</Text>
+            <VirtualizedList
+                data={weeks}
+                renderItem={renderItem}
+                keyExtractor={(item, index) => index.toString()}
+                getItemCount={getItemCount}
+                getItem={getItem}
+            />
+        </View>
+    );
+};
 
 RenderMonth.propTypes = {
     date: PropTypes.instanceOf(Date).isRequired,

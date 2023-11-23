@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useCallback, useRef } from 'react';
 import { ScrollView, View, PanResponder, Animated, Dimensions } from 'react-native';
 import { startOfWeek, endOfWeek, addDays, subWeeks, addWeeks, format, parseISO } from 'date-fns';
 import styles from '../styles/styles';
@@ -8,38 +8,9 @@ import TasksForSelectedDateComponent from './TasksForSelectedDateComponent';
 const screenWidth = Dimensions.get('window').width;
 
 const CustomCalendar = ({ selectedDate, onDateChange, tasks, taskDates }) => {
-
-
   const [expandedClients, setExpandedClients] = useState([]);
   const translateX = useRef(new Animated.Value(0)).current;
   const currentWeekRef = useRef();
-
-  const weeks = useMemo(() => {
-    const weekStart = startOfWeek(selectedDate, { weekStartsOn: 1 });
-    const previousWeekStart = subWeeks(weekStart, 1);
-    const nextWeekStart = addWeeks(weekStart, 1);
-
-    return [previousWeekStart, weekStart, nextWeekStart].map(weekStart => {
-      const daysArray = [];
-      for (let day = weekStart; day <= endOfWeek(weekStart, { weekStartsOn: 1 }); day = addDays(day, 1)) {
-        daysArray.push(day);
-      }
-      return daysArray;
-    });
-  }, [selectedDate]);
-  
-  const weekWidth = screenWidth * weeks.length;
-
-  const days = useMemo(() => {
-    const daysArray = [];
-    const start = startOfWeek(selectedDate, { weekStartsOn: 1 });
-    const end = endOfWeek(selectedDate, { weekStartsOn: 1 });
-
-    for (let day = start; day <= end; day = addDays(day, 1)) {
-      daysArray.push(day);
-    }
-    return daysArray;
-  }, [selectedDate]);
 
   const panResponder = PanResponder.create({
     onMoveShouldSetPanResponder: (evt, gestureState) => {
@@ -79,7 +50,7 @@ const CustomCalendar = ({ selectedDate, onDateChange, tasks, taskDates }) => {
     },
   });
 
-  const handleDateChange = (day) => {
+  const handleDateChange = useCallback((day) => {
     if (currentWeekRef.current.includes(day)) {
       onDateChange(day);
     } else {
@@ -87,7 +58,7 @@ const CustomCalendar = ({ selectedDate, onDateChange, tasks, taskDates }) => {
       const newWeek = isPreviousWeek ? subWeeks(day, 1) : addWeeks(day, 1);
       onDateChange(newWeek);
     }
-  };
+  }, [currentWeekRef.current, onDateChange]);
 
   const currentWeek = useMemo(() => {
     const start = startOfWeek(selectedDate, { weekStartsOn: 1 });
@@ -99,14 +70,14 @@ const CustomCalendar = ({ selectedDate, onDateChange, tasks, taskDates }) => {
     currentWeekRef.current = daysArray;
     return daysArray;
   }, [selectedDate]);
-
+  
   const tasksByClient = useMemo(() => {
     const selectedTasks = tasks.filter(task =>
       format(parseISO(task.start_date), 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd')
     );
-
+  
     return selectedTasks.reduce((acc, task) => {
-      const client = task.fullname_client;
+      const client = task.status === 'черновик' ? 'Черновик' : task.fullname_client || 'Неизвестный клиент';
       if (!acc[client]) {
         acc[client] = [];
       }
@@ -115,13 +86,13 @@ const CustomCalendar = ({ selectedDate, onDateChange, tasks, taskDates }) => {
     }, {});
   }, [tasks, selectedDate]);
 
-  const toggleClient = (client) => {
+  const toggleClient = useCallback((client) => {
     setExpandedClients((current) =>
       current.includes(client)
         ? current.filter((c) => c !== client)
         : [...current, client]
     );
-  };
+  }, []);
 
   return (
     <View>

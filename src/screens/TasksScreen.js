@@ -42,7 +42,7 @@ const TasksScreen = () => {
     };
 
     fetchData();
-  }, [selectedDate, updateHeaderTitle]);
+  }, [selectedDate, updateHeaderTitle, tasks]);
 
   if (error) {
     return <Text style={styles.errorText}>{error}</Text>;
@@ -64,7 +64,7 @@ const TasksScreen = () => {
             {viewMode === VIEW_MODES.TODAY ? headerTitle : 'Календарь'}
           </Text>
           <View style={styles.calendarBlock}>
-            <Text style={styles.title}>{format(selectedDate, 'MMMM, yyyy', { locale: ru })}</Text>
+            {viewMode === VIEW_MODES.TODAY ? <Text style={styles.title}>{format(selectedDate, 'MMMM, yyyy', { locale: ru })}</Text> : <Text></Text>}
             <TouchableOpacity onPress={handleViewModeToggle}>
               {viewMode === VIEW_MODES.TODAY ? <CalendarIcon /> : <TodayIcon />}
             </TouchableOpacity>
@@ -83,7 +83,6 @@ const TasksScreen = () => {
             onDateChange={setSelectedDate}
             tasks={tasks}
             taskDates={taskDates}
-            viewMode={viewMode}
           />
         )}
         <AddButton onPress={handleAddButtonPress} />

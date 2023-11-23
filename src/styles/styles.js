@@ -530,8 +530,8 @@ const styles = StyleSheet.create({
     fontSize: sizes.fontSizeLarge,
     color: colors.black,
     backgroundColor: colors.white,
-    minHeight: 48,
-    maxHeight: 48,
+    minHeight: 64,
+    maxHeight: 64,
     borderRadius: sizes.borderRadiusSmall,
     borderWidth: 1,
     borderColor: colors.grey,
@@ -735,6 +735,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-start',
     backgroundColor: 'white',
+    elevation: 5,
   },
   modalViewModal: {
     top: screenHeight * 0.4,

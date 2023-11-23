@@ -22,7 +22,7 @@
             ]}
         >
             <Text style={[styles.dayName, isSelected && styles.selectedDayText]}>
-            {format(day, 'eee', { locale: ru })}
+            {format(day, 'EEEEEE', { locale: ru })}
             </Text>
             <Text style={[styles.dayNumber, isSelected && styles.selectedDayText]}>
             {format(day, 'd')}

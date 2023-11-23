@@ -5,7 +5,7 @@ import styles from '../styles/styles';
 
 const screenHeight = Dimensions.get('window').height;
 
-const SaveDraftModal = ({ isVisible, onSaveDraft, onDelete, onClose }) => {
+const SaveDraftModal = ({ isVisible, onSaveDraft, onDelete, onClose, onSave }) => {
   
   return (
     <Modal
@@ -17,7 +17,7 @@ const SaveDraftModal = ({ isVisible, onSaveDraft, onDelete, onClose }) => {
       <View style={styles.modalOverlay}>
         <View style={styles.modalViewModal}>
           <Text style={styles.modalText}>Сохранить как черновик?</Text>
-          <TouchableOpacity style={[styles.buttonClose,{marginBottom: 16}]} onPress={onSaveDraft}>
+          <TouchableOpacity style={[styles.buttonClose,{marginBottom: 16}]} onPress={onSave}>
             <Text style={styles.textStyle}>Сохранить</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.buttonClose} onPress={onDelete}>

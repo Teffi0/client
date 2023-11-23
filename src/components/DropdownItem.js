@@ -1,9 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { View, Text, TouchableOpacity, FlatList, TextInput } from 'react-native';
 import { ChooseIcon, DeleteIcon } from '../icons';
 import styles from '../styles/styles';
 
-function DropdownItem({ label, options, onValueChange }) {
+function DropdownItem({ label, options, onValueChange, selectedValues }) {
     const [showOptions, setShowOptions] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedItems, setSelectedItems] = useState([]);
@@ -13,28 +13,37 @@ function DropdownItem({ label, options, onValueChange }) {
         [options, searchQuery]
     );
 
+    useEffect(() => {
+        setSelectedItems(selectedValues);
+    }, [selectedValues]);
+
+    // Обновляемый обработчик для selectedItems
+    const updateSelectedItems = (newItems) => {
+        setSelectedItems(newItems);
+        if (onValueChange) {
+            onValueChange(newItems);
+        }
+    };
+
     const handleSelectOption = (option) => {
         setShowOptions(false);
         setSearchQuery('');
         const existingItem = selectedItems.find(item => item.id === option.id);
-        setSelectedItems(current =>
+        updateSelectedItems(
             existingItem
-                ? current.map(item => item.id === option.id ? { ...item, quantity: item.quantity + 1 } : item)
-                : [...current, { ...option, quantity: 1 }]
+                ? selectedItems.map(item => item.id === option.id ? { ...item, quantity: item.quantity + 1 } : item)
+                : [...selectedItems, { ...option, quantity: 1 }]
         );
     };
 
     const handleQuantityChange = (item, delta) => {
-        setSelectedItems(current =>
-            current.map(ci => ci.id === item.id ? { ...ci, quantity: Math.max(1, ci.quantity + delta) } : ci)
+        updateSelectedItems(
+            selectedItems.map(ci => ci.id === item.id ? { ...ci, quantity: Math.max(1, ci.quantity + delta) } : ci)
         );
     };
 
     const handleRemoveItem = (id) => {
-        setSelectedItems(currentSelectedItems => {
-            const updatedSelectedItems = currentSelectedItems.filter(item => item.id !== id);
-            return updatedSelectedItems;
-        });
+        updateSelectedItems(selectedItems.filter(item => item.id !== id));
     };
 
     const renderItem = ({ item }) => (
@@ -42,7 +51,7 @@ function DropdownItem({ label, options, onValueChange }) {
             <Text style={styles.itemName}>{`${item.name} - ${item.measure}`}</Text>
         </TouchableOpacity>
     );
-
+    
     const renderSelectedItem = ({ item }) => (
         <View style={styles.selectedItemContainer}>
             <View style={{
@@ -76,7 +85,7 @@ function DropdownItem({ label, options, onValueChange }) {
                     </TouchableOpacity>
                 </View>
 
-                <Text style={styles.bodyMedium}>{`Остаток в складе: ${item.stock}`}</Text>
+                <Text style={styles.bodyMedium}>{`Остаток в складе: `}</Text>
             </View>
 
         </View>

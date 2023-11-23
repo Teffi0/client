@@ -1,15 +1,15 @@
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import { ScrollView, View, Text, TextInput, TouchableOpacity } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import styles from '../styles/styles';
 import DateInput from './DateInput';
-import Dropdown from './Dropdown';
-import DropdownClient from './DropdownClient';
 import DropdownEmployee from './DropdownEmployee';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { BackIcon, DeleteIcon } from '../icons';
 import { format } from 'date-fns';
 import SaveDraftModal from './SaveDraftModal';
 import DropdownWithSearch from './DropdownWithSearch';
+import { handleSaveTask } from '../utils/taskScreenHelpers';
 
 function TaskForm({ formData, dispatchFormData, onSave, setIsWarningModalVisible, onClose }) {
     const [city, setCity] = useState('');
@@ -17,21 +17,52 @@ function TaskForm({ formData, dispatchFormData, onSave, setIsWarningModalVisible
     const [house, setHouse] = useState('');
     const [entrance, setEntrance] = useState('');
     const [floor, setFloor] = useState('');
-    const [isMapVisible, setIsMapVisible] = useState(false);
-    const [address, setAddress] = useState('');
-    
 
-    const onLocationSelect = (data) => {
-        setAddress(data.address);
-        setIsMapVisible(false);
+    useEffect(() => {
+        const loadData = async () => {
+            const savedData = await AsyncStorage.getItem('taskFormData');
+            if (savedData) {
+                const parsedData = JSON.parse(savedData);
+                dispatchFormData({ type: 'SET_FORM', payload: parsedData });
+            }
+        };
+
+        loadData();
+    }, [dispatchFormData]);
+
+    const saveFormData = async (data) => {
+        await AsyncStorage.setItem('taskFormData', JSON.stringify(data));
     };
 
+    const handleSave = useCallback(async () => {
+        let updatedFormData = { ...formData };
 
-    const updateAddressClient = () => {
+        // Если начальная дата не установлена, установить сегодняшнюю дату
+        if (!updatedFormData.startDate) {
+            updatedFormData = {
+                ...updatedFormData,
+                startDate: new Date().toISOString(),
+            };
+            console.log("нет даты", updatedFormData.startDate);
+        }
+        else {
+            console.log("есть дата", updatedFormData.startDate);
+        }
+
+        // Обновляем статус на "черновик"
+        updatedFormData = { ...updatedFormData, status: 'черновик' };
+        dispatchFormData({ type: 'UPDATE_FORM', payload: updatedFormData });
+
+        // Затем вызываем handleSaveTask с обновленными данными
+        await handleSaveTask(updatedFormData);
+    }, [formData, dispatchFormData]);
+
+    const updateAddressClient = async () => {
         const fullAddress = `город ${city}, улица ${street}, ${house}, подъезд ${entrance}, этаж ${floor}`;
-        setField('addressClient', fullAddress);
+        const updatedFormData = { ...formData, addressClient: fullAddress, city, street, house, entrance, floor };
+        dispatchFormData({ type: 'UPDATE_FORM', payload: updatedFormData });
+        await saveFormData(updatedFormData);
     };
-
 
     const handleCostChange = text => {
         const newText = text.replace(/^0+/, '');
@@ -46,8 +77,9 @@ function TaskForm({ formData, dispatchFormData, onSave, setIsWarningModalVisible
         setIsWarningModalVisible(true);
     };
 
-    const handleDelete = () => {
-        onClose();
+    const handleDelete = async () => {
+        await AsyncStorage.removeItem('taskFormData');
+        dispatchFormData({ type: 'RESET_FORM' }); // Очищаем форму
     };
 
     const setField = (field, value) => {
@@ -88,6 +120,7 @@ function TaskForm({ formData, dispatchFormData, onSave, setIsWarningModalVisible
                         onSaveDraft={handleSaveDraft}
                         onDelete={handleDelete}
                         onClose={() => setField('isSaveDraftModalVisible', false)}
+                        onSave={handleSave}
                     />
                     <Text style={[styles.titleMedium, { flex: 1, textAlign: 'center' }]}>Новая задача</Text>
                     <TouchableOpacity onPress={handleDelete}>
@@ -96,83 +129,89 @@ function TaskForm({ formData, dispatchFormData, onSave, setIsWarningModalVisible
                 </View>
 
                 <ScrollView>
-                    <Text style={[styles.headlineMedium, { marginBottom: 24 }]}>Данные задачи</Text>
-                    <DropdownWithSearch
-                        label="Услуга"
-                        options={formData.serviceOptions}
-                        selectedValue={formData.service}
-                        onValueChange={handleChange('service')}
-                    />
-
-                    <View style={{ flexDirection: 'row' }}>
-                        <DropdownWithSearch
-                            label="Способ оплаты"
-                            options={formData.paymentMethodOptions}
-                            selectedValue={formData.paymentMethod}
-                            onValueChange={handleChange('paymentMethod')}
-                        />
-                        <View style={{ flex: 1, marginLeft: 8 }}>
-                            <Text style={styles.label}>Стоимость</Text>
-                            <TextInput
-                                style={styles.costInput}
-                                placeholder="1000"
-                                value={formData.cost}
-                                onChangeText={handleCostChange}
-                                keyboardType="numeric"
+                    {tryRender(() => (
+                        <>
+                            <Text style={[styles.headlineMedium, { marginBottom: 24 }]}>Данные задачи</Text>
+                            <DropdownWithSearch
+                                label="Услуга"
+                                options={formData.serviceOptions}
+                                selectedValue={formData.service}
+                                onValueChange={handleChange('service')}
                             />
-                        </View>
-                    </View>
+                        </>
+                    ))}
 
-                    <View style={{ flexDirection: 'row' }}>
-                        <View style={{ flex: 1, marginRight: 8 }}>
-                            <Text style={styles.label}>Начальная дата</Text>
-                            <DateInput
-                                date={formData.startDate}
-                                placeholder="ГГГГ-ММ-ДД"
-                                onDateChange={(dateType, selectedDate) => dispatchFormData({ type: 'UPDATE_FORM', payload: { [dateType]: selectedDate } })}
-                                dateType="startDate"
-                                minDate={new Date()}
+                    {tryRender(() => (
+                        <View style={{ flexDirection: 'row' }}>
+                            <DropdownWithSearch
+                                label="Способ оплаты"
+                                options={formData.paymentMethodOptions}
+                                selectedValue={formData.paymentMethod}
+                                onValueChange={handleChange('paymentMethod')}
                             />
-                        </View>
-
-                        <View style={{ flex: 1 }}>
-                            <Text style={styles.label}>Конечная дата</Text>
-                            <DateInput
-                                date={formData.endDate}
-                                placeholder="ГГГГ-ММ-ДД"
-                                onDateChange={(dateType, selectedDate) => dispatchFormData({ type: 'UPDATE_FORM', payload: { [dateType]: selectedDate } })}
-                                dateType="endDate"
-                                minDate={new Date()}
-                            />
-                        </View>
-                    </View>
-
-                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 80, marginTop: 36 }}>
-                        <View style={{ flex: 1, marginRight: 8 }}>
-                            <Text style={styles.label}>Начало работы</Text>
-                            <TouchableOpacity onPress={toggleStartPicker} style={styles.dateInputContainer}>
+                            <View style={{ flex: 1, marginLeft: 8 }}>
+                                <Text style={styles.label}>Стоимость</Text>
                                 <TextInput
-                                    value={formData.startDateTime ? format(formData.startDateTime, 'HH:mm') : ''}
-                                    placeholder="HH:mm"
-                                    editable={false}
-                                    style={styles.selectedItemText}
+                                    style={styles.costInput}
+                                    placeholder="1000"
+                                    value={formData.cost}
+                                    onChangeText={handleCostChange}
+                                    keyboardType="numeric"
                                 />
-                            </TouchableOpacity>
+                            </View>
                         </View>
-
-                        <View style={{ flex: 1 }}>
-                            <Text style={styles.label}>Конец работы</Text>
-                            <TouchableOpacity onPress={toggleEndPicker} style={styles.dateInputContainer}>
-                                <TextInput
-                                    value={formData.endDateTime ? format(formData.endDateTime, 'HH:mm') : ''}
-                                    placeholder="HH:mm"
-                                    editable={false}
-                                    style={styles.selectedItemText}
+                    ))}
+                    {tryRender(() => (
+                        <View style={{ flexDirection: 'row' }}>
+                            <View style={{ flex: 1, marginRight: 8 }}>
+                                <Text style={styles.label}>Начальная дата</Text>
+                                <DateInput
+                                    date={formData.startDate}
+                                    placeholder="ГГГГ-ММ-ДД"
+                                    onDateChange={(dateType, selectedDate) => dispatchFormData({ type: 'UPDATE_FORM', payload: { [dateType]: selectedDate } })}
+                                    dateType="startDate"
+                                    minDate={new Date()}
                                 />
-                            </TouchableOpacity>
+                            </View>
+                            <View style={{ flex: 1 }}>
+                                <Text style={styles.label}>Конечная дата</Text>
+                                <DateInput
+                                    date={formData.endDate}
+                                    placeholder="ГГГГ-ММ-ДД"
+                                    onDateChange={(dateType, selectedDate) => dispatchFormData({ type: 'UPDATE_FORM', payload: { [dateType]: selectedDate } })}
+                                    dateType="endDate"
+                                    minDate={new Date()}
+                                />
+                            </View>
                         </View>
-                    </View>
+                    ))}
+                    {tryRender(() => (
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 80, marginTop: 36 }}>
+                            <View style={{ flex: 1, marginRight: 8 }}>
+                                <Text style={styles.label}>Начало работы</Text>
+                                <TouchableOpacity onPress={toggleStartPicker} style={styles.dateInputContainer}>
+                                    <TextInput
+                                        value={formData.startDateTime ? format(formData.startDateTime, 'HH:mm') : ''}
+                                        placeholder="HH:mm"
+                                        editable={false}
+                                        style={styles.selectedItemText}
+                                    />
+                                </TouchableOpacity>
+                            </View>
 
+                            <View style={{ flex: 1 }}>
+                                <Text style={styles.label}>Конец работы</Text>
+                                <TouchableOpacity onPress={toggleEndPicker} style={styles.dateInputContainer}>
+                                    <TextInput
+                                        value={formData.endDateTime ? format(formData.endDateTime, 'HH:mm') : ''}
+                                        placeholder="HH:mm"
+                                        editable={false}
+                                        style={styles.selectedItemText}
+                                    />
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    ))}
                     <DateTimePickerModal
                         isVisible={formData.isStartPickerVisible}
                         mode="time"
@@ -190,41 +229,43 @@ function TaskForm({ formData, dispatchFormData, onSave, setIsWarningModalVisible
                         is24Hour={true}
                         date={formData.endDateTime || new Date()}
                     />
+                    {tryRender(() => (
+                        <>
+                            <Text style={[styles.headlineMedium, { marginBottom: 24 }]}>Команда</Text>
+                            <DropdownWithSearch
+                                label="Ответственный"
+                                options={formData.responsibleOptions}
+                                selectedValue={formData.selectedResponsible}
+                                onValueChange={handleChange('selectedResponsible')}
+                            />
+                            <DropdownEmployee
+                                label="Участники"
+                                options={formData.employeesOptions}
+                                selectedValue={formData.selectedEmployee}
+                                onValueChange={handleChange('selectedEmployee')}
+                            />
+                        </>
+                    ))}
 
-                    <Text style={[styles.headlineMedium, { marginBottom: 24 }]}>Команда</Text>
-                    <DropdownWithSearch
-                        label="Ответственный"
-                        options={formData.responsibleOptions}
-                        selectedValue={formData.selectedResponsible}
-                        onValueChange={handleChange('selectedResponsible')}
-                    />
-                    <DropdownEmployee
-                        label="Участники"
-                        options={formData.employeesOptions}
-                        selectedValue={formData.selectedEmployee}
-                        onValueChange={handleChange('selectedEmployee')}
-                    />
-
-                    <View style={{ marginTop: 80 }}>
-                        <Text style={[styles.headlineMedium, { marginBottom: 24 }]}>Данные клиента</Text>
-                        <DropdownWithSearch
-                            label="Связанный клиент"
-                            options={formData.fullnameClientOptions}
-                            selectedValue={formData.fullnameClient}
-                            onValueChange={(value) => {
-                                handleChange('fullnameClient')(value);
-                                // Сброс адреса при смене клиента
-                                setCity('');
-                                setStreet('');
-                                setHouse('');
-                                setEntrance('');
-                                setFloor('');
-                            }}
-                        />
-                        {formData.fullnameClient && (
-                            <View>
-                                <View style={{ flexDirection: 'column', marginTop: 24 }}>
-                                    <View>
+                    {tryRender(() => (
+                        <View style={{ marginTop: 80 }}>
+                            <Text style={[styles.headlineMedium, { marginBottom: 24 }]}>Данные клиента</Text>
+                            <DropdownWithSearch
+                                label="Связанный клиент"
+                                options={formData.fullnameClientOptions}
+                                selectedValue={formData.fullnameClient}
+                                onValueChange={(value) => {
+                                    handleChange('fullnameClient')(value);
+                                    setCity('');
+                                    setStreet('');
+                                    setHouse('');
+                                    setEntrance('');
+                                    setFloor('');
+                                }}
+                            />
+                            {formData.fullnameClient && (
+                                <View>
+                                    <View style={{ flexDirection: 'column', marginTop: 24 }}>
                                         <TextInput
                                             placeholder="Город"
                                             value={city}
@@ -237,8 +278,6 @@ function TaskForm({ formData, dispatchFormData, onSave, setIsWarningModalVisible
                                             onChangeText={text => setStreet(text)}
                                             style={[styles.costInput, { marginBottom: 24 }]}
                                         />
-                                    </View>
-                                    <View style={{ flexDirection: 'row' }}>
                                         <TextInput
                                             placeholder="Дом/Квартира"
                                             value={house}
@@ -251,7 +290,6 @@ function TaskForm({ formData, dispatchFormData, onSave, setIsWarningModalVisible
                                             onChangeText={text => setEntrance(text)}
                                             style={styles.addressInput}
                                         />
-
                                         <TextInput
                                             placeholder="Этаж"
                                             value={floor}
@@ -259,40 +297,38 @@ function TaskForm({ formData, dispatchFormData, onSave, setIsWarningModalVisible
                                             style={[styles.addressInput, { marginRight: 0, marginBottom: 24 }]}
                                         />
                                     </View>
-
                                 </View>
-                                <TouchableOpacity
-                                    onPress={() => {
-                                        updateAddressClient();
-                                    }}
-                                    style={styles.buttonClose}
-                                >
-                                    <Text style={styles.textStyle}>Сохранить</Text>
-                                </TouchableOpacity>
-                            </View>
-                        )}
-                    </View>
-
-                    <View style={{ marginBottom: 300 }}>
-                        <Text style={[styles.headlineMedium, { marginBottom: 24, marginTop: 80 }]}>Дополнительно</Text>
-                        <View style={styles.commentContainer}>
-                            <Text style={styles.label}>Примечание</Text>
-                            <TextInput
-                                placeholder="Добавьте примечание"
-                                value={formData.description}
-                                onChangeText={(text) => setField('description', text)}
-                                multiline={true}
-                                numberOfLines={4}
-                                style={styles.commentInput}
-                            />
+                            )}
                         </View>
-                    </View>
-
-
+                    ))}
+                    {tryRender(() => (
+                        <View style={{ marginBottom: 300 }}>
+                            <Text style={[styles.headlineMedium, { marginBottom: 24, marginTop: 80 }]}>Дополнительно</Text>
+                            <View style={styles.commentContainer}>
+                                <Text style={styles.label}>Примечание</Text>
+                                <TextInput
+                                    placeholder="Добавьте примечание"
+                                    value={formData.description}
+                                    onChangeText={(text) => setField('description', text)}
+                                    multiline={true}
+                                    numberOfLines={4}
+                                    style={styles.commentInput}
+                                />
+                            </View>
+                        </View>
+                    ))}
                 </ScrollView>
             </View>
         </View>
     );
+    function tryRender(renderFunc) {
+        try {
+            return renderFunc();
+        } catch (error) {
+            console.error("Ошибка при отрисовке элемента:", error);
+            return <Text>Ошибка при отрисовке</Text>;
+        }
+    }
 }
 
 export default TaskForm;
