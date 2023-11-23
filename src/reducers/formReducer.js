@@ -20,7 +20,7 @@ export  const initialState = {
     fullnameClientOptions: [],
     isStartPickerVisible: false,
     isEndPickerVisible: false,
-    isSaveDraftModalVisible: false
+    isSaveDraftModalVisible: false,
   };
 
   

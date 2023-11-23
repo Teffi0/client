@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import styles from '../styles/styles';
 import DateInput from './DateInput';
 import DropdownEmployee from './DropdownEmployee';
+import DropdownService from './DropdownService';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { BackIcon, DeleteIcon } from '../icons';
 import { format } from 'date-fns';
@@ -11,101 +12,126 @@ import SaveDraftModal from './SaveDraftModal';
 import DropdownWithSearch from './DropdownWithSearch';
 import { handleSaveTask } from '../utils/taskScreenHelpers';
 
-function TaskForm({ formData, dispatchFormData, onSave, setIsWarningModalVisible, onClose }) {
-    const [city, setCity] = useState('');
-    const [street, setStreet] = useState('');
-    const [house, setHouse] = useState('');
-    const [entrance, setEntrance] = useState('');
-    const [floor, setFloor] = useState('');
+function TaskForm({ formData, dispatchFormData, onClose }) {
+    const [selectedService, setSelectedService] = useState([]);
+    const [service, setServices] = useState([]);
+    const [address, setAddress] = useState({
+        city: '',
+        street: '',
+        house: '',
+        entrance: '',
+        floor: ''
+    });
 
-    useEffect(() => {
-        const loadData = async () => {
+    const fetchServices = useCallback(async () => {
+        try {
+            const response = await fetch('http://31.129.101.174/services');
+            const data = await response.json();
+            setServices(data);
+        } catch (error) {
+            console.error('Ошибка при получении инвентаря:', error);
+        }
+    }, []);
+
+      useEffect(() => {
+        fetchServices();
+      }, []);
+
+    const loadData = useCallback(async () => {
+        try {
             const savedData = await AsyncStorage.getItem('taskFormData');
             if (savedData) {
                 const parsedData = JSON.parse(savedData);
+                parsedData.isSaveDraftModalVisible = false;
                 dispatchFormData({ type: 'SET_FORM', payload: parsedData });
             }
-        };
-
-        loadData();
+        } catch (error) {
+            console.error('Ошибка загрузки данных', error);
+        }
     }, [dispatchFormData]);
 
-    const saveFormData = async (data) => {
-        await AsyncStorage.setItem('taskFormData', JSON.stringify(data));
-    };
+    useEffect(() => {
+        fetchServices();
+        loadData();
+    }, [fetchServices, loadData]);
+
+    const saveFormData = useCallback(async (data) => {
+        try {
+            await AsyncStorage.setItem('taskFormData', JSON.stringify(data));
+        } catch (error) {
+            console.error('Ошибка сохранения данных', error);
+        }
+    }, []);
 
     const handleSave = useCallback(async () => {
         let updatedFormData = { ...formData };
 
-        // Если начальная дата не установлена, установить сегодняшнюю дату
         if (!updatedFormData.startDate) {
-            updatedFormData = {
-                ...updatedFormData,
-                startDate: new Date().toISOString(),
-            };
-            console.log("нет даты", updatedFormData.startDate);
-        }
-        else {
-            console.log("есть дата", updatedFormData.startDate);
+            const today = new Date();
+            updatedFormData.startDate = format(today, 'yyyy-MM-dd');
         }
 
-        // Обновляем статус на "черновик"
-        updatedFormData = { ...updatedFormData, status: 'черновик' };
-        dispatchFormData({ type: 'UPDATE_FORM', payload: updatedFormData });
+        updatedFormData.status = 'черновик';
 
-        // Затем вызываем handleSaveTask с обновленными данными
-        await handleSaveTask(updatedFormData);
-    }, [formData, dispatchFormData]);
+        try {
+            await handleSaveTask(updatedFormData);
+        } catch (error) {
+            console.error('Ошибка сохранения задачи', error);
+        }
+    }, [formData, handleSaveTask]);
 
-    const updateAddressClient = async () => {
-        const fullAddress = `город ${city}, улица ${street}, ${house}, подъезд ${entrance}, этаж ${floor}`;
-        const updatedFormData = { ...formData, addressClient: fullAddress, city, street, house, entrance, floor };
-        dispatchFormData({ type: 'UPDATE_FORM', payload: updatedFormData });
-        await saveFormData(updatedFormData);
-    };
+    const handleAddressChange = useCallback((field, value) => {
+        setAddress(prev => ({ ...prev, [field]: value }));
+    }, []);
 
-    const handleCostChange = text => {
+    const handleCostChange = useCallback(text => {
         const newText = text.replace(/^0+/, '');
         dispatchFormData({ type: 'UPDATE_FORM', payload: { cost: newText } });
-    };
+    }, [dispatchFormData]);
 
-    const handleBackPress = () => {
+    const handleBackPress = useCallback(() => {
+        saveFormData(formData);
         dispatchFormData({ type: 'UPDATE_FORM', payload: { isSaveDraftModalVisible: true } });
-    };
+    }, [formData, saveFormData, dispatchFormData]);
 
-    const handleSaveDraft = () => {
-        setIsWarningModalVisible(true);
-    };
+    const handleSaveAsDraft = useCallback(async () => {
+        await AsyncStorage.setItem('taskFormData', JSON.stringify(formData));
+        dispatchFormData({ type: 'UPDATE_FORM', payload: { isSaveDraftModalVisible: false } });
+    }, [formData, dispatchFormData]);
 
-    const handleDelete = async () => {
+    const handleDelete = useCallback(async () => {
         await AsyncStorage.removeItem('taskFormData');
-        dispatchFormData({ type: 'RESET_FORM' }); // Очищаем форму
-    };
+        dispatchFormData({ type: 'RESET_FORM' });
+    }, [dispatchFormData]);
 
-    const setField = (field, value) => {
+    const setField = useCallback((field, value) => {
         dispatchFormData({ type: 'UPDATE_FORM', payload: { [field]: value } });
-    };
+    }, [dispatchFormData]);
 
     const handleChange = useCallback((field) => (value) => {
         setField(field, value);
-    }, []);
+    }, [setField]);
 
-    const toggleStartPicker = () => {
+    const toggleStartPicker = useCallback(() => {
         setField('isStartPickerVisible', !formData.isStartPickerVisible);
-    };
+    }, [formData.isStartPickerVisible, setField]);
 
-    const toggleEndPicker = () => {
+    const toggleEndPicker = useCallback(() => {
         setField('isEndPickerVisible', !formData.isEndPickerVisible);
-    };
+    }, [formData.isEndPickerVisible, setField]);
 
-    const handleStartPicked = (date) => {
+    const handleStartPicked = useCallback((date) => {
         dispatchFormData({ type: 'UPDATE_FORM', payload: { startDateTime: date } });
         toggleStartPicker();
-    };
+    }, [toggleStartPicker, dispatchFormData]);
 
-    const handleEndPicked = (date) => {
+    const handleEndPicked = useCallback((date) => {
         dispatchFormData({ type: 'UPDATE_FORM', payload: { endDateTime: date } });
         toggleEndPicker();
+    }, [toggleEndPicker, dispatchFormData]);
+
+    const handleServiceChange = (newSelectedService) => {
+        setSelectedService(newSelectedService);
     };
 
     return (
@@ -117,10 +143,13 @@ function TaskForm({ formData, dispatchFormData, onSave, setIsWarningModalVisible
                     </TouchableOpacity>
                     <SaveDraftModal
                         isVisible={formData.isSaveDraftModalVisible}
-                        onSaveDraft={handleSaveDraft}
                         onDelete={handleDelete}
-                        onClose={() => setField('isSaveDraftModalVisible', false)}
+                        onClose={() => {
+                            dispatchFormData({ type: 'UPDATE_FORM', payload: { isSaveDraftModalVisible: false } });
+                            onClose(); // Эта функция должна быть определена в NewTaskScreen для закрытия самого NewTaskScreen
+                        }}
                         onSave={handleSave}
+                        formData={formData}
                     />
                     <Text style={[styles.titleMedium, { flex: 1, textAlign: 'center' }]}>Новая задача</Text>
                     <TouchableOpacity onPress={handleDelete}>
@@ -128,15 +157,15 @@ function TaskForm({ formData, dispatchFormData, onSave, setIsWarningModalVisible
                     </TouchableOpacity>
                 </View>
 
-                <ScrollView>
+                <ScrollView showsVerticalScrollIndicator={false}>
                     {tryRender(() => (
                         <>
                             <Text style={[styles.headlineMedium, { marginBottom: 24 }]}>Данные задачи</Text>
-                            <DropdownWithSearch
+                            <DropdownService
                                 label="Услуга"
-                                options={formData.serviceOptions}
-                                selectedValue={formData.service}
-                                onValueChange={handleChange('service')}
+                                options={service}
+                                selectedValue={selectedService}
+                                onValueChange={handleServiceChange}
                             />
                         </>
                     ))}
@@ -268,32 +297,32 @@ function TaskForm({ formData, dispatchFormData, onSave, setIsWarningModalVisible
                                     <View style={{ flexDirection: 'column', marginTop: 24 }}>
                                         <TextInput
                                             placeholder="Город"
-                                            value={city}
-                                            onChangeText={text => setCity(text)}
+                                            value={address.city}
+                                            onChangeText={(text) => handleAddressChange('city', text)}
                                             style={[styles.costInput, { marginBottom: 24 }]}
                                         />
                                         <TextInput
                                             placeholder="Улица"
-                                            value={street}
-                                            onChangeText={text => setStreet(text)}
+                                            value={address.street}
+                                            onChangeText={(text) => handleAddressChange('street', text)}
                                             style={[styles.costInput, { marginBottom: 24 }]}
                                         />
                                         <TextInput
                                             placeholder="Дом/Квартира"
-                                            value={house}
-                                            onChangeText={text => setHouse(text)}
+                                            value={address.house}
+                                            onChangeText={(text) => handleAddressChange('house', text)}
                                             style={styles.addressInput}
                                         />
                                         <TextInput
                                             placeholder="Подъезд"
-                                            value={entrance}
-                                            onChangeText={text => setEntrance(text)}
+                                            value={address.entrance}
+                                            onChangeText={(text) => handleAddressChange('entrance', text)}
                                             style={styles.addressInput}
                                         />
                                         <TextInput
                                             placeholder="Этаж"
-                                            value={floor}
-                                            onChangeText={text => setFloor(text)}
+                                            value={address.floor}
+                                            onChangeText={(text) => handleAddressChange('floor', text)}
                                             style={[styles.addressInput, { marginRight: 0, marginBottom: 24 }]}
                                         />
                                     </View>

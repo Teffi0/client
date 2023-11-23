@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { View, Text, TouchableOpacity, FlatList, TextInput } from 'react-native';
 import { ChooseIcon, CancelIcon } from '../icons';
 import styles from '../styles/styles';
@@ -9,20 +9,24 @@ function DropdownEmployee({ label, options, selectedValues, onValueChange }) {
     const [selectedOptions, setSelectedOptions] = useState(selectedValues || []);
     const [searchText, setSearchText] = useState('');
     // Фильтрация теперь по full_name
-    const filteredOptions = options.filter((option) =>
-        option.full_name && option.full_name.toLowerCase().includes(searchText.toLowerCase())
+    const filteredOptions = useMemo(() => 
+        options.filter(option =>
+            option.full_name && option.full_name.toLowerCase().includes(searchText.toLowerCase())
+        ), [options, searchText]
     );
 
-    const handleSelectOption = (option) => {
-        const newSelectedOptions = selectedOptions.includes(option.id)
-            ? selectedOptions.filter(id => id !== option.id)
-            : [...selectedOptions, option.id];
-        setSelectedOptions(newSelectedOptions);
-        onValueChange(newSelectedOptions); // Теперь передаём массив идентификаторов
 
-        // Логирование текущих выбранных значений
-        console.log('Выбранные сотрудники:', newSelectedOptions);
-    };
+    const handleSelectOption = useCallback((option) => {
+        setSelectedOptions(prevSelectedOptions => {
+            const newSelectedOptions = prevSelectedOptions.includes(option.id)
+                ? prevSelectedOptions.filter(id => id !== option.id)
+                : [...prevSelectedOptions, option.id];
+            onValueChange(newSelectedOptions);
+            console.log('Выбранные сотрудники:', newSelectedOptions);
+            return newSelectedOptions;
+        });
+    }, []);
+    
     // Изменение renderItem для отображения full_name
     const renderItem = ({ item }) => (
         <TouchableOpacity

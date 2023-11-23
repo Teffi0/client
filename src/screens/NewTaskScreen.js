@@ -1,4 +1,4 @@
-import React, { useState, useReducer, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useReducer, useEffect, useCallback } from 'react';
 import { View, TouchableOpacity, Text } from 'react-native';
 import styles from '../styles/styles';
 import TaskForm from '../components/TaskForm';
@@ -10,22 +10,20 @@ import { fetchOptions, handleSaveTask } from '../utils/taskScreenHelpers';
 function NewTaskScreen({ onClose }) {
   const [isSuccessModalVisible, setIsSuccessModalVisible] = useState(false);
   const [isWarningModalVisible, setIsWarningModalVisible] = useState(false);
-
-
   const [isPressed, setIsPressed] = useState(false);
 
-  const addButtonStyles = useMemo(() => ({
-    ...styles.addButton,
-    ...(isPressed && styles.addButtonPressed),
-  }), [isPressed]);
-
+  // Убрать useMemo, так как styles.addButtonText не зависит от состояния
   const addButtonTextStyles = styles.addButtonText;
 
   const [formData, dispatchFormData] = useReducer(formReducer, initialState);
 
+  // Обновление useCallback, чтобы избежать излишних пересозданий функции
   const handleSave = useCallback(async () => {
     const isValid = await handleSaveTask(formData, setIsSuccessModalVisible);
-  }, [formData]);
+    if (isValid) {
+      setIsSuccessModalVisible(true); // Показываем модальное окно при успешном сохранении
+    }
+  }, [formData]); // Зависимость только от formData
 
   const closeSuccessModal = () => {
     setIsSuccessModalVisible(false);
@@ -35,6 +33,12 @@ function NewTaskScreen({ onClose }) {
   useEffect(() => {
     fetchOptions(dispatchFormData);
   }, []);
+
+  const addButtonStyles = {
+    ...styles.addButton,
+    ...(isPressed && styles.addButtonPressed),
+  };
+
   return (
     <View style={{ flex: 1 }}>
       <TaskForm
