@@ -33,9 +33,16 @@ function TaskForm({ formData, dispatchFormData, onClose }) {
         }
     }, []);
 
-      useEffect(() => {
+    useEffect(() => {
         fetchServices();
-      }, []);
+    }, []);
+
+    useEffect(() => {
+        dispatchFormData({
+            type: 'UPDATE_FORM',
+            payload: { selectedService } // Используйте selectedService напрямую, так как это теперь массив ID
+        });
+    }, [selectedService, dispatchFormData]);
 
     const loadData = useCallback(async () => {
         try {
@@ -79,6 +86,12 @@ function TaskForm({ formData, dispatchFormData, onClose }) {
             console.error('Ошибка сохранения задачи', error);
         }
     }, [formData, handleSaveTask]);
+
+    const updateAddressClient = () => {
+        const { city, street, house, entrance, floor } = address; // Деструктуризация значений из объекта address
+        const fullAddress = `город ${city}, улица ${street}, дом ${house}, подъезд ${entrance}, этаж ${floor}`;
+        setField('addressClient', fullAddress);
+    };
 
     const handleAddressChange = useCallback((field, value) => {
         setAddress(prev => ({ ...prev, [field]: value }));
@@ -130,9 +143,13 @@ function TaskForm({ formData, dispatchFormData, onClose }) {
         toggleEndPicker();
     }, [toggleEndPicker, dispatchFormData]);
 
-    const handleServiceChange = (newSelectedService) => {
-        setSelectedService(newSelectedService);
-    };
+    const handleServiceChange = useCallback((newSelectedServiceIds) => {
+        setSelectedService(newSelectedServiceIds); // Обновление selectedService
+        dispatchFormData({
+            type: 'UPDATE_FORM',
+            payload: { selectedService: newSelectedServiceIds }
+        });
+    }, [dispatchFormData]);
 
     return (
         <View style={styles.container}>
@@ -164,7 +181,7 @@ function TaskForm({ formData, dispatchFormData, onClose }) {
                             <DropdownService
                                 label="Услуга"
                                 options={service}
-                                selectedValue={selectedService}
+                                selectedValues={selectedService}
                                 onValueChange={handleServiceChange}
                             />
                         </>
@@ -285,11 +302,14 @@ function TaskForm({ formData, dispatchFormData, onClose }) {
                                 selectedValue={formData.fullnameClient}
                                 onValueChange={(value) => {
                                     handleChange('fullnameClient')(value);
-                                    setCity('');
-                                    setStreet('');
-                                    setHouse('');
-                                    setEntrance('');
-                                    setFloor('');
+                                    setAddress(prevAddress => ({
+                                        ...prevAddress,
+                                        city: '',
+                                        street: '',
+                                        house: '',
+                                        entrance: '',
+                                        floor: ''
+                                    }));
                                 }}
                             />
                             {formData.fullnameClient && (
@@ -326,6 +346,14 @@ function TaskForm({ formData, dispatchFormData, onClose }) {
                                             style={[styles.addressInput, { marginRight: 0, marginBottom: 24 }]}
                                         />
                                     </View>
+                                    <TouchableOpacity
+                                        onPress={() => {
+                                            updateAddressClient();
+                                        }}
+                                        style={styles.buttonClose}
+                                    >
+                                        <Text style={styles.textStyle}>Сохранить</Text>
+                                    </TouchableOpacity>
                                 </View>
                             )}
                         </View>

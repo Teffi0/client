@@ -13,6 +13,8 @@ const areEqual = (prevProps, nextProps) => {
 const Day = memo(({ day, handleDatePress, taskDates }) => {
     const isSelectedDay = day && isSameDay(day, new Date());
     const dayButtonStyle = day ? styles.dayButton : null;
+    const formattedDate = day ? format(day, 'yyyy-MM-dd') : null;
+    const hasTask = taskDates[formattedDate] === 'в процессе' || taskDates[formattedDate] === 'новая';
 
     const onPress = useCallback(() => {
         if (day) {
@@ -32,7 +34,7 @@ const Day = memo(({ day, handleDatePress, taskDates }) => {
                         <Text style={[styles.dayText, isSelectedDay ? styles.today : null]}>
                             {format(day, 'd', { locale: ru })}
                         </Text>
-                        <View style={[styles.taskDot, taskDates.includes(format(day, 'yyyy-MM-dd')) && styles.taskDotActive]} />
+                        <View style={[styles.taskDot, hasTask && styles.taskDotActive]} />
                     </>
                 )}
             </TouchableOpacity>
@@ -43,8 +45,9 @@ const Day = memo(({ day, handleDatePress, taskDates }) => {
 Day.propTypes = {
     day: PropTypes.instanceOf(Date),
     handleDatePress: PropTypes.func.isRequired,
-    taskDates: PropTypes.array.isRequired,
+    taskDates: PropTypes.object.isRequired, // Обновляем тип с array на object
 };
+
 
 const RenderMonth = ({ date, handleDatePress, taskDates }) => {
     const memoizedHandleDatePress = useCallback(handleDatePress, []);
@@ -74,8 +77,8 @@ const RenderMonth = ({ date, handleDatePress, taskDates }) => {
                 <Day
                     key={day ? format(day, 'yyyy-MM-dd') : Math.random().toString()}
                     day={day}
-                    handleDatePress={memoizedHandleDatePress}
-                    taskDates={memoizedTaskDates}
+                    handleDatePress={handleDatePress}
+                    taskDates={taskDates} // Передаем taskDates как объект
                 />
             ))}
         </View>
@@ -101,7 +104,7 @@ const RenderMonth = ({ date, handleDatePress, taskDates }) => {
 RenderMonth.propTypes = {
     date: PropTypes.instanceOf(Date).isRequired,
     handleDatePress: PropTypes.func.isRequired,
-    taskDates: PropTypes.array.isRequired,
+    taskDates: PropTypes.object.isRequired, 
 };
 
 export default RenderMonth;

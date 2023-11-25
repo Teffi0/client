@@ -7,26 +7,26 @@ import { SERVER_URL } from '../utils/tasks';
 
 export async function updateTaskStatus(taskId, newStatus) {
     try {
-      const response = await fetch(`http://31.129.101.174/tasks/${taskId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ status: newStatus }),
-      });
-      return response; // Возвращает объект ответа fetch
+        const response = await fetch(`http://31.129.101.174/tasks/${taskId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ status: newStatus }),
+        });
+        return response; // Возвращает объект ответа fetch
     } catch (error) {
-      console.error('Ошибка при обновлении статуса задачи:', error);
-      throw error; // В случае ошибки пробрасываем исключение
+        console.error('Ошибка при обновлении статуса задачи:', error);
+        throw error; // В случае ошибки пробрасываем исключение
     }
-  }
-  
+}
+
 
 
 const validateFormData = (formData) => {
-    const requiredFields = ['service', 'paymentMethod', 'cost', 'startDate', 'endDate', 'startDateTime', 'endDateTime', 'selectedEmployee', 'selectedResponsible', 'fullnameClient', 'description'];
+    const requiredFields = ['selectedService', 'paymentMethod', 'cost', 'startDate', 'endDate', 'startDateTime', 'endDateTime', 'selectedEmployee', 'selectedResponsible', 'fullnameClient', 'description'];
     for (let field of requiredFields) {
-        if (!formData[field]) {
+        if (!formData[field] || (Array.isArray(formData[field]) && formData[field].length === 0)) {
             alert(`Пожалуйста, заполните поле ${field}.`);
             return false;
         }
@@ -40,6 +40,7 @@ const validateFormData = (formData) => {
 
     return true;
 };
+
 
 const formatTaskData = (formData) => {
     const taskData = {
@@ -94,13 +95,29 @@ export const handleSaveTask = async (formData) => {
         return; // Если валидация не пройдена, прекращаем выполнение функции
     }
 
-    const formattedData = formatTaskData(formData); 
+    const serviceString = formData.selectedService.join(', ');
+
+    const formattedData = formatTaskData({ ...formData, service: serviceString });
+
+    // Преобразуем данные сотрудников в массив ID
     const employees = formData.employeesOptions.map(employee => employee.id);
     formattedData.employees = employees;
-    
+
+    // После изменения
+    formattedData.employees = formData.selectedEmployee;
+    console.log(formData);
     try {
         const response = await axios.post(`${SERVER_URL}/tasks`, formattedData);
+        const taskId = response.data.task_id;
         console.log('Задача успешно добавлена. Данные ответа:', response.data);
+
+        // Добавление услуг к задаче, если они есть
+        if (formData.selectedService && formData.selectedService.length > 0) {
+            await axios.post(`${SERVER_URL}/tasks/${taskId}/services`, {
+                services: formData.selectedService
+            });
+            console.log('Услуги успешно добавлены к задаче');
+        }
     } catch (error) {
         console.error('Ошибка при добавлении задачи:', error);
     }

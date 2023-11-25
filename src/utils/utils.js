@@ -46,3 +46,15 @@ export const formatAddress = (fullAddress) => {
   return `ул.${street}, д.${house}`;
 };
 
+/**
+ * Преобразует строку услуги в название услуги, используя объект services.
+ * @param {string} service - Строка услуги.
+ * @param {Object} services - Объект, содержащий соответствия между ID услуги и её названием.
+ * @returns {string} - Название услуги.
+ */
+export const getServiceName = (service, services) => {
+  // Предполагаем, что service - это строка с ID услуги, разделенными запятыми.
+  const serviceIds = service.split(',').map(id => id.trim());
+  const serviceNames = serviceIds.map(id => services[id]?.service_name || 'Неизвестная услуга');
+  return serviceNames.join(', ');
+};

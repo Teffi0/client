@@ -42,7 +42,7 @@ const TasksScreen = () => {
     };
 
     fetchData();
-  }, [selectedDate, updateHeaderTitle, tasks]);
+  }, [selectedDate]);
 
   if (error) {
     return <Text style={styles.errorText}>{error}</Text>;

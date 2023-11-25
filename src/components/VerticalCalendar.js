@@ -202,7 +202,7 @@ const VerticalCalendar = ({ tasks, taskDates }) => {
 
 VerticalCalendar.propTypes = {
   tasks: PropTypes.array.isRequired,
-  taskDates: PropTypes.array.isRequired,
+  taskDates: PropTypes.object.isRequired,
 };
 
 export default VerticalCalendar;

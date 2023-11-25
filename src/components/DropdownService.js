@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { View, Text, TouchableOpacity, FlatList, TextInput } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, TextInput } from 'react-native';
 import { ChooseIcon, DeleteIcon } from '../icons';
 import styles from '../styles/styles';
 
@@ -8,79 +8,44 @@ function DropdownService({ label, options, onValueChange, selectedValues }) {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedItems, setSelectedItems] = useState([]);
 
+    // Обновление selectedItems при изменении selectedValues или options
     useEffect(() => {
-        if (Array.isArray(selectedValues)) {
-            setSelectedItems(selectedValues);
-        }
-    }, [selectedValues]);
+        const updatedSelectedItems = selectedValues.map(sv =>
+            options.find(option => option.id === sv)
+        ).filter(item => item); // Удаляем undefined элементы
+        setSelectedItems(updatedSelectedItems);
+    }, [selectedValues, options]);
 
-    const filteredOptions = useMemo(() =>
-        options.filter(option => option.service_name.toLowerCase().includes(searchQuery.toLowerCase())).slice(0, 4),
-        [options, searchQuery]
-    );
-    
-    const updateSelectedItems = useCallback((newItems) => {
-        setSelectedItems(newItems);
-        if (onValueChange) {
-            onValueChange(newItems);
-        }
-    }, [onValueChange]);
+    const filteredOptions = useMemo(() => {
+        return options.filter(option =>
+            option.service_name.toLowerCase().includes(searchQuery.toLowerCase()) &&
+            !selectedItems.some(selected => selected.id === option.id)
+        );
+    }, [options, searchQuery, selectedItems]);
 
     const handleSelectOption = useCallback((option) => {
+        const newSelectedItems = [...selectedItems, option];
+        setSelectedItems(newSelectedItems);
+        if (onValueChange) {
+            onValueChange(newSelectedItems.map(item => item.id));
+        }
         setShowOptions(false);
-        setSearchQuery('');
-        setSelectedItems(prevItems => {
-            const existingItem = prevItems.find(item => item.id === option.id);
-            return existingItem
-                ? prevItems.map(item => item.id === option.id ? { ...item, quantity: item.quantity + 1 } : item)
-                : [...prevItems, { ...option, quantity: 1 }];
-        });
-    }, []);
+    }, [selectedItems, onValueChange]);
 
-    const handleQuantityChange = useCallback((item, delta) => {
-        updateSelectedItems(
-            selectedItems.map(ci => ci.id === item.id ? { ...ci, quantity: Math.max(1, ci.quantity + delta) } : ci)
-        );
-    }, [selectedItems, updateSelectedItems]);
+    const handleRemoveItem = useCallback((id) => {
+        const newSelectedItems = selectedItems.filter(item => item.id !== id);
+        setSelectedItems(newSelectedItems);
+        if (onValueChange) {
+            onValueChange(newSelectedItems.map(item => item.id));
+        }
+    }, [selectedItems, onValueChange]);
 
-    const handleRemoveItem = (id) => {
-        setSelectedItems(prevItems => prevItems.filter(item => item.id !== id));
-    };
-
-    const renderItem = useMemo(() => ({ item }) => (
-        <TouchableOpacity style={styles.rowStyle} onPress={() => handleSelectOption(item)}>
-            <Text style={styles.itemName}>{`${item.service_name} - ${item.cost}`}</Text>
-        </TouchableOpacity>
-    ), [handleSelectOption, styles]);
+    useEffect(() => {
+        console.log('Selected Items:', selectedItems);
+    }, [selectedItems]);
 
 
-    const renderSelectedItem = useMemo(() => ({ item }) => (
-        <View style={styles.selectedItemContainer}>
-            <View style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                marginBottom: 20,
-            }}>
-                <Text style={styles.selectedItemText}>{`${item.service_name}`}</Text>
-                <TouchableOpacity onPress={() => handleRemoveItem(item.id)}>
-                    <DeleteIcon />
-                </TouchableOpacity>
-            </View>
-            <View style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-            }}>
-
-                <Text style={styles.bodyMedium}>{`Стоимость: ${item.cost} руб.`}</Text>
-            </View>
-
-        </View>
-    ), [handleRemoveItem, styles]);
-
-
-   return (
+    return (
         <View>
             <Text style={styles.label}>{label}</Text>
             <View style={styles.searchContainer}>
@@ -88,35 +53,27 @@ function DropdownService({ label, options, onValueChange, selectedValues }) {
                     placeholder='Поиск...'
                     value={searchQuery}
                     style={styles.searchInput}
-                    onChangeText={(text) => {
-                        setSearchQuery(text);
-                        setShowOptions(true);
-                    }}
+                    onChangeText={setSearchQuery}
                     onFocus={() => setShowOptions(true)}
                 />
                 <TouchableOpacity onPress={() => setShowOptions(!showOptions)}>
                     <ChooseIcon />
                 </TouchableOpacity>
             </View>
+
             {showOptions && (
-                <FlatList
-                    data={filteredOptions}
-                    keyExtractor={(item) => `option-${item.id}`}
-                    renderItem={({ item }) => (
-                        <TouchableOpacity style={styles.rowStyle} onPress={() => handleSelectOption(item)}>
+                <ScrollView style={styles.dropdownList}>
+                    {filteredOptions.map((item) => (
+                        <TouchableOpacity key={`option-${item.id}`} style={styles.rowStyle} onPress={() => handleSelectOption(item)}>
                             <Text style={styles.itemName}>{`${item.service_name} - ${item.cost}`}</Text>
                         </TouchableOpacity>
-                    )}
-                    style={styles.dropdownList}
-                    scrollEnabled={true}
-                    ListEmptyComponent={<Text style={styles.noItemsText}>Нет результатов</Text>}
-                />
+                    ))}
+                </ScrollView>
             )}
-            <FlatList
-                data={selectedItems}
-                keyExtractor={(item) => `selected-${item.id}`}
-                renderItem={({ item }) => (
-                    <View style={styles.selectedItemContainer}>
+
+            <ScrollView style={styles.selectedItemsList}>
+                {selectedItems.map((item) => (
+                    <View key={`selected-${item.id}`} style={styles.selectedItemContainer}>
                         <View style={styles.selectedItemTextRow}>
                             <Text style={styles.selectedItemText}>{`${item.service_name}`}</Text>
                             <TouchableOpacity onPress={() => handleRemoveItem(item.id)}>
@@ -127,11 +84,8 @@ function DropdownService({ label, options, onValueChange, selectedValues }) {
                             <Text style={styles.bodyMedium}>{`Стоимость: ${item.cost} руб.`}</Text>
                         </View>
                     </View>
-                )}
-                style={styles.selectedItemsList}
-                scrollEnabled={true}
-                ListEmptyComponent={<Text style={styles.noItemsText}>Нет выбранных элементов</Text>}
-            />
+                ))}
+            </ScrollView>
         </View>
     );
 }
