@@ -1,20 +1,22 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { View, Text, TouchableOpacity, FlatList, TextInput } from 'react-native';
 import { ChooseIcon, CancelIcon } from '../icons';
 import styles from '../styles/styles';
 
 function DropdownEmployee({ label, options, selectedValues, onValueChange }) {
     const [showOptions, setShowOptions] = useState(false);
-    // Теперь selectedOptions будет хранить id выбранных сотрудников
     const [selectedOptions, setSelectedOptions] = useState(selectedValues || []);
     const [searchText, setSearchText] = useState('');
-    // Фильтрация теперь по full_name
+
     const filteredOptions = useMemo(() => 
         options.filter(option =>
             option.full_name && option.full_name.toLowerCase().includes(searchText.toLowerCase())
         ), [options, searchText]
     );
 
+    useEffect(() => {
+        setSelectedOptions(selectedValues);
+    }, [selectedValues]);
 
     const handleSelectOption = useCallback((option) => {
         setSelectedOptions(prevSelectedOptions => {

@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, ScrollView, TextInput } from 'react-nativ
 import { ChooseIcon, DeleteIcon } from '../icons';
 import styles from '../styles/styles';
 
-function DropdownService({ label, options, onValueChange, selectedValues = [] }) {
+function DropdownService({ label, options, onValueChange, selectedValues = [], updateTotalCost }) {
     const [showOptions, setShowOptions] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedItems, setSelectedItems] = useState([]);
@@ -38,7 +38,9 @@ function DropdownService({ label, options, onValueChange, selectedValues = [] })
         if (onValueChange) {
             onValueChange(newSelectedItems.map(item => item.id));
         }
-    }, [selectedItems, onValueChange]);
+        // Обновление общей стоимости после удаления услуги
+        updateTotalCost(newSelectedItems);
+    }, [selectedItems, onValueChange, updateTotalCost]);
 
     return (
         <View>

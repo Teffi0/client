@@ -24,7 +24,7 @@ export async function updateTaskStatus(taskId, newStatus) {
 
 
 const validateFormData = (formData) => {
-    const requiredFields = ['selectedService', 'paymentMethod', 'cost', 'startDate', 'endDate', 'startDateTime', 'endDateTime', 'selectedEmployee', 'selectedResponsible', 'fullnameClient', 'description'];
+    const requiredFields = ['selectedService', 'paymentMethod', 'cost', 'startDate', 'endDate', 'startDateTime', 'endDateTime', 'selectedEmployee', 'selectedResponsible', 'fullnameClient'];
     for (let field of requiredFields) {
         if (!formData[field] || (Array.isArray(formData[field]) && formData[field].length === 0)) {
             alert(`Пожалуйста, заполните поле ${field}.`);
@@ -142,7 +142,7 @@ export const updateDraft = async (draftId, formData) => {
         address_client: formData.addressClient,
         phone: formData.phone,
         description: formData.description,
-        employees: formData.selectedEmployee, // Предполагается, что это массив ID сотрудников
+        employees: formData.selectedEmployee.join(','), // Предполагается, что это массив ID сотрудников
         services: formData.selectedService, // Предполагается, что это массив ID услуг
         // Добавьте другие поля, если они необходимы
     };
