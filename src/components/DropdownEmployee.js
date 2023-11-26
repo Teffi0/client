@@ -22,7 +22,6 @@ function DropdownEmployee({ label, options, selectedValues, onValueChange }) {
                 ? prevSelectedOptions.filter(id => id !== option.id)
                 : [...prevSelectedOptions, option.id];
             onValueChange(newSelectedOptions);
-            console.log('Выбранные сотрудники:', newSelectedOptions);
             return newSelectedOptions;
         });
     }, []);

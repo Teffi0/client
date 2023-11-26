@@ -1,6 +1,5 @@
-import React, { useMemo, useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { ScrollView, View, Text, TextInput, TouchableOpacity } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import styles from '../styles/styles';
 import DateInput from './DateInput';
 import DropdownEmployee from './DropdownEmployee';
@@ -10,11 +9,14 @@ import { BackIcon, DeleteIcon } from '../icons';
 import { format } from 'date-fns';
 import SaveDraftModal from './SaveDraftModal';
 import DropdownWithSearch from './DropdownWithSearch';
-import { handleSaveTask } from '../utils/taskScreenHelpers';
+import axios from 'axios';
+import { fetchServiceNamesByIds } from '../utils/tasks';
+import { handleSaveTask, updateDraft } from '../utils/taskScreenHelpers';
 
-function TaskForm({ formData, dispatchFormData, onClose }) {
+function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
     const [selectedService, setSelectedService] = useState([]);
     const [service, setServices] = useState([]);
+    const [isFormInitialized, setIsFormInitialized] = useState(false);
     const [address, setAddress] = useState({
         city: '',
         street: '',
@@ -35,40 +37,56 @@ function TaskForm({ formData, dispatchFormData, onClose }) {
 
     useEffect(() => {
         fetchServices();
-    }, []);
+    }, [fetchServices]);
 
     useEffect(() => {
         dispatchFormData({
             type: 'UPDATE_FORM',
-            payload: { selectedService } // Используйте selectedService напрямую, так как это теперь массив ID
+            payload: { selectedService }
         });
     }, [selectedService, dispatchFormData]);
 
-    const loadData = useCallback(async () => {
-        try {
-            const savedData = await AsyncStorage.getItem('taskFormData');
-            if (savedData) {
-                const parsedData = JSON.parse(savedData);
-                parsedData.isSaveDraftModalVisible = false;
-                dispatchFormData({ type: 'SET_FORM', payload: parsedData });
-            }
-        } catch (error) {
-            console.error('Ошибка загрузки данных', error);
-        }
-    }, [dispatchFormData]);
-
     useEffect(() => {
-        fetchServices();
-        loadData();
-    }, [fetchServices, loadData]);
+        if (draftData && !isFormInitialized) {
+            (async () => {
+                const serviceNames = await fetchServiceNamesByIds(draftData.service);
+                const serviceIds = Object.keys(serviceNames).map(Number);
+                setSelectedService(serviceIds);
 
-    const saveFormData = useCallback(async (data) => {
-        try {
-            await AsyncStorage.setItem('taskFormData', JSON.stringify(data));
-        } catch (error) {
-            console.error('Ошибка сохранения данных', error);
+                const formatTimeString = (timeString) => {
+                    return timeString ? new Date('1970-01-01T' + timeString + 'Z') : null;
+                };
+
+                const formattedDraftData = {
+                    ...draftData,
+                    cost: draftData.cost ? draftData.cost.toString() : '',
+                    description: draftData.description || '',
+                    startDate: draftData.start_date ? new Date(draftData.start_date) : null,
+                    endDate: draftData.end_date ? new Date(draftData.end_date) : null,
+                    startDateTime: formatTimeString(draftData.start_time),
+                    endDateTime: formatTimeString(draftData.end_time),
+                    paymentMethod: draftData.payment || '',
+                    fullnameClient: draftData.fullname_client || '',
+                    phone: draftData.phone || '',
+                    selectedResponsible: draftData.responsible || '',
+                    addressClient: draftData.address_client || '',
+                    // Добавьте другие поля, если они необходимы
+                };
+
+                setIsFormInitialized(true);
+
+                if (JSON.stringify(formData) !== JSON.stringify(formattedDraftData)) {
+                    dispatchFormData({
+                        type: 'SET_FORM',
+                        payload: formattedDraftData
+                    });
+                }
+            })();
         }
-    }, []);
+    }, [draftData, formData, dispatchFormData]);
+
+
+
 
     const handleSave = useCallback(async () => {
         let updatedFormData = { ...formData };
@@ -81,11 +99,19 @@ function TaskForm({ formData, dispatchFormData, onClose }) {
         updatedFormData.status = 'черновик';
 
         try {
-            await handleSaveTask(updatedFormData);
+            const isUpdating = draftData && draftData.id;
+            if (isUpdating) {
+                // Обновление существующего черновика
+                await updateDraft(draftData.id, updatedFormData);
+            } else {
+                // Создание новой задачи
+                await handleSaveTask(updatedFormData);
+            }
         } catch (error) {
             console.error('Ошибка сохранения задачи', error);
         }
-    }, [formData, handleSaveTask]);
+    }, [formData, draftData, handleSaveTask]);
+
 
     const updateAddressClient = () => {
         const { city, street, house, entrance, floor } = address; // Деструктуризация значений из объекта address
@@ -103,9 +129,8 @@ function TaskForm({ formData, dispatchFormData, onClose }) {
     }, [dispatchFormData]);
 
     const handleBackPress = useCallback(() => {
-        saveFormData(formData);
         dispatchFormData({ type: 'UPDATE_FORM', payload: { isSaveDraftModalVisible: true } });
-    }, [formData, saveFormData, dispatchFormData]);
+    }, [formData, dispatchFormData]);
 
     const handleSaveAsDraft = useCallback(async () => {
         await AsyncStorage.setItem('taskFormData', JSON.stringify(formData));
@@ -113,7 +138,6 @@ function TaskForm({ formData, dispatchFormData, onClose }) {
     }, [formData, dispatchFormData]);
 
     const handleDelete = useCallback(async () => {
-        await AsyncStorage.removeItem('taskFormData');
         dispatchFormData({ type: 'RESET_FORM' });
     }, [dispatchFormData]);
 

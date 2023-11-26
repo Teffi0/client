@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, ScrollView, TextInput } from 'react-nativ
 import { ChooseIcon, DeleteIcon } from '../icons';
 import styles from '../styles/styles';
 
-function DropdownService({ label, options, onValueChange, selectedValues }) {
+function DropdownService({ label, options, onValueChange, selectedValues = [] }) {
     const [showOptions, setShowOptions] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedItems, setSelectedItems] = useState([]);
@@ -39,11 +39,6 @@ function DropdownService({ label, options, onValueChange, selectedValues }) {
             onValueChange(newSelectedItems.map(item => item.id));
         }
     }, [selectedItems, onValueChange]);
-
-    useEffect(() => {
-        console.log('Selected Items:', selectedItems);
-    }, [selectedItems]);
-
 
     return (
         <View>

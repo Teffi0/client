@@ -1,16 +1,10 @@
 import React, {useCallback} from 'react';
 import { Modal, View, Text, TouchableOpacity, Dimensions } from 'react-native';
 import styles from '../styles/styles';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 
 const SaveDraftModal = ({ isVisible, onClose, onSave, formData }) => {
   const navigation = useNavigation(); // Получаем функцию навигации
-
-  const handleSaveAsDraftAndCloseScreen = useCallback(async () => {
-    await AsyncStorage.setItem('taskFormData', JSON.stringify(formData));
-    onClose();
-  }, [onClose, formData]);
   
   return (
     <Modal

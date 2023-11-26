@@ -7,23 +7,21 @@ import { WarningModal } from '../components/WarningModal';
 import { formReducer, initialState } from '../reducers/formReducer';
 import { fetchOptions, handleSaveTask } from '../utils/taskScreenHelpers';
 
-function NewTaskScreen({ onClose }) {
+function NewTaskScreen({ onClose, draftData  }) {
   const [isSuccessModalVisible, setIsSuccessModalVisible] = useState(false);
   const [isWarningModalVisible, setIsWarningModalVisible] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
 
-  // Убрать useMemo, так как styles.addButtonText не зависит от состояния
   const addButtonTextStyles = styles.addButtonText;
 
   const [formData, dispatchFormData] = useReducer(formReducer, initialState);
 
-  // Обновление useCallback, чтобы избежать излишних пересозданий функции
   const handleSave = useCallback(async () => {
     const isValid = await handleSaveTask(formData, setIsSuccessModalVisible);
     if (isValid) {
-      setIsSuccessModalVisible(true); // Показываем модальное окно при успешном сохранении
+      setIsSuccessModalVisible(true);
     }
-  }, [formData]); // Зависимость только от formData
+  }, [formData]);
 
   const closeSuccessModal = () => {
     setIsSuccessModalVisible(false);
@@ -47,6 +45,7 @@ function NewTaskScreen({ onClose }) {
         onSave={handleSave}
         setIsWarningModalVisible={setIsWarningModalVisible}
         onClose={onClose}
+        draftData={draftData}
       />
       <TouchableOpacity style={addButtonStyles} onPress={handleSave}>
         <Text style={addButtonTextStyles}>Добавить задачу</Text>

@@ -123,7 +123,37 @@ export const handleSaveTask = async (formData) => {
     }
 };
 
+// Функция для обновления черновика
+export const updateDraft = async (draftId, formData) => {
+    console.log('Отправляемые данные:', formData);
 
+    // Преобразование данных в формат, ожидаемый сервером
+    const dataToSend = {
+        status: formData.status,
+        service: formData.selectedService.join(', '),
+        payment: formData.paymentMethod,
+        cost: formData.cost,
+        start_date: formData.startDate ? format(formData.startDate, 'yyyy-MM-dd') : null,
+        start_time: formData.startDateTime ? format(formData.startDateTime, 'HH:mm') : null,
+        end_date: formData.endDate ? format(formData.endDate, 'yyyy-MM-dd') : null,
+        end_time: formData.endDateTime ? format(formData.endDateTime, 'HH:mm') : null,
+        responsible: formData.selectedResponsible,
+        fullname_client: formData.fullnameClient,
+        address_client: formData.addressClient,
+        phone: formData.phone,
+        description: formData.description,
+        employees: formData.selectedEmployee, // Предполагается, что это массив ID сотрудников
+        services: formData.selectedService, // Предполагается, что это массив ID услуг
+        // Добавьте другие поля, если они необходимы
+    };
+
+    try {
+        const response = await axios.put(`${SERVER_URL}/tasks/${draftId}`, dataToSend);
+        console.log('Черновик успешно обновлен. Данные ответа:', response.data);
+    } catch (error) {
+        console.error('Ошибка при обновлении черновика:', error);
+    }
+};
 
 export const SuccessModal = React.memo(({ isVisible, onClose }) => {
     if (!isVisible) return null;
