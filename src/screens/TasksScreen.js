@@ -9,6 +9,7 @@ import CustomCalendar from '../components/CustomCalendar';
 import VerticalCalendar from '../components/VerticalCalendar';
 import NewTaskScreen from './NewTaskScreen';
 import { isToday, fetchTaskDates, fetchTasksForSelectedDate } from '../utils/tasks';
+import { taskEventEmitter } from '../Events'; // Убедитесь, что путь к Events корректный
 
 const VIEW_MODES = {
   TODAY: 'today',
@@ -27,22 +28,32 @@ const TasksScreen = () => {
     setHeaderTitle(isToday(date) ? 'Сегодня' : format(date, 'd MMMM', { locale: ru }));
   }, []);
 
-  const [error, setError] = useState(null);
+  const fetchData = async () => {
+    try {
+      await fetchTaskDates(setTaskDates);
+      await fetchTasksForSelectedDate(selectedDate, setTasks);
+      updateHeaderTitle(selectedDate);
+    } catch (error) {
+      console.error('Error fetching tasks:', error);
+      setError('Произошла ошибка при загрузке задач.');
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        await fetchTaskDates(setTaskDates);
-        await fetchTasksForSelectedDate(selectedDate, setTasks);
-        updateHeaderTitle(selectedDate);
-      } catch (error) {
-        console.error('Error fetching tasks:', error);
-        setError('Произошла ошибка при загрузке задач.');
-      }
+    fetchData();
+
+    const handleTaskUpdate = () => {
+      fetchData(); // Повторная загрузка данных при событии обновления
     };
 
-    fetchData();
-  }, [selectedDate]);
+    taskEventEmitter.on('taskUpdated', handleTaskUpdate);
+
+    return () => {
+      taskEventEmitter.removeListener('taskUpdated', handleTaskUpdate);
+    };
+  }, [selectedDate, updateHeaderTitle]);
+
+  const [error, setError] = useState(null);
 
   if (error) {
     return <Text style={styles.errorText}>{error}</Text>;
@@ -85,7 +96,7 @@ const TasksScreen = () => {
             taskDates={taskDates}
           />
         )}
-        <AddButton onPress={handleAddButtonPress} />
+        {viewMode === VIEW_MODES.TODAY && <AddButton onPress={handleAddButtonPress} />}
         <Modal
           visible={isNewTaskScreenVisible}
           animationType="slide"

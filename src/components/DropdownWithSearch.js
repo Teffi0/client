@@ -25,7 +25,7 @@ function DropdownWithSearch({ label, options, selectedValue, onValueChange }) {
     Keyboard.dismiss();
   }, [onValueChange]);
 
-  const renderItem = useCallback(({ item }) => (
+  const renderItem = useCallback(({ item, index }) => (
     <TouchableOpacity
       style={styles.rowStyle}
       onPress={() => handleSelectOption(item)}
@@ -35,6 +35,7 @@ function DropdownWithSearch({ label, options, selectedValue, onValueChange }) {
       </View>
     </TouchableOpacity>
   ), [handleSelectOption]);
+
 
   const handleTextChange = (text) => {
     setSearchText(text);
@@ -61,7 +62,7 @@ function DropdownWithSearch({ label, options, selectedValue, onValueChange }) {
           <View style={styles.dropdownList}>
             <FlatList
               data={filteredOptions}
-              keyExtractor={(item) => item}
+              keyExtractor={(item, index) => `key-${index}-${item}`} // Использование индекса и значения элемента
               renderItem={renderItem}
               scrollEnabled={false}
             />

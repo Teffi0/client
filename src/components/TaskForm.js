@@ -21,6 +21,8 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
     const [clients, setClients] = useState([]);
     const [selectedClient, setSelectedClient] = useState(null);
     const [isFormInitialized, setIsFormInitialized] = useState(false);
+    const [isNewClientAdded, setIsNewClientAdded] = useState(false);
+    const [isAddingNewClient, setIsAddingNewClient] = useState(false);
     const [address, setAddress] = useState({
         city: '',
         street: '',
@@ -29,20 +31,44 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
         floor: ''
     });
 
+    const resetForm = () => {
+        setIsNewClientAdded(false);
+        setSelectedClient(null);
+        setAddress({
+            city: '',
+            street: '',
+            house: '',
+            entrance: '',
+            floor: ''
+        });
+        setField('phoneClient', '');
+    };
+
+    const handleOpenAddClientForm = () => {
+        setIsAddingNewClient(true);
+        resetForm(); // Сбрасываем форму при открытии
+    };
+
     const renderClientButton = () => {
-        if (selectedClient) {
+        if (selectedClient && !isAddingNewClient) {
             return (
                 <TouchableOpacity onPress={handleUpdateClient} style={styles.buttonClose}>
-                    <Text style={styles.textStyle}>Сохранить</Text>
+                    <Text style={styles.textStyle}>Обновить данные</Text>
+                </TouchableOpacity>
+            );
+        } else if (isAddingNewClient) {
+            return (
+                <TouchableOpacity onPress={handleAddClient} style={styles.buttonClose}>
+                    <Text style={styles.textStyle}>Добавить клиента</Text>
+                </TouchableOpacity>
+            );
+        } else {
+            return (
+                <TouchableOpacity onPress={handleOpenAddClientForm} style={styles.buttonClose}>
+                    <Text style={styles.textStyle}>Добавить нового клиента</Text>
                 </TouchableOpacity>
             );
         }
-        
-        return (
-            <TouchableOpacity onPress={handleAddClient} style={styles.buttonClose}>
-                <Text style={styles.textStyle}>Добавить Клиента</Text>
-            </TouchableOpacity>
-        );
     };
 
     const fetchClients = useCallback(async () => {
@@ -168,9 +194,10 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
                         floor: addressMatch[5] || ''
                     });
                     setField('phoneClient', selectedClient.phone_number || '');
+                    setIsNewClientAdded(true);
                 }
             } else {
-                // Сброс адреса и других полей для нового клиента
+                // Очистка полей для нового клиента
                 setAddress({
                     city: '',
                     street: '',
@@ -179,6 +206,7 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
                     floor: ''
                 });
                 setField('phoneClient', '');
+                setIsNewClientAdded(false);
             }
         }
     }, [formData.fullnameClient, clients]);
@@ -234,9 +262,10 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
 
     const handleAddClient = async () => {
         const clientData = {
+            // Сбор данных из формы
             full_name: formData.fullnameClient,
             phone_number: formData.phoneClient,
-            address: `${address.city}, ${address.street}, дом ${address.house}, подъезд ${address.entrance}, этаж ${address.floor}`
+            address: `город ${address.city}, улица ${address.street}, дом ${address.house}, подъезд ${address.entrance}, этаж ${address.floor}`
         };
 
         try {
@@ -244,6 +273,7 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
             alert('Клиент успешно добавлен');
             setClients([...clients, response.data]); // Обновляем список клиентов
             setSelectedClient(response.data); // Устанавливаем добавленного клиента как выбранного
+            setIsAddingNewClient(false); // Закрываем форму добавления
         } catch (error) {
             console.error('Ошибка при добавлении клиента:', error);
         }
@@ -257,6 +287,9 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
     };
 
     const handleUpdateClient = async () => {
+        const { city, street, house, entrance, floor } = address; // Деструктуризация значений из объекта address
+        const fullAddress = `город ${city}, улица ${street}, дом ${house}, подъезд ${entrance}, этаж ${floor}`;
+        setField('addressClient', fullAddress);
         if (!selectedClient) {
             alert('Клиент не выбран.');
             return;
@@ -479,7 +512,7 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
                             />
                             <DropdownEmployee
                                 label="Участники"
-                                options={employees} // убедитесь, что переменная employees заполнена данными
+                                options={formData.employeesOptions} // убедитесь, что переменная employees заполнена данными
                                 selectedValues={selectedEmployee}
                                 onValueChange={setSelectedEmployee}
                             />
@@ -505,7 +538,7 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
                                     }));
                                 }}
                             />
-                            {formData.fullnameClient && (
+                            {(isAddingNewClient || selectedClient) && (
                                 <View>
                                     <View style={{ flexDirection: 'column', marginTop: 24 }}>
                                         <TextInput
@@ -546,9 +579,10 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
                                             style={styles.costInput}
                                         />
                                     </View>
-                                    {renderClientButton()}
+                                    
                                 </View>
                             )}
+                            {renderClientButton()}
                         </View>
                     ))}
                     {tryRender(() => (

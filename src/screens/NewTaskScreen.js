@@ -5,9 +5,10 @@ import TaskForm from '../components/TaskForm';
 import { SuccessModal } from '../components/SuccessModal';
 import { WarningModal } from '../components/WarningModal';
 import { formReducer, initialState } from '../reducers/formReducer';
-import { fetchOptions, handleSaveTask } from '../utils/taskScreenHelpers';
+import { fetchOptions, handleSaveTask, updateDraft, validateFormData } from '../utils/taskScreenHelpers';
+import PropTypes from 'prop-types';
 
-function NewTaskScreen({ onClose, draftData  }) {
+function NewTaskScreen({ onClose, draftData, selectedDate }) {
   const [isSuccessModalVisible, setIsSuccessModalVisible] = useState(false);
   const [isWarningModalVisible, setIsWarningModalVisible] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
@@ -17,11 +18,24 @@ function NewTaskScreen({ onClose, draftData  }) {
   const [formData, dispatchFormData] = useReducer(formReducer, initialState);
 
   const handleSave = useCallback(async () => {
-    const isValid = await handleSaveTask(formData, setIsSuccessModalVisible);
-    if (isValid) {
-      setIsSuccessModalVisible(true);
+    // Если статус был "черновик", обновляем на "новая"
+    if (formData.status === 'черновик') {
+      const updatedFormData = { ...formData, status: 'новая' };
+      // Валидируем обновленные данные
+      if (validateFormData(updatedFormData)) {
+        await updateDraft(draftData.id, updatedFormData);
+        setIsSuccessModalVisible(true); // Показываем модальное окно об успешном добавлении
+      }
+    } else {
+      // В противном случае обновляем статус и вызываем handleSaveTask
+      const isValid = await handleSaveTask(formData, setIsSuccessModalVisible);
+      if (isValid) {
+        setIsSuccessModalVisible(true); // Показываем модальное окно об успешном добавлении
+      }
     }
-  }, [formData]);
+  }, [formData, draftData]);
+  
+  
 
   const closeSuccessModal = () => {
     setIsSuccessModalVisible(false);
@@ -31,6 +45,16 @@ function NewTaskScreen({ onClose, draftData  }) {
   useEffect(() => {
     fetchOptions(dispatchFormData);
   }, []);
+
+  useEffect(() => {
+    if (selectedDate) {
+      // Заполняем начальную дату в formData
+      dispatchFormData({ type: 'UPDATE_FORM', payload: { startDate: selectedDate } });
+    } else {
+      // Если selectedDate не определен, устанавливаем сегодняшнюю дату
+      dispatchFormData({ type: 'UPDATE_FORM', payload: { startDate: new Date() } });
+    }
+  }, [selectedDate]);
 
   const addButtonStyles = {
     ...styles.addButton,
@@ -55,5 +79,11 @@ function NewTaskScreen({ onClose, draftData  }) {
     </View>
   );
 }
+
+NewTaskScreen.propTypes = {
+  onClose: PropTypes.func.isRequired,
+  draftData: PropTypes.object,
+  selectedDate: PropTypes.instanceOf(Date) // Убираем isRequired
+};
 
 export default NewTaskScreen;

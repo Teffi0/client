@@ -25,6 +25,7 @@
     "axios": "^1.6.2",
     "date-fns": "^2.30.0",
     "dayjs": "^1.11.10",
+    "events": "^3.3.0",
     "expo": "^49.0.18",
     "expo-font": "~11.4.0",
     "expo-splash-screen": "~0.20.5",

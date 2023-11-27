@@ -5,17 +5,7 @@ import styles from '../styles/styles';
 import { formatDate, formatTime } from '../utils/dateFormatter';
 import { updateTaskStatus } from '../utils/taskScreenHelpers';
 import DropdownItem from '../components/DropdownItem';
-
-const fetchTaskParticipants = async (taskId) => {
-  try {
-    const response = await fetch(`http://31.129.101.174/task-participants/${taskId}`);
-    const participants = await response.json();
-    return participants.join(', ');
-  } catch (error) {
-    console.error('Ошибка при получении участников:', error);
-    return 'Ошибка при загрузке участников';
-  }
-};
+import { fetchTaskParticipants } from '../utils/tasks';
 
 const TaskDetailScreen = ({ route }) => {
   const navigation = useNavigation();
@@ -30,16 +20,18 @@ const TaskDetailScreen = ({ route }) => {
       setModalVisible(true);
     } else {
       try {
-        const updatedTask = { status: 'в процессе' };
-        await updateTaskStatus(task.id, updatedTask.status);
-        // Обновление задачи на сервере успешно выполнено
+        const updatedTask = { ...task, status: 'в процессе' };
+        await updateTaskStatus(task.id, updatedTask); // Отправляем полный объект задачи
+        setTask(updatedTask); // Обновляем состояние задачи
         navigation.navigate('Tabs', { screen: 'TasksScreen' });
       } catch (error) {
-        // Обработка ошибки при обновлении статуса задачи
         console.error('Ошибка при обновлении статуса задачи:', error);
       }
     }
   };
+
+  useEffect(() => {
+}, [task.id]);
 
   const handleInventoryChange = (newSelectedInventory) => {
     setSelectedInventory(newSelectedInventory);
@@ -51,14 +43,15 @@ const TaskDetailScreen = ({ route }) => {
       alert('Выберите инвентарь перед завершением задачи.');
       return;
     }
-
+  
     try {
       // Обновляем статус задачи
-      const statusResponse = await updateTaskStatus(task.id, 'выполнено');
-      if (!statusResponse.ok) {
-        throw new Error('Ошибка при обновлении статуса задачи');
-      }
-
+      const updatedTask = { ...task, status: 'выполнено' };
+      const statusResponse = await updateTaskStatus(task.id, updatedTask);
+  
+      // Фильтруем выбранный инвентарь, исключая элементы с количеством ноль
+      const filteredInventory = selectedInventory.filter(item => item.quantity > 0);
+  
       // Отправляем данные о выбранном инвентаре на сервер
       const inventoryResponse = await fetch(`http://31.129.101.174/tasks/${task.id}/complete`, {
         method: 'PUT',
@@ -66,21 +59,21 @@ const TaskDetailScreen = ({ route }) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          inventory: selectedInventory.map(item => ({
+          inventory: filteredInventory.map(item => ({
             inventory_id: item.id,
             quantity: item.quantity
           })),
         }),
       });
-
+  
       if (!inventoryResponse.ok) {
         throw new Error('Ошибка при обновлении инвентаря');
       }
-
+  
       // Получаем ответ от сервера
       const inventoryResult = await inventoryResponse.json();
       console.log('Инвентарь обновлен:', inventoryResult);
-
+  
       // Закрыть модальное окно и перейти к списку задач
       setModalVisible(false);
       navigation.navigate('Tabs', { screen: 'TasksScreen' });
@@ -88,6 +81,8 @@ const TaskDetailScreen = ({ route }) => {
       console.error('Ошибка при завершении задачи:', error);
     }
   };
+  
+  
 
   const fetchInventoryItems = async () => {
     try {
@@ -122,12 +117,21 @@ const TaskDetailScreen = ({ route }) => {
     </View>
   );
 
-  const Row = ({ title, value }) => (
-    <View style={styles.rowStyle}>
-      <Text style={styles.rowTitle}>{title}</Text>
-      <Text style={styles.rowValue}>{value}</Text>
-    </View>
-  );
+  const Row = ({ title, value }) => {
+    let displayValue = value;
+    
+    // Проверяем, является ли value массивом и содержит ли он объекты с полем full_name
+    if (Array.isArray(value) && value.length > 0 && value[0].hasOwnProperty('full_name')) {
+      displayValue = value.map(employee => employee.full_name).join(', ');
+    }
+  
+    return (
+      <View style={styles.rowStyle}>
+        <Text style={styles.rowTitle}>{title}</Text>
+        <Text style={styles.rowValue}>{displayValue}</Text>
+      </View>
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -144,7 +148,7 @@ const TaskDetailScreen = ({ route }) => {
           <Row title="Способ оплаты:" value={task.payment || 'Не указан'} />
           <Row title="Стоимость:" value={task.cost ? `${task.cost} руб.` : 'Не указана'} />
         </Section>
-
+        
         <Section title="Работа">
           <Row title="Ответственный:" value={task.responsible || 'Не назначен'} />
           <Row title="Участники:" value={task.employees || 'Нет информации'} />
@@ -170,13 +174,15 @@ const TaskDetailScreen = ({ route }) => {
             onValueChange={handleInventoryChange}
           />
           <TouchableOpacity style={styles.addButton} onPress={completeTask}>
-            <Text style={styles.addButtonText}>Задача выполнена</Text>
+            <Text style={styles.addButtonText}>Завершить работу</Text>
           </TouchableOpacity>
         </View>
       </Modal>
 
       <TouchableOpacity style={styles.addButton} onPress={handleAddTaskPress}>
-        <Text style={styles.addButtonText}>Добавить задачу</Text>
+        <Text style={styles.addButtonText}>
+          {task.status === 'в процессе' ? 'Добавить расходники' : 'Начать выполнение'}
+        </Text>
       </TouchableOpacity>
     </View>
   );

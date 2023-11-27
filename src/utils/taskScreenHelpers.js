@@ -4,26 +4,28 @@ import axios from 'axios';
 import { formatISO, parseISO, isBefore, format } from 'date-fns';
 import styles from '../styles/styles';
 import { SERVER_URL } from '../utils/tasks';
+import { taskEventEmitter } from '../Events';
 
-export async function updateTaskStatus(taskId, newStatus) {
+export async function updateTaskStatus(taskId, taskData) {
     try {
         const response = await fetch(`http://31.129.101.174/tasks/${taskId}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ status: newStatus }),
+            body: JSON.stringify(taskData), // Отправляем полный объект задачи
         });
+        taskEventEmitter.emit('taskUpdated');
         return response; // Возвращает объект ответа fetch
     } catch (error) {
-        console.error('Ошибка при обновлении статуса задачи:', error);
+        console.error('Ошибка при обновлении задачи:', error);
         throw error; // В случае ошибки пробрасываем исключение
     }
 }
 
 
 
-const validateFormData = (formData) => {
+export const validateFormData = (formData) => {
     const requiredFields = ['selectedService', 'paymentMethod', 'cost', 'startDate', 'endDate', 'startDateTime', 'endDateTime', 'selectedEmployee', 'selectedResponsible', 'fullnameClient'];
     for (let field of requiredFields) {
         if (!formData[field] || (Array.isArray(formData[field]) && formData[field].length === 0)) {
@@ -110,7 +112,6 @@ export const handleSaveTask = async (formData) => {
         const response = await axios.post(`${SERVER_URL}/tasks`, formattedData);
         const taskId = response.data.task_id;
         console.log('Задача успешно добавлена. Данные ответа:', response.data);
-
         // Добавление услуг к задаче, если они есть
         if (formData.selectedService && formData.selectedService.length > 0) {
             await axios.post(`${SERVER_URL}/tasks/${taskId}/services`, {
@@ -118,6 +119,8 @@ export const handleSaveTask = async (formData) => {
             });
             console.log('Услуги успешно добавлены к задаче');
         }
+        
+        taskEventEmitter.emit('taskUpdated');
     } catch (error) {
         console.error('Ошибка при добавлении задачи:', error);
     }
@@ -150,6 +153,7 @@ export const updateDraft = async (draftId, formData) => {
     try {
         const response = await axios.put(`${SERVER_URL}/tasks/${draftId}`, dataToSend);
         console.log('Черновик успешно обновлен. Данные ответа:', response.data);
+        taskEventEmitter.emit('taskUpdated');
     } catch (error) {
         console.error('Ошибка при обновлении черновика:', error);
     }

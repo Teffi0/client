@@ -10,7 +10,7 @@ function DropdownEmployee({ label, options, selectedValues, onValueChange }) {
 
     const filteredOptions = useMemo(() => 
         options.filter(option =>
-            option.full_name && option.full_name.toLowerCase().includes(searchText.toLowerCase())
+            option.full_name.toLowerCase().includes(searchText.toLowerCase())
         ), [options, searchText]
     );
 
@@ -26,9 +26,8 @@ function DropdownEmployee({ label, options, selectedValues, onValueChange }) {
             onValueChange(newSelectedOptions);
             return newSelectedOptions;
         });
-    }, []);
-    
-    // Изменение renderItem для отображения full_name
+    }, [onValueChange]);
+
     const renderItem = ({ item }) => (
         <TouchableOpacity
             onPress={() => handleSelectOption(item)}
@@ -39,17 +38,16 @@ function DropdownEmployee({ label, options, selectedValues, onValueChange }) {
         </TouchableOpacity>
     );
 
-    // Изменение renderSelectedItem для отображения full_name
     const renderSelectedItem = ({ item }) => {
         const selectedItem = options.find(option => option.id === item);
-        return (
+        return selectedItem ? (
             <View style={styles.selectedItemContainer}>
                 <Text style={styles.selectedItemText}>{selectedItem.full_name}</Text>
                 <TouchableOpacity onPress={() => handleSelectOption(selectedItem)}>
                     <CancelIcon />
                 </TouchableOpacity>
             </View>
-        );
+        ) : null;
     };
 
     return (
@@ -75,7 +73,7 @@ function DropdownEmployee({ label, options, selectedValues, onValueChange }) {
                 <View style={styles.dropdownList}>
                     <FlatList
                         data={filteredOptions}
-                        keyExtractor={(item) => item.id.toString()} // где `item.id` — это уникальный идентификатор
+                        keyExtractor={(item) => item.id.toString()}
                         renderItem={renderItem}
                         scrollEnabled={false}
                     />
@@ -83,13 +81,12 @@ function DropdownEmployee({ label, options, selectedValues, onValueChange }) {
             )}
             <FlatList
                 data={selectedOptions}
-                keyExtractor={(item) => item.toString()} // `item` уже является идентификатором
+                keyExtractor={(item) => item.toString()}
                 renderItem={renderSelectedItem}
                 style={styles.selectedItemsList}
                 horizontal={true}
                 scrollEnabled={false}
             />
-
         </View>
     );
 }

@@ -237,6 +237,12 @@ const styles = StyleSheet.create({
   tabTextActive: {
     color: colors.white,
   },
+  addButtonOverlay: {
+    position: 'absolute',
+    bottom: 20, // или другое значение, чтобы позиционировать кнопку
+    right: 20, // или другое значение
+    // остальные стили для кнопки
+  },
   addButton: {
     position: 'absolute',
     bottom: sizes.paddingMedium,
@@ -248,6 +254,7 @@ const styles = StyleSheet.create({
     paddingVertical: sizes.paddingMedium,
     alignItems: 'center',
     justifyContent: 'center',
+    zIndex: 1000,
   },
   addButtonText: {
     ...baseTextStyles,

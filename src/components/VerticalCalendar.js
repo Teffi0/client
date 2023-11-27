@@ -9,7 +9,7 @@ import PropTypes from 'prop-types';
 
 const screenHeight = Dimensions.get('window').height;
 
-const VerticalCalendar = ({ tasks, taskDates }) => {
+const VerticalCalendar = ({ tasks, taskDates, renderAddButton }) => {
   const flatListRef = useRef(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [data, setData] = useState(Array.from({ length: 5 }, (_, i) => addMonths(startOfMonth(new Date()), i - 2)));
@@ -192,9 +192,11 @@ const VerticalCalendar = ({ tasks, taskDates }) => {
                   toggleClient={handleToggleClient}
                 />
               </ScrollView>
+              
             </View>
           </View>
         </Animated.View>
+        {modalVisible && renderAddButton()}
       </Modal>
     </>
   );
@@ -203,6 +205,7 @@ const VerticalCalendar = ({ tasks, taskDates }) => {
 VerticalCalendar.propTypes = {
   tasks: PropTypes.array.isRequired,
   taskDates: PropTypes.object.isRequired,
+  renderAddButton: PropTypes.func.isRequired,
 };
 
 export default VerticalCalendar;

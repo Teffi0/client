@@ -81,6 +81,7 @@ export const fetchTaskParticipants = async (taskId) => {
   try {
     const response = await axios.get(`http://31.129.101.174/task-participants/${taskId}`);
     if (response.data && Array.isArray(response.data)) {
+      console.log(response.data);
       return response.data; // Убедитесь, что это массив
     } else {
       throw new Error("Некорректный формат данных");
@@ -88,5 +89,15 @@ export const fetchTaskParticipants = async (taskId) => {
   } catch (error) {
     console.error('Ошибка при получении участников:', error);
     throw error; // Перебрасываем ошибку дальше
+  }
+};
+
+export const fetchTaskDetails = async (taskId) => {
+  try {
+    // Загрузка данных о задаче
+    const response = await axios.get(`${SERVER_URL}/tasks/${taskId}`);
+    setTask(response.data);
+  } catch (error) {
+    console.error('Ошибка при загрузке деталей задачи:', error);
   }
 };
