@@ -70,12 +70,12 @@ const CustomCalendar = ({ selectedDate, onDateChange, tasks, taskDates }) => {
     currentWeekRef.current = daysArray;
     return daysArray;
   }, [selectedDate]);
-  
+
   const tasksByClient = useMemo(() => {
     const selectedTasks = tasks.filter(task =>
       format(parseISO(task.start_date), 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd')
     );
-  
+
     return selectedTasks.reduce((acc, task) => {
       const client = task.status === 'черновик' ? 'Черновик' : task.fullname_client || 'Неизвестный клиент';
       if (!acc[client]) {
@@ -95,16 +95,15 @@ const CustomCalendar = ({ selectedDate, onDateChange, tasks, taskDates }) => {
   }, []);
 
   return (
-    <View>
+    <View style={{ flex: 1 }}>
       <Animated.View
         {...panResponder.panHandlers}
         style={{
-          width: screenWidth,
           flexDirection: 'row',
           transform: [{ translateX }]
         }}
       >
-        <View style={{ width: screenWidth, flexDirection: 'row' }}>
+        <View style={{ flex: 1, flexDirection: 'row' }}>
           <DayDotsComponent
             days={currentWeek}
             onDateChange={handleDateChange}
@@ -114,14 +113,12 @@ const CustomCalendar = ({ selectedDate, onDateChange, tasks, taskDates }) => {
         </View>
       </Animated.View>
 
-      <ScrollView showsVerticalScrollIndicator={false} style={{ marginBottom: 200 }}>
-        <View style={styles.tasksContainer}>
-          <TasksForSelectedDateComponent
-            tasksByClient={tasksByClient}
-            expandedClients={expandedClients}
-            toggleClient={toggleClient}
-          />
-        </View>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <TasksForSelectedDateComponent
+          tasksByClient={tasksByClient}
+          expandedClients={expandedClients}
+          toggleClient={toggleClient}
+        />
 
       </ScrollView>
     </View>

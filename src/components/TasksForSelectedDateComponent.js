@@ -9,19 +9,25 @@ const TasksForSelectedDateComponent = ({ tasksByClient, expandedClients, toggleC
     return <Text style={styles.noTasksText}>Нет задач.</Text>;
   }
 
-  return Object.entries(tasksByClient).map(([client, clientTasks]) => (
-    <View key={client}>
-      <View style={styles.taskFIO}>
-        <Text style={styles.clientName}>{client}</Text>
-        <TouchableOpacity onPress={() => toggleClient(client)}>
-          {expandedClients.includes(client) ? <CollapseIcon /> : <ExpandIcon />}
-        </TouchableOpacity>
-      </View>
-      {expandedClients.includes(client) && clientTasks.map((task) => (
-        <TaskComponent key={task.id} {...task} />
+  return (
+    <View style={styles.tasksContainer}>
+      {Object.entries(tasksByClient).map(([client, clientTasks]) => (
+        <View key={client} style={styles.clientTaskContainer}>
+          <TouchableOpacity style={styles.clientHeader} onPress={() => toggleClient(client)}>
+            <Text style={styles.clientName}>{client}</Text>
+            {expandedClients.includes(client) ? <CollapseIcon /> : <ExpandIcon />}
+          </TouchableOpacity>
+          {expandedClients.includes(client) && (
+            <View style={styles.clientTasks}>
+              {clientTasks.map((task) => (
+                <TaskComponent key={task.id} {...task} />
+              ))}
+            </View>
+          )}
+        </View>
       ))}
     </View>
-  ));
+  );
 };
 
 export default TasksForSelectedDateComponent;

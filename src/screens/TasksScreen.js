@@ -101,7 +101,9 @@ const TasksScreen = () => {
             renderAddButton={renderAddButton}
           />
         )}
-        {viewMode === VIEW_MODES.TODAY && renderAddButton()}
+        
+      </View>
+      {viewMode === VIEW_MODES.TODAY && renderAddButton()}
         <Modal
           visible={isNewTaskScreenVisible}
           animationType="slide"
@@ -109,7 +111,6 @@ const TasksScreen = () => {
         >
           <NewTaskScreen onClose={() => setNewTaskScreenVisible(false)} />
         </Modal>
-      </View>
     </View>
   );
 };

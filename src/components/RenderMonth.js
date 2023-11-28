@@ -12,7 +12,7 @@ const Day = memo(({ day, handleDatePress, isSelectedDay, hasTask }) => {
         }
     }, [day, handleDatePress]);
 
-    const dayButtonStyle = day ? styles.dayButton : null;
+    const dayButtonStyle = day ? [styles.dayButton, { flex: 1 }] : null;
     const formattedDay = day ? format(day, 'd', { locale: ru }) : '';  // Оптимизированная проверка
 
     return (

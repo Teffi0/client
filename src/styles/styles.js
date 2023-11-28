@@ -97,11 +97,6 @@ const styles = StyleSheet.create({
     fontSize: sizes.fontSizeXXXXLarge,
     lineHeight: sizes.lineHeightExtraLarge,
   },
-  titleLarge: {
-    ...baseTextStyles,
-    fontSize: sizes.fontSizeXXLarge,
-    lineHeight: sizes.lineHeightLarge,
-  },
   titleMedium: {
     ...baseTextStyles,
     fontSize: sizes.fontSizeXXLarge,
@@ -109,37 +104,11 @@ const styles = StyleSheet.create({
     letterSpacing: sizes.letterSpacingMedium,
     textAlign: 'center',
   },
-  titleSmall: {
-    ...baseTextStyles,
-    fontSize: sizes.fontSizeMedium,
-    lineHeight: sizes.lineHeightMedium,
-    letterSpacing: sizes.letterSpacingSmall,
-  },
-  labelMedium: {
-    ...baseTextStyles,
-    fontSize: sizes.fontSizeSmall,
-    letterSpacing: sizes.letterSpacingExtraLarge,
-  },
-  labelSmall: {
-    ...baseTextStyles,
-    fontSize: sizes.fontSizeExtraSmall,
-    letterSpacing: sizes.letterSpacingExtraLarge,
-  },
-  bodyLarge: {
-    ...baseTextStyles,
-    fontSize: sizes.fontSizeLarge,
-    letterSpacing: sizes.letterSpacingExtraLarge,
-  },
   bodyMedium: {
     ...baseTextStyles,
     fontSize: sizes.fontSizeMedium,
     letterSpacing: sizes.letterSpacingLarge,
     textAlign: 'justify',
-  },
-  bodySmall: {
-    ...baseTextStyles,
-    fontSize: sizes.fontSizeSmall,
-    letterSpacing: sizes.letterSpacingMedium,
   },
   primaryColor: {
     color: colors.primary,
@@ -175,7 +144,7 @@ const styles = StyleSheet.create({
   contentContainer: {
     flex: 1,
     padding: sizes.paddingMedium,
-    marginTop: sizes.marginLarge,
+    marginTop: sizes.marginExtraLarge,
   },
   contentContainerTask: {
     flex: 1,
@@ -192,17 +161,21 @@ const styles = StyleSheet.create({
   },
   title: {
     color: colors.darkGrey,
-    fontSize: sizes.fontSizeSmall,
+    fontSize: sizes.fontSizeMedium,
     ...boldTextStyles,
-    lineHeight: sizes.lineHeightSmall,
-    letterSpacing: sizes.letterSpacingExtraLarge,
-    textAlign: 'center',
-    marginTop: sizes.marginExtraSmall,
+    lineHeight: sizes.lineHeightMedium,
+    letterSpacing: sizes.letterSpacingMedium,
+    marginTop: sizes.marginSmall,
     marginRight: sizes.marginSmall,
   },
   calendarBlock: {
     flexDirection: 'row',
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.41,
+    elevation: 2,
   },
   calendar: {
     marginBottom: sizes.marginMedium,
@@ -237,12 +210,6 @@ const styles = StyleSheet.create({
   tabTextActive: {
     color: colors.white,
   },
-  addButtonOverlay: {
-    position: 'absolute',
-    bottom: 20, // или другое значение, чтобы позиционировать кнопку
-    right: 20, // или другое значение
-    // остальные стили для кнопки
-  },
   addButton: {
     position: 'absolute',
     bottom: sizes.paddingMedium,
@@ -251,10 +218,8 @@ const styles = StyleSheet.create({
     height: 60,
     backgroundColor: colors.primary,
     borderRadius: sizes.borderRadiusLarge,
-    paddingVertical: sizes.paddingMedium,
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 1000,
   },
   addButtonText: {
     ...baseTextStyles,
@@ -264,8 +229,6 @@ const styles = StyleSheet.create({
   },
   addButtonPressed: {
     backgroundColor: colors.primary,
-  },
-  addButtonTextPressed: {
   },
 
   section: {
@@ -381,11 +344,10 @@ const styles = StyleSheet.create({
     ...baseTextStyles,
     marginLeft: sizes.marginExtraSmall,
   },
-  noTasksText: {
-    fontSize: sizes.fontSizeLarge,
-    color: colors.darkGrey,
-    textAlign: 'center',
-    marginTop: sizes.marginLarge,
+  noTasksContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   monthContainer: {
     width: '100%',
@@ -399,26 +361,19 @@ const styles = StyleSheet.create({
   },
   weekContainer: {
     flexDirection: 'row',
+    justifyContent: 'space-around',
     width: '100%',
   },
   dayContainer: {
     flex: 1,
-    height: 48,
-    alignItems: 'center',
     justifyContent: 'center',
-  },
-  calendarContainer: {
-    flex: 1,
-  },
-  daysRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginVertical: 4,
+    marginHorizontal: 2,
   },
   todayButton: {
-    borderColor: 'red',
-    borderWidth: 1,
-  },
-  selectedDayButton: {
+    fontWeight: 'bold',
+    color: 'red',
   },
 
   dayName: {
@@ -427,8 +382,8 @@ const styles = StyleSheet.create({
   },
 
   selectedDayText: {
-    fontWeight: 'bold',
-    color: 'red',
+    borderColor: 'red',
+    borderWidth: 1,
   },
 
   dayNumber: {
@@ -459,9 +414,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
 
-  clientName: {
-  },
-
   noTasksText: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -469,31 +421,26 @@ const styles = StyleSheet.create({
     fontSize: sizes.fontSizeXXLarge,
   },
   dayButton: {
+    width: '100%', // Кнопка dayButton займет всю ширину dayContainer
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 5,
-    paddingHorizontal: 5,
-    margin: 2,
+    paddingVertical: 8, // Устанавливаем паддинг для вертикальных границ
     borderWidth: 1,
     borderColor: 'white',
     borderRadius: 10,
     backgroundColor: '#f9f9f9',
-    width: 52,
   },
   dayText: {
     fontSize: sizes.fontSizeLarge,
     color: colors.black,
   },
-  emptyDayText: {
-    fontSize: sizes.fontSizeLarge,
-    color: 'transparent',
-  },
   today: {
     color: colors.primary,
   },
   clientName: {
+    flex: 1,
     fontSize: sizes.fontSizeXXXLarge,
-    marginBottom: sizes.marginMedium,
+    marginBottom: sizes.marginSmall,
   },
   header: {
     marginTop: sizes.marginExtraLarge,
@@ -594,25 +541,12 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.grey,
   },
-  selectedItemTouchable: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: sizes.paddingMedium,
-    marginVertical: sizes.marginExtraSmall,
-    flex: 1,
-  },
   selectedItemText: {
     fontSize: sizes.fontSizeLarge,
     ...baseTextStyles,
   },
-  selectedItemDelete: {
-    fontSize: sizes.fontSizeLarge,
-    color: colors.black,
-    marginLeft: sizes.marginExtraSmall,
-  },
-  chooseIconContainer: {
-    padding: sizes.paddingMedium,
+  selectedItemsList: {
+    flexDirection: 'row',
   },
   quantityControl: {
     flexDirection: 'row', 
@@ -636,23 +570,6 @@ const styles = StyleSheet.create({
     fontSize: sizes.fontSizeLarge,
     ...boldTextStyles,
     marginBottom: sizes.marginSmall,
-  },
-  timeInputContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: sizes.marginLarge,
-  },
-  timeInput: {
-    flex: 1,
-    backgroundColor: colors.white,
-    borderRadius: sizes.borderRadiusSmall,
-    borderWidth: 1,
-    borderColor: colors.grey,
-    paddingVertical: sizes.paddingMedium,
-    paddingHorizontal: sizes.paddingMedium,
-    fontSize: sizes.fontSizeLarge,
-    ...baseTextStyles,
-    textAlign: 'center',
   },
   commentInput: {
     fontSize: sizes.fontSizeLarge,
@@ -694,13 +611,6 @@ const styles = StyleSheet.create({
   },
   centeredView: {
     flex: 1,
-  },
-  filtersContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: 10,
-    paddingVertical: 10, 
-    alignItems: 'center',
-    backgroundColor: '#f0f2f5', 
   },
   filterChip: {
     backgroundColor: '#ffffff',
@@ -785,9 +695,19 @@ const styles = StyleSheet.create({
     width: 50, 
     textAlign: 'center',
   },
-  stockInfo: {
-    fontSize: 14,
-    flex: 2, 
+  clientTaskContainer: {
+    marginBottom: 10,
+  },
+  clientHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  errorText: {
+    fontSize: sizes.fontSizeLarge,
+    color: colors.error,
+    textAlign: 'center',
+    padding: sizes.paddingMedium,
   },
 });
 
