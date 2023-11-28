@@ -5,22 +5,15 @@ import { ru } from 'date-fns/locale';
 import styles from '../styles/styles';
 import PropTypes from 'prop-types';
 
-const areEqual = (prevProps, nextProps) => {
-    return prevProps.day === nextProps.day &&
-        JSON.stringify(prevProps.taskDates) === JSON.stringify(nextProps.taskDates);
-};
-
-const Day = memo(({ day, handleDatePress, taskDates }) => {
-    const isSelectedDay = day && isSameDay(day, new Date());
-    const dayButtonStyle = day ? styles.dayButton : null;
-    const formattedDate = day ? format(day, 'yyyy-MM-dd') : null;
-    const hasTask = taskDates[formattedDate] === 'в процессе' || taskDates[formattedDate] === 'новая';
-
+const Day = memo(({ day, handleDatePress, isSelectedDay, hasTask }) => {
     const onPress = useCallback(() => {
         if (day) {
             handleDatePress(day);
         }
     }, [day, handleDatePress]);
+
+    const dayButtonStyle = day ? styles.dayButton : null;
+    const formattedDay = day ? format(day, 'd', { locale: ru }) : '';  // Оптимизированная проверка
 
     return (
         <View style={styles.dayContainer}>
@@ -32,7 +25,7 @@ const Day = memo(({ day, handleDatePress, taskDates }) => {
                 {day && (
                     <>
                         <Text style={[styles.dayText, isSelectedDay ? styles.today : null]}>
-                            {format(day, 'd', { locale: ru })}
+                            {formattedDay}
                         </Text>
                         <View style={[styles.taskDot, hasTask && styles.taskDotActive]} />
                     </>
@@ -40,18 +33,17 @@ const Day = memo(({ day, handleDatePress, taskDates }) => {
             </TouchableOpacity>
         </View>
     );
-}, areEqual);
+});
 
 Day.propTypes = {
     day: PropTypes.instanceOf(Date),
     handleDatePress: PropTypes.func.isRequired,
-    taskDates: PropTypes.object.isRequired, // Обновляем тип с array на object
+    isSelectedDay: PropTypes.bool.isRequired,
+    hasTask: PropTypes.bool.isRequired,
 };
 
-
-const RenderMonth = ({ date, handleDatePress, taskDates }) => {
+const RenderMonth = React.memo(({ date, handleDatePress, taskDates }) => {
     const memoizedHandleDatePress = useCallback(handleDatePress, []);
-    const memoizedTaskDates = useMemo(() => taskDates, [taskDates]);
 
     const weeks = useMemo(() => {
         const weeksArray = [];
@@ -71,18 +63,36 @@ const RenderMonth = ({ date, handleDatePress, taskDates }) => {
         return weeksArray;
     }, [date]);
 
-    const renderItem = useCallback(({ item: week }) => (
+    const renderItem = useCallback(({ item: week, index: weekIndex }) => (
         <View style={styles.weekContainer}>
-            {week.map((day) => (
-                <Day
-                    key={day ? format(day, 'yyyy-MM-dd') : Math.random().toString()}
-                    day={day}
-                    handleDatePress={handleDatePress}
-                    taskDates={taskDates} // Передаем taskDates как объект
-                />
-            ))}
+            {week.map((day, dayIndex) => {
+                if (!day) {
+                    return (
+                        <Day
+                            key={`empty-${weekIndex}-${dayIndex}`}
+                            day={null}
+                            handleDatePress={handleDatePress}
+                            isSelectedDay={false}
+                            hasTask={false}
+                        />
+                    );
+                }
+                const isSelectedDay = isSameDay(day, new Date());
+                const formattedDate = format(day, 'yyyy-MM-dd');
+                const hasTask = taskDates[formattedDate] === 'в процессе' || taskDates[formattedDate] === 'новая';
+    
+                return (
+                    <Day
+                        key={formattedDate}
+                        day={day}
+                        handleDatePress={handleDatePress}
+                        isSelectedDay={isSelectedDay}
+                        hasTask={hasTask}
+                    />
+                );
+            })}
         </View>
-    ), [memoizedHandleDatePress, memoizedTaskDates]);
+    ), [memoizedHandleDatePress, taskDates]);
 
     const getItemCount = () => weeks.length;
     const getItem = (data, index) => weeks[index];
@@ -93,18 +103,19 @@ const RenderMonth = ({ date, handleDatePress, taskDates }) => {
             <VirtualizedList
                 data={weeks}
                 renderItem={renderItem}
-                keyExtractor={(item, index) => index.toString()}
+                keyExtractor={(item, index) => `week-${index}`}
                 getItemCount={getItemCount}
                 getItem={getItem}
             />
         </View>
     );
-};
+});
 
 RenderMonth.propTypes = {
     date: PropTypes.instanceOf(Date).isRequired,
     handleDatePress: PropTypes.func.isRequired,
-    taskDates: PropTypes.object.isRequired, 
+    taskDates: PropTypes.object.isRequired,
 };
 
 export default RenderMonth;
+

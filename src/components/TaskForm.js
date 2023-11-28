@@ -23,6 +23,7 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
     const [isFormInitialized, setIsFormInitialized] = useState(false);
     const [isNewClientAdded, setIsNewClientAdded] = useState(false);
     const [isAddingNewClient, setIsAddingNewClient] = useState(false);
+    const [isClientFromDraft, setIsClientFromDraft] = useState(false);
     const [address, setAddress] = useState({
         city: '',
         street: '',
@@ -50,7 +51,7 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
     };
 
     const renderClientButton = () => {
-        if (selectedClient && !isAddingNewClient) {
+        if (isClientFromDraft || (selectedClient && !isAddingNewClient)) {
             return (
                 <TouchableOpacity onPress={handleUpdateClient} style={styles.buttonClose}>
                     <Text style={styles.textStyle}>Обновить данные</Text>
@@ -135,8 +136,11 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
         if (draftData && !isFormInitialized) {
             (async () => {
                 const serviceNames = await fetchServiceNamesByIds(draftData.service);
-                const serviceIds = Object.keys(serviceNames).map(Number);
-                setSelectedService(serviceIds);
+                if (!serviceNames.noServices) {
+                    // Если услуги были выбраны, восстанавливаем их
+                    const serviceIds = Object.keys(serviceNames).map(Number);
+                    setSelectedService(serviceIds);
+                }
 
                 const employeeData = await fetchTaskParticipants(draftData.id);
                 if (employeeData && Array.isArray(employeeData)) {
@@ -147,6 +151,7 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
                 const formatTimeString = (timeString) => {
                     return timeString ? new Date('1970-01-01T' + timeString + 'Z') : null;
                 };
+                console.log(draftData);
 
                 const formattedDraftData = {
                     ...draftData,
@@ -164,6 +169,14 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
                     // Добавьте другие поля, если они необходимы
                 };
 
+                if (formattedDraftData.fullnameClient) {
+                    const client = clients.find(c => c.full_name === formattedDraftData.fullnameClient);
+                    if (client) {
+                        setSelectedClient(client);
+                        setIsClientFromDraft(true);
+                    }
+                }
+
                 setIsFormInitialized(true);
 
                 if (JSON.stringify(formData) !== JSON.stringify(formattedDraftData)) {
@@ -174,7 +187,7 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
                 }
             })();
         }
-    }, [draftData, formData, dispatchFormData, isFormInitialized, fetchServiceNamesByIds, fetchTaskParticipants]);
+    }, [draftData, formData, dispatchFormData, isFormInitialized, fetchServiceNamesByIds, fetchTaskParticipants, clients]);
 
     useEffect(() => {
         if (formData.fullnameClient) {
@@ -277,13 +290,6 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
         } catch (error) {
             console.error('Ошибка при добавлении клиента:', error);
         }
-    };
-
-
-    const updateAddressClient = () => {
-        const { city, street, house, entrance, floor } = address; // Деструктуризация значений из объекта address
-        const fullAddress = `город ${city}, улица ${street}, дом ${house}, подъезд ${entrance}, этаж ${floor}`;
-        setField('addressClient', fullAddress);
     };
 
     const handleUpdateClient = async () => {
@@ -579,7 +585,7 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
                                             style={styles.costInput}
                                         />
                                     </View>
-                                    
+
                                 </View>
                             )}
                             {renderClientButton()}

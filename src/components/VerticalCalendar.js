@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { View, Text, FlatList, Modal, Animated, PanResponder, Dimensions, ScrollView } from 'react-native';
 import { format, addMonths, startOfMonth, parseISO } from 'date-fns';
 import { ru } from 'date-fns/locale';
@@ -16,23 +16,23 @@ const VerticalCalendar = ({ tasks, taskDates, renderAddButton }) => {
   const [page, setPage] = useState(0);
   const [modalVisible, setModalVisible] = useState(false);
   const [isFullSize, setIsFullSize] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
 
   const ModalFullHeight = screenHeight * 0.05;
   const ModalHeight = screenHeight * 0.35;
   const modalHeight = useRef(new Animated.Value(ModalHeight));
 
-  const swipeThreshold = screenHeight * 0.1;
-
   const [expandedClients, setExpandedClients] = useState([]);
-  const handleToggleClient = (client) => {
+
+  const handleToggleClient = useCallback((client) => {
     setExpandedClients((current) =>
       current.includes(client)
         ? current.filter((c) => c !== client)
         : [...current, client]
     );
-  };
+  }, []);
 
-  const tasksBySelectedDate = tasks.filter(task =>
+  const tasksBySelectedDate = useMemo(() => tasks.filter(task =>
     format(parseISO(task.start_date), 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd')
   ).reduce((acc, task) => {
     const client = task.fullname_client;
@@ -41,7 +41,7 @@ const VerticalCalendar = ({ tasks, taskDates, renderAddButton }) => {
     }
     acc[client].push(task);
     return acc;
-  }, {});
+  }, {}), [tasks, selectedDate]);
 
   useEffect(() => {
     if (isFullSize) {
@@ -103,17 +103,18 @@ const VerticalCalendar = ({ tasks, taskDates, renderAddButton }) => {
     })
   ).current;
 
-  useEffect(() => {
-    flatListRef.current?.scrollToIndex({ index: 2, animated: false });
-  }, []);
-
-  useEffect(() => {
+  const onEndReached = useCallback(() => {
     setData(prevData => {
       const start = addMonths(startOfMonth(new Date()), page * 5 - 2);
       const newData = Array.from({ length: 5 }, (_, i) => addMonths(start, i));
       return [...new Set([...prevData, ...newData])];
     });
+    setPage(prevPage => prevPage + 1);
   }, [page]);
+
+  useEffect(() => {
+    flatListRef.current?.scrollToIndex({ index: 2, animated: false });
+  }, []);
 
   const handleDatePress = useCallback((day) => {
     setSelectedDate(day);
@@ -139,6 +140,7 @@ const VerticalCalendar = ({ tasks, taskDates, renderAddButton }) => {
   }, [ModalHeight]);
 
   const closeModal = useCallback(() => {
+    setIsClosing(true); // Начало процесса закрытия модального окна
     Animated.spring(modalHeight.current, {
       toValue: screenHeight,
       useNativeDriver: false,
@@ -147,6 +149,7 @@ const VerticalCalendar = ({ tasks, taskDates, renderAddButton }) => {
       setModalVisible(false);
       setIsFullSize(false);
       modalHeight.current.setValue(ModalHeight - screenHeight);
+      setIsClosing(false); // Завершение процесса закрытия модального окна
     });
   }, [screenHeight, ModalHeight]);
 
@@ -154,23 +157,31 @@ const VerticalCalendar = ({ tasks, taskDates, renderAddButton }) => {
     <RenderMonth date={item} handleDatePress={handleDatePress} taskDates={taskDates} />
   ), [handleDatePress, taskDates]);
 
-  const getItemLayout = useCallback((data, index) => ({
+  const getItemLayout = useCallback((_, index) => ({
     length: 400, offset: 400 * index, index
   }), []);
 
   const keyExtractor = useCallback((item, index) => `${format(item, 'yyyy-MM')}-${index}`, []);
+
+  const modifiedRenderAddButton = useCallback(() => {
+    if (!isClosing) return renderAddButton();
+  }, [isClosing, renderAddButton]);
 
   return (
     <>
       <FlatList
         ref={flatListRef}
         data={data}
+        initialNumToRender={5}
+        maxToRenderPerBatch={5}
+        windowSize={5}
         renderItem={renderItem}
         keyExtractor={keyExtractor}
         getItemLayout={getItemLayout}
-        onEndReached={() => setPage(prevPage => prevPage + 1)}
+        onEndReached={onEndReached}
         onEndReachedThreshold={0.5}
         showsVerticalScrollIndicator={false}
+        removeClippedSubviews={true}
         initialScrollIndex={1}
       />
       <Modal
@@ -196,7 +207,7 @@ const VerticalCalendar = ({ tasks, taskDates, renderAddButton }) => {
             </View>
           </View>
         </Animated.View>
-        {modalVisible && renderAddButton()}
+        {modifiedRenderAddButton()}
       </Modal>
     </>
   );

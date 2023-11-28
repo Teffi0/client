@@ -28,6 +28,10 @@ const TasksScreen = () => {
     setHeaderTitle(isToday(date) ? 'Сегодня' : format(date, 'd MMMM', { locale: ru }));
   }, []);
 
+  const renderAddButton = () => (
+    <AddButton onPress={handleAddButtonPress} />
+  );
+
   const fetchData = async () => {
     try {
       await fetchTaskDates(setTaskDates);
@@ -49,7 +53,7 @@ const TasksScreen = () => {
     taskEventEmitter.on('taskUpdated', handleTaskUpdate);
 
     return () => {
-      taskEventEmitter.removeListener('taskUpdated', handleTaskUpdate);
+      taskEventEmitter.off('taskUpdated', handleTaskUpdate);
     };
   }, [selectedDate, updateHeaderTitle]);
 
@@ -94,9 +98,10 @@ const TasksScreen = () => {
             onDateChange={setSelectedDate}
             tasks={tasks}
             taskDates={taskDates}
+            renderAddButton={renderAddButton}
           />
         )}
-        {viewMode === VIEW_MODES.TODAY && <AddButton onPress={handleAddButtonPress} />}
+        {viewMode === VIEW_MODES.TODAY && renderAddButton()}
         <Modal
           visible={isNewTaskScreenVisible}
           animationType="slide"

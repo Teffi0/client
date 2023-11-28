@@ -51,6 +51,11 @@ export const fetchServiceNamesByIds = async (serviceIds) => {
       throw new Error('serviceIds должна быть строкой с идентификаторами, разделенными запятой');
     }
 
+    // Проверка, есть ли выбранные услуги
+    if (serviceIds.trim().length === 0) {
+      return { noServices: 'Услуга не выбрана' };
+    }
+
     // Преобразуем строку в массив чисел
     const idsArray = serviceIds.split(',').map(id => parseInt(id.trim(), 10));
     const response = await axios.post(`${SERVER_URL}/services/names`, { ids: idsArray });

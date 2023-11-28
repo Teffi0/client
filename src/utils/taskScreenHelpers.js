@@ -107,7 +107,6 @@ export const handleSaveTask = async (formData) => {
 
     // После изменения
     formattedData.employees = formData.selectedEmployee;
-    console.log(formData);
     try {
         const response = await axios.post(`${SERVER_URL}/tasks`, formattedData);
         const taskId = response.data.task_id;
@@ -149,11 +148,10 @@ export const updateDraft = async (draftId, formData) => {
         services: formData.selectedService, // Предполагается, что это массив ID услуг
         // Добавьте другие поля, если они необходимы
     };
-
+    console.log('dataToSend данные:', dataToSend);
     try {
         const response = await axios.put(`${SERVER_URL}/tasks/${draftId}`, dataToSend);
         console.log('Черновик успешно обновлен. Данные ответа:', response.data);
-        taskEventEmitter.emit('taskUpdated');
     } catch (error) {
         console.error('Ошибка при обновлении черновика:', error);
     }
