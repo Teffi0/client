@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import SplashScreen from '../screens/SplashScreen';
 import Navigation from '../Navigation';
 import FontError from './FontError';
@@ -19,5 +20,9 @@ export default function App() {
     return <FontError message={fontError.message} />;
   }
 
-  return fontsLoaded ? <Navigation /> : <SplashScreen onFontsLoaded={handleFontsLoaded} />;
+  return (
+    <SafeAreaProvider>
+      {fontsLoaded ? <Navigation /> : <SplashScreen onFontsLoaded={handleFontsLoaded} />}
+    </SafeAreaProvider>
+  );
 }

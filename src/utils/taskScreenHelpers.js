@@ -179,26 +179,3 @@ export const SuccessModal = React.memo(({ isVisible, onClose }) => {
     );
 });
 
-export const WarningModal = React.memo(({ isVisible, onClose }) => {
-    if (!isVisible) return null;
-
-    return (
-        <Modal
-            visible={isVisible}
-            transparent={true}
-            animationType="slide"
-        >
-            <View style={styles.centeredView}>
-                <View style={styles.modalView}>
-                    <Text style={styles.modalText}>Пока нельзя создать черновик</Text>
-                    <TouchableOpacity
-                        style={styles.buttonClose}
-                        onPress={onClose}
-                    >
-                        <Text style={styles.textStyle}>Хорошо</Text>
-                    </TouchableOpacity>
-                </View>
-            </View>
-        </Modal>
-    );
-});

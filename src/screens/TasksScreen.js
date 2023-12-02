@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, TouchableOpacity, Modal } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import styles from '../styles/styles';
@@ -72,7 +73,7 @@ const TasksScreen = () => {
   }, []);
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.contentContainer}>
         <View style={styles.taskHeader}>
           <Text style={styles.titleMedium}>
@@ -111,7 +112,7 @@ const TasksScreen = () => {
         >
           <NewTaskScreen onClose={() => setNewTaskScreenVisible(false)} />
         </Modal>
-    </View>
+    </SafeAreaView>
   );
 };
 

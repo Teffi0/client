@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { ScrollView, View, Text, TextInput, TouchableOpacity } from 'react-native';
+import { ScrollView, View, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import styles from '../styles/styles';
 import DateInput from './DateInput';
 import DropdownEmployee from './DropdownEmployee';
@@ -24,6 +25,7 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
     const [isNewClientAdded, setIsNewClientAdded] = useState(false);
     const [isAddingNewClient, setIsAddingNewClient] = useState(false);
     const [isClientFromDraft, setIsClientFromDraft] = useState(false);
+    const [isDeleteConfirmationVisible, setDeleteConfirmationVisible] = useState(false);
     const [address, setAddress] = useState({
         city: '',
         street: '',
@@ -151,7 +153,6 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
                 const formatTimeString = (timeString) => {
                     return timeString ? new Date('1970-01-01T' + timeString + 'Z') : null;
                 };
-                console.log(draftData);
 
                 const formattedDraftData = {
                     ...draftData,
@@ -224,6 +225,14 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
         }
     }, [formData.fullnameClient, clients]);
 
+    useEffect(() => {
+        if (draftData) {
+          // Устанавливаем значения формы из draftData
+          Object.entries(draftData).forEach(([key, value]) => {
+            dispatchFormData({ type: 'UPDATE_FORM', payload: { [key]: value } });
+          });
+        }
+      }, [draftData, dispatchFormData]);
 
     useEffect(() => {
         let totalCost = 0;
@@ -344,6 +353,51 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
         dispatchFormData({ type: 'RESET_FORM' });
     }, [dispatchFormData]);
 
+    const deleteTask = async () => {
+        try {
+            const response = await axios.delete(`http://31.129.101.174/tasks/${formData.id}`);
+            if (response.status === 200) {
+                // Если задача успешно удалена, очисти форму и закрой окно
+                dispatchFormData({ type: 'RESET_FORM' });
+                onClose(); // Закрытие модального окна
+            }
+        } catch (error) {
+            console.error('Ошибка при удалении задачи:', error);
+        }
+    };
+
+    const handleDeletePress = () => {
+        if (formData.status && formData.status !== "отсутствует") {
+            // Если статус задачи существует и не равен "отсутствует", показываем подтверждение
+            setDeleteConfirmationVisible(true);
+        } else {
+            // Если статус задачи "отсутствует" или его нет, просто очисти форму и закрой окно
+            dispatchFormData({ type: 'RESET_FORM' });
+            onClose(); // Закрытие модального окна
+        }
+    };
+
+    const showDeleteConfirmationAlert = () => {
+        Alert.alert(
+            "Подтвердите удаление",
+            "Вы уверены, что хотите удалить эту задачу?",
+            [
+                {
+                    text: "Нет",
+                    onPress: () => setDeleteConfirmationVisible(false),
+                    style: "cancel"
+                },
+                { text: "Да", onPress: deleteTask }
+            ]
+        );
+    };
+
+    useEffect(() => {
+        if (isDeleteConfirmationVisible) {
+            showDeleteConfirmationAlert();
+        }
+    }, [isDeleteConfirmationVisible]);
+
     const setField = useCallback((field, value) => {
         dispatchFormData({ type: 'UPDATE_FORM', payload: { [field]: value } });
     }, [dispatchFormData]);
@@ -383,7 +437,7 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
     }, [dispatchFormData]);
 
     return (
-        <View style={styles.container}>
+        <SafeAreaView style={styles.container}>
             <View style={styles.contentContainerTask}>
                 <View style={styles.taskHeader}>
                     <TouchableOpacity onPress={handleBackPress}>
@@ -399,217 +453,254 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
                         onSave={handleSave}
                         formData={formData}
                     />
-                    <Text style={[styles.titleMedium, { flex: 1, textAlign: 'center' }]}>Новая задача</Text>
-                    <TouchableOpacity onPress={handleDelete}>
+                    <Text style={[styles.titleMedium, { flex: 1, textAlign: 'center' }]}>Добавление задачи</Text>
+                    <TouchableOpacity onPress={handleDeletePress}>
                         <DeleteIcon />
                     </TouchableOpacity>
                 </View>
+                <ScrollView showsVerticalScrollIndicator={false} overScrollMode="never">
+                    <View style={[styles.contentContainer, { backgroundColor: "#f9f9f9", borderRadius: 24, marginBottom: 24 }]}>
+                        {tryRender(() => (
+                            <>
+                                <Text style={[styles.headlineMedium, { marginBottom: 24 }]}>Данные задачи</Text>
 
-                <ScrollView showsVerticalScrollIndicator={false}>
-                    {tryRender(() => (
-                        <>
-                            <Text style={[styles.headlineMedium, { marginBottom: 24 }]}>Данные задачи</Text>
-                            <DropdownService
-                                label="Услуга"
-                                options={service}
-                                selectedValues={selectedService}
-                                onValueChange={handleServiceChange}
-                                updateTotalCost={updateTotalCost}
-                            />
-                        </>
-                    ))}
+                            </>
+                        ))}
 
-                    {tryRender(() => (
-                        <View style={{ flexDirection: 'row' }}>
-                            <DropdownWithSearch
-                                label="Способ оплаты"
-                                options={formData.paymentMethodOptions}
-                                selectedValue={formData.paymentMethod}
-                                onValueChange={handleChange('paymentMethod')}
-                            />
-                            <View style={{ flex: 1, marginLeft: 8 }}>
-                                <Text style={styles.label}>Стоимость</Text>
-                                <TextInput
-                                    style={styles.costInput}
-                                    placeholder="1000"
-                                    value={formData.cost}
-                                    onChangeText={handleCostChange}
-                                    keyboardType="numeric"
-                                />
-                            </View>
-                        </View>
-                    ))}
-                    {tryRender(() => (
-                        <View style={{ flexDirection: 'row' }}>
-                            <View style={{ flex: 1, marginRight: 8 }}>
-                                <Text style={styles.label}>Начальная дата</Text>
-                                <DateInput
-                                    date={formData.startDate}
-                                    placeholder="ГГГГ-ММ-ДД"
-                                    onDateChange={(dateType, selectedDate) => dispatchFormData({ type: 'UPDATE_FORM', payload: { [dateType]: selectedDate } })}
-                                    dateType="startDate"
-                                    minDate={new Date()}
-                                />
-                            </View>
-                            <View style={{ flex: 1 }}>
-                                <Text style={styles.label}>Конечная дата</Text>
-                                <DateInput
-                                    date={formData.endDate}
-                                    placeholder="ГГГГ-ММ-ДД"
-                                    onDateChange={(dateType, selectedDate) => dispatchFormData({ type: 'UPDATE_FORM', payload: { [dateType]: selectedDate } })}
-                                    dateType="endDate"
-                                    minDate={new Date()}
-                                />
-                            </View>
-                        </View>
-                    ))}
-                    {tryRender(() => (
-                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 80, marginTop: 36 }}>
-                            <View style={{ flex: 1, marginRight: 8 }}>
-                                <Text style={styles.label}>Начало работы</Text>
-                                <TouchableOpacity onPress={toggleStartPicker} style={styles.dateInputContainer}>
-                                    <TextInput
-                                        value={formData.startDateTime ? format(formData.startDateTime, 'HH:mm') : ''}
-                                        placeholder="HH:mm"
-                                        editable={false}
-                                        style={styles.selectedItemText}
+                        {tryRender(() => (
+                            <View>
+                                <View style={{ flex: 1, marginBottom: 24 }}>
+                                    <Text style={styles.label}>Способ оплаты</Text>
+                                    <DropdownService
+                                        options={service}
+                                        selectedValues={selectedService}
+                                        onValueChange={handleServiceChange}
+                                        updateTotalCost={updateTotalCost}
                                     />
-                                </TouchableOpacity>
-                            </View>
-
-                            <View style={{ flex: 1 }}>
-                                <Text style={styles.label}>Конец работы</Text>
-                                <TouchableOpacity onPress={toggleEndPicker} style={styles.dateInputContainer}>
-                                    <TextInput
-                                        value={formData.endDateTime ? format(formData.endDateTime, 'HH:mm') : ''}
-                                        placeholder="HH:mm"
-                                        editable={false}
-                                        style={styles.selectedItemText}
-                                    />
-                                </TouchableOpacity>
-                            </View>
-                        </View>
-                    ))}
-                    <DateTimePickerModal
-                        isVisible={formData.isStartPickerVisible}
-                        mode="time"
-                        onConfirm={handleStartPicked}
-                        onCancel={toggleStartPicker}
-                        is24Hour={true}
-                        date={formData.startDateTime || new Date()}
-                    />
-
-                    <DateTimePickerModal
-                        isVisible={formData.isEndPickerVisible}
-                        mode="time"
-                        onConfirm={handleEndPicked}
-                        onCancel={toggleEndPicker}
-                        is24Hour={true}
-                        date={formData.endDateTime || new Date()}
-                    />
-                    {tryRender(() => (
-                        <>
-                            <Text style={[styles.headlineMedium, { marginBottom: 24 }]}>Команда</Text>
-                            <DropdownWithSearch
-                                label="Ответственный"
-                                options={formData.responsibleOptions}
-                                selectedValue={formData.selectedResponsible}
-                                onValueChange={handleChange('selectedResponsible')}
-                            />
-                            <DropdownEmployee
-                                label="Участники"
-                                options={formData.employeesOptions} // убедитесь, что переменная employees заполнена данными
-                                selectedValues={selectedEmployee}
-                                onValueChange={setSelectedEmployee}
-                            />
-                        </>
-                    ))}
-
-                    {tryRender(() => (
-                        <View style={{ marginTop: 80 }}>
-                            <Text style={[styles.headlineMedium, { marginBottom: 24 }]}>Данные клиента</Text>
-                            <DropdownWithSearch
-                                label="Связанный клиент"
-                                options={formData.fullnameClientOptions}
-                                selectedValue={formData.fullnameClient}
-                                onValueChange={(value) => {
-                                    handleChange('fullnameClient')(value);
-                                    setAddress(prevAddress => ({
-                                        ...prevAddress,
-                                        city: '',
-                                        street: '',
-                                        house: '',
-                                        entrance: '',
-                                        floor: ''
-                                    }));
-                                }}
-                            />
-                            {(isAddingNewClient || selectedClient) && (
-                                <View>
-                                    <View style={{ flexDirection: 'column', marginTop: 24 }}>
-                                        <TextInput
-                                            placeholder="Город"
-                                            value={address.city}
-                                            onChangeText={(text) => handleAddressChange('city', text)}
-                                            style={[styles.costInput, { marginBottom: 24 }]}
-                                        />
-                                        <TextInput
-                                            placeholder="Улица"
-                                            value={address.street}
-                                            onChangeText={(text) => handleAddressChange('street', text)}
-                                            style={[styles.costInput, { marginBottom: 24 }]}
-                                        />
-                                        <TextInput
-                                            placeholder="Дом/Квартира"
-                                            value={address.house}
-                                            onChangeText={(text) => handleAddressChange('house', text)}
-                                            style={styles.addressInput}
-                                        />
-                                        <TextInput
-                                            placeholder="Подъезд"
-                                            value={address.entrance}
-                                            onChangeText={(text) => handleAddressChange('entrance', text)}
-                                            style={styles.addressInput}
-                                        />
-                                        <TextInput
-                                            placeholder="Этаж"
-                                            value={address.floor}
-                                            onChangeText={(text) => handleAddressChange('floor', text)}
-                                            style={[styles.addressInput, { marginRight: 0, marginBottom: 24 }]}
-                                        />
-                                        <TextInput
-                                            placeholder="Номер телефона клиента"
-                                            value={formData.phoneClient}
-                                            onChangeText={(text) => setField('phoneClient', text)}
-                                            keyboardType="phone-pad"
-                                            style={styles.costInput}
+                                </View>
+                                <View style={{ flexDirection: 'row', marginBottom: 24 }}>
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={styles.label}>Способ оплаты</Text>
+                                        <DropdownWithSearch
+                                            options={formData.paymentMethodOptions}
+                                            selectedValue={formData.paymentMethod}
+                                            onValueChange={handleChange('paymentMethod')}
                                         />
                                     </View>
+                                    <View style={{ flex: 1, marginLeft: 8 }}>
+                                        <Text style={styles.label}>Стоимость</Text>
+                                        <TextInput
+                                            style={styles.costInput}
+                                            placeholder="1000"
+                                            value={formData.cost}
+                                            onChangeText={handleCostChange}
+                                            keyboardType="numeric"
+                                        />
+                                    </View>
+                                </View>
+                            </View>
+                        ))}
+                        {tryRender(() => (
+                            <View style={{ flexDirection: 'row', marginBottom: 24 }}>
+                                <View style={{ flex: 1, marginRight: 8 }}>
+                                    <Text style={styles.label}>Начальная дата</Text>
+                                    <DateInput
+                                        date={formData.startDate}
+                                        placeholder="ГГГГ-ММ-ДД"
+                                        onDateChange={(dateType, selectedDate) => dispatchFormData({ type: 'UPDATE_FORM', payload: { [dateType]: selectedDate } })}
+                                        dateType="startDate"
+                                        minDate={new Date()}
+                                    />
+                                </View>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={styles.label}>Конечная дата</Text>
+                                    <DateInput
+                                        date={formData.endDate}
+                                        placeholder="ГГГГ-ММ-ДД"
+                                        onDateChange={(dateType, selectedDate) => dispatchFormData({ type: 'UPDATE_FORM', payload: { [dateType]: selectedDate } })}
+                                        dateType="endDate"
+                                        minDate={new Date()}
+                                    />
+                                </View>
+                            </View>
+                        ))}
+                        {tryRender(() => (
+                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                <View style={{ flex: 1, marginRight: 8 }}>
+                                    <Text style={styles.label}>Начало работы</Text>
+                                    <TouchableOpacity onPress={toggleStartPicker} style={styles.dateInputContainer}>
+                                        <TextInput
+                                            value={formData.startDateTime ? format(formData.startDateTime, 'HH:mm') : ''}
+                                            placeholder="HH:mm"
+                                            editable={false}
+                                            style={styles.selectedItemText}
+                                        />
+                                    </TouchableOpacity>
+                                </View>
+
+                                <View style={{ flex: 1 }}>
+                                    <Text style={styles.label}>Конец работы</Text>
+                                    <TouchableOpacity onPress={toggleEndPicker} style={styles.dateInputContainer}>
+                                        <TextInput
+                                            value={formData.endDateTime ? format(formData.endDateTime, 'HH:mm') : ''}
+                                            placeholder="HH:mm"
+                                            editable={false}
+                                            style={styles.selectedItemText}
+                                        />
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+                        ))}
+                        <DateTimePickerModal
+                            isVisible={formData.isStartPickerVisible}
+                            mode="time"
+                            onConfirm={handleStartPicked}
+                            onCancel={toggleStartPicker}
+                            is24Hour={true}
+                            date={formData.startDateTime || new Date()}
+                        />
+
+                        <DateTimePickerModal
+                            isVisible={formData.isEndPickerVisible}
+                            mode="time"
+                            onConfirm={handleEndPicked}
+                            onCancel={toggleEndPicker}
+                            is24Hour={true}
+                            date={formData.endDateTime || new Date()}
+                        />
+                    </View>
+                    <View style={[styles.contentContainer, { backgroundColor: "#f9f9f9", borderRadius: 24, marginBottom: 24 }]}>
+                        {tryRender(() => (
+                            <>
+                                <Text style={[styles.headlineMedium, { marginBottom: 24 }]}>Команда</Text>
+                                <View style={{ marginBottom: 24 }}>
+                                    <Text style={styles.label}>Ответственный</Text>
+                                    <DropdownWithSearch
+                                        options={formData.responsibleOptions}
+                                        selectedValue={formData.selectedResponsible}
+                                        onValueChange={handleChange('selectedResponsible')}
+                                    />
 
                                 </View>
-                            )}
-                            {renderClientButton()}
-                        </View>
-                    ))}
-                    {tryRender(() => (
-                        <View style={{ marginBottom: 300 }}>
-                            <Text style={[styles.headlineMedium, { marginBottom: 24, marginTop: 80 }]}>Дополнительно</Text>
-                            <View style={styles.commentContainer}>
-                                <Text style={styles.label}>Примечание</Text>
-                                <TextInput
-                                    placeholder="Добавьте примечание"
-                                    value={formData.description}
-                                    onChangeText={(text) => setField('description', text)}
-                                    multiline={true}
-                                    numberOfLines={4}
-                                    style={styles.commentInput}
-                                />
+                                <View>
+                                    <Text style={styles.label}>Участники</Text>
+                                    <DropdownEmployee
+                                        options={formData.employeesOptions}
+                                        selectedValues={selectedEmployee}
+                                        onValueChange={setSelectedEmployee}
+                                    />
+                                </View>
+                            </>
+                        ))}
+                    </View>
+                    <View style={[styles.contentContainer, { backgroundColor: "#f9f9f9", borderRadius: 24, marginBottom: 24 }]}>
+                        {tryRender(() => (
+                            <View>
+                                <Text style={[styles.headlineMedium, { marginBottom: 24 }]}>Данные клиента</Text>
+                                <View style={{ marginBottom: 24 }}>
+                                    <Text style={styles.label}>ФИО клиента</Text>
+                                    <DropdownWithSearch
+                                        options={formData.fullnameClientOptions}
+                                        selectedValue={formData.fullnameClient}
+                                        onValueChange={(value) => {
+                                            handleChange('fullnameClient')(value);
+                                            setAddress(prevAddress => ({
+                                                ...prevAddress,
+                                                city: '',
+                                                street: '',
+                                                house: '',
+                                                entrance: '',
+                                                floor: ''
+                                            }));
+                                        }}
+                                    />
+                                </View>
+                                {(isAddingNewClient || selectedClient) && (
+                                    <View>
+                                        <View style={{ flexDirection: 'column' }}>
+                                            <Text style={styles.label}>Город</Text>
+                                            <TextInput
+                                                placeholder="Город"
+                                                value={address.city}
+                                                onChangeText={(text) => handleAddressChange('city', text)}
+                                                style={[styles.addressInput, { marginBottom: 24 }]}
+                                            />
+                                            <Text style={styles.label}>Улица</Text>
+                                            <TextInput
+                                                placeholder="Улица"
+                                                value={address.street}
+                                                onChangeText={(text) => handleAddressChange('street', text)}
+                                                style={[styles.addressInput, { marginBottom: 24 }]}
+                                            />
+                                            <View style={{ flexDirection: "row", alignItems: 'center', justifyContent: 'space-between' }}>
+                                                <View style={{ flexDirection: "column" }}>
+                                                    <Text style={styles.label}>Дом/Квартира</Text>
+                                                    <TextInput
+                                                        placeholder="Дом/Квартира"
+                                                        value={address.house}
+                                                        onChangeText={(text) => handleAddressChange('house', text)}
+                                                        style={[styles.addressInput, { marginBottom: 24 }]}
+                                                    />
+                                                </View>
+                                                <View style={{ flexDirection: "column" }}>
+                                                    <Text style={styles.label}>Подъезд</Text>
+                                                    <TextInput
+                                                        placeholder="Подъезд"
+                                                        value={address.entrance}
+                                                        onChangeText={(text) => handleAddressChange('entrance', text)}
+                                                        style={[styles.addressInput, { marginBottom: 24, marginRight: 8 }]}
+                                                    />
+                                                </View>
+                                                <View style={{ flexDirection: "column" }}>
+                                                    <Text style={styles.label}>Этаж</Text>
+                                                    <TextInput
+                                                        placeholder="Этаж"
+                                                        value={address.floor}
+                                                        onChangeText={(text) => handleAddressChange('floor', text)}
+                                                        style={[styles.addressInput, { marginBottom: 24, marginRight: 8 }]}
+                                                    />
+                                                </View>
+                                            </View>
+
+                                            <Text style={styles.label}>Номер телефона клиента</Text>
+                                            <TextInput
+                                                placeholder="+79999999999"
+                                                value={formData.phoneClient}
+                                                onChangeText={(text) => setField('phoneClient', text)}
+                                                keyboardType="phone-pad"
+                                                style={[styles.addressInput, { marginBottom: 24 }]}
+                                            />
+                                        </View>
+
+                                    </View>
+                                )}
+                                {renderClientButton()}
                             </View>
+                        ))}
+                    </View>
+                    <View style={{ marginBottom: 320 }}>
+                        <View style={[styles.contentContainer, { backgroundColor: "#f9f9f9", borderRadius: 24 }]}>
+                            {tryRender(() => (
+                                <View>
+                                    <Text style={[styles.headlineMedium, { marginBottom: 24 }]}>Дополнительно</Text>
+                                    <View style={styles.commentContainer}>
+                                        <Text style={styles.label}>Примечание</Text>
+                                        <TextInput
+                                            placeholder="Добавьте примечание"
+                                            value={formData.description}
+                                            onChangeText={(text) => setField('description', text)}
+                                            multiline={true}
+                                            numberOfLines={4}
+                                            style={styles.commentInput}
+                                        />
+                                    </View>
+                                </View>
+                            ))}
                         </View>
-                    ))}
+                    </View>
                 </ScrollView>
             </View>
-        </View>
+        </SafeAreaView>
     );
     function tryRender(renderFunc) {
         try {

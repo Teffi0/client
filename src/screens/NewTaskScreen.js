@@ -3,14 +3,13 @@ import { View, TouchableOpacity, Text } from 'react-native';
 import styles from '../styles/styles';
 import TaskForm from '../components/TaskForm';
 import { SuccessModal } from '../components/SuccessModal';
-import { WarningModal } from '../components/WarningModal';
 import { formReducer, initialState } from '../reducers/formReducer';
 import { fetchOptions, handleSaveTask, updateDraft, validateFormData } from '../utils/taskScreenHelpers';
 import PropTypes from 'prop-types';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 function NewTaskScreen({ onClose, draftData, selectedDate }) {
   const [isSuccessModalVisible, setIsSuccessModalVisible] = useState(false);
-  const [isWarningModalVisible, setIsWarningModalVisible] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
 
   const addButtonTextStyles = styles.addButtonText;
@@ -18,7 +17,9 @@ function NewTaskScreen({ onClose, draftData, selectedDate }) {
   const [formData, dispatchFormData] = useReducer(formReducer, initialState);
 
   const handleSave = useCallback(async () => {
-    // Если статус был "черновик", обновляем на "новая"
+    if (formData.status === '') {
+      formData.status="новая";
+    }
     if (formData.status === 'черновик') {
       const updatedFormData = { ...formData, status: 'новая' };
       // Валидируем обновленные данные
@@ -35,7 +36,12 @@ function NewTaskScreen({ onClose, draftData, selectedDate }) {
     }
   }, [formData, draftData]);
   
-  
+  useEffect(() => {
+    if (draftData) {
+      // Инициализируем форму данными для редактирования
+      dispatchFormData({ type: 'SET_FORM', payload: draftData });
+    }
+  }, [draftData, dispatchFormData]);
 
   const closeSuccessModal = () => {
     setIsSuccessModalVisible(false);
@@ -62,12 +68,11 @@ function NewTaskScreen({ onClose, draftData, selectedDate }) {
   };
 
   return (
-    <View style={{ flex: 1 }}>
+    <SafeAreaView style={{ flex: 1 }}>
       <TaskForm
         formData={formData}
         dispatchFormData={dispatchFormData}
         onSave={handleSave}
-        setIsWarningModalVisible={setIsWarningModalVisible}
         onClose={onClose}
         draftData={draftData}
       />
@@ -75,8 +80,7 @@ function NewTaskScreen({ onClose, draftData, selectedDate }) {
         <Text style={addButtonTextStyles}>Добавить задачу</Text>
       </TouchableOpacity>
       <SuccessModal isVisible={isSuccessModalVisible} onClose={closeSuccessModal} />
-      <WarningModal isVisible={isWarningModalVisible} onClose={() => setIsWarningModalVisible(false)} />
-    </View>
+    </SafeAreaView>
   );
 }
 

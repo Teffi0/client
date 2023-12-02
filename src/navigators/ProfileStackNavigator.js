@@ -12,10 +12,10 @@ export default function ProfileStackNavigator() {
   return (
     <Stack.Navigator>
       <Stack.Screen name="ProfileScreen" component={ProfileScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="ClientBase" component={ClientBaseScreen} />
-      <Stack.Screen name="Employees" component={EmployeesScreen} />
-      <Stack.Screen name="Inventory" component={InventoryScreen} />
-      <Stack.Screen name="Notifications" component={NotificationsScreen} />
+      <Stack.Screen name="ClientBase" component={ClientBaseScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Employees" component={EmployeesScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Inventory" component={InventoryScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 }

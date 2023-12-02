@@ -61,11 +61,11 @@ const TaskComponent = React.memo((props) => {
 
   const handleTaskPress = () => {
     if (props.status === 'черновик' && draftData) {
-      setNewTaskScreenVisible(true); // Отображаем модальное окно с NewTaskScreen
+      setNewTaskScreenVisible(true); 
     } else {
       navigation.navigate('TaskDetail', {
         screen: 'TaskDetailScreen',
-        params: { ...props },
+        params: { ...props, serviceName },
       });
     }
   };

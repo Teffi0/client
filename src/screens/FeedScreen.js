@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, ScrollView, View, Text, TouchableOpacity } from 'react-native';
 import axios from 'axios';
-import TaskComponent from '../components/TaskComponent'; // Предполагается, что у вас есть TaskComponent
-import styles from '../styles/styles'; // Предполагается, что у вас есть файл стилей
-import { FilterIcon } from '../icons'; // Предполагается, что у вас есть иконки
+import TaskComponent from '../components/TaskComponent';
+import styles from '../styles/styles';
+import { FilterIcon } from '../icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const FeedScreen = () => {
   const [tasks, setTasks] = useState([]);
@@ -16,7 +17,7 @@ const FeedScreen = () => {
       try {
         const response = await axios.get('http://31.129.101.174/tasks');
         setTasks(response.data);
-        setFilteredTasks(response.data); // Устанавливаем все задачи как отфильтрованные по умолчанию
+        setFilteredTasks(response.data);
       } catch (error) {
         console.error('Ошибка при загрузке задач:', error);
       }
@@ -58,7 +59,7 @@ const FeedScreen = () => {
   const groupedTasks = groupTasksByDate(filteredTasks);
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <FilterModal
         visible={isFilterModalVisible}
         onClose={() => setFilterModalVisible(false)}
@@ -75,6 +76,7 @@ const FeedScreen = () => {
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.filtersContentContainer}
+          overScrollMode="never"
         >
           {filters.map((filter, index) => (
             <View key={index} style={styles.filterChip}>
@@ -85,7 +87,7 @@ const FeedScreen = () => {
             </View>
           ))}
         </ScrollView>
-        <ScrollView style={styles.tasksScrollView}>
+        <ScrollView style={styles.tasksScrollView}  overScrollMode="never">
           {Object.entries(groupedTasks).sort(([a], [b]) => new Date(b) - new Date(a)).map(([date, tasksForDate]) => (
             <View key={date} style={styles.section}>
               <Text style={styles.sectionTitle}>
@@ -98,7 +100,7 @@ const FeedScreen = () => {
           ))}
         </ScrollView>
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
 

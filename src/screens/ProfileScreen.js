@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import styles from '../styles/styles';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 function ProfileScreen() {
   const navigation = useNavigation();
@@ -12,7 +13,7 @@ function ProfileScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.contentContainer}>
         <Text style={styles.headlineLarge}>Профиль</Text>
 
@@ -44,7 +45,7 @@ function ProfileScreen() {
           </TouchableOpacity>
         </View>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 

@@ -22,7 +22,7 @@ const DateInput = ({ date, placeholder, onDateChange, dateType, minDate, maxDate
   }, [dateType, onDateChange, hideDatePicker]);
 
   return (
-    <View style={styles.container}>
+    <View>
       <TouchableOpacity onPress={showDatePicker} style={styles.dateInputContainer}>
         <TextInput
           value={date ? format(date, 'yyyy-MM-dd') : ''}

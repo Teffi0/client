@@ -144,7 +144,6 @@ const styles = StyleSheet.create({
   contentContainer: {
     flex: 1,
     padding: sizes.paddingMedium,
-    marginTop: sizes.marginExtraLarge,
   },
   contentContainerTask: {
     flex: 1,
@@ -182,7 +181,6 @@ const styles = StyleSheet.create({
     color: colors.black,
   },
   selectedDate: {
-    backgroundColor: colors.white,
     borderRadius: sizes.borderRadiusExtraLarge,
     paddingHorizontal: sizes.paddingSmall,
     paddingVertical: sizes.paddingExtraSmall,
@@ -260,14 +258,12 @@ const styles = StyleSheet.create({
     color: colors.darkGrey,
   },
   scrollViewContent: {
-    paddingHorizontal: sizes.paddingMedium,
     paddingTop: sizes.paddingSmall,
   },
 
   task: {
     width: '100%',
     borderRadius: sizes.borderRadiusLarge,
-    backgroundColor: colors.white,
     borderWidth: 1,
     borderColor: colors.finishedStatus,
     paddingHorizontal: sizes.paddingSmall,
@@ -404,7 +400,6 @@ const styles = StyleSheet.create({
   },
 
   tasksContainer: {
-    marginTop: 16,
     marginBottom: 120,
   },
 
@@ -417,7 +412,7 @@ const styles = StyleSheet.create({
   noTasksText: {
     alignItems: 'center',
     justifyContent: 'center',
-    color: colors.black,
+    color: colors.darkGrey,
     fontSize: sizes.fontSizeXXLarge,
   },
   dayButton: {
@@ -456,11 +451,9 @@ const styles = StyleSheet.create({
     fontSize: sizes.fontSizeXXXLarge,
   },
   dateInput: {
-    backgroundColor: colors.white,
     borderRadius: sizes.borderRadiusSmall,
     borderWidth: 1,
     borderColor: colors.grey,
-    padding: sizes.paddingExtraSmall,
   },
   dateInputText: {
     flex: 1,
@@ -483,9 +476,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     fontSize: sizes.fontSizeLarge,
     color: colors.black,
-    backgroundColor: colors.white,
-    minHeight: 64,
-    maxHeight: 64,
+    minHeight: 48,
+    maxHeight: 48,
     borderRadius: sizes.borderRadiusSmall,
     borderWidth: 1,
     borderColor: colors.grey,
@@ -494,7 +486,6 @@ const styles = StyleSheet.create({
   dropdownContainer: {
     fontSize: sizes.fontSizeLarge,
     color: colors.grey,
-    backgroundColor: colors.white,
     minHeight: 48,
     maxHeight: 48,
     borderRadius: sizes.borderRadiusSmall,
@@ -523,7 +514,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     fontSize: sizes.fontSizeLarge,
     color: colors.black,
-    backgroundColor: colors.white,
     minHeight: 48,
     maxHeight: 48,
     borderRadius: sizes.borderRadiusSmall,
@@ -541,13 +531,24 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.grey,
   },
+  selectedItemTextRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
   selectedItemText: {
-    fontSize: sizes.fontSizeLarge,
+    fontSize: sizes.fontSizeXXLarge,
     ...baseTextStyles,
   },
   selectedItemsList: {
     flexDirection: 'row',
   },
+  itemCostRow: {
+    flex: 1,
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+  },  
   quantityControl: {
     flexDirection: 'row', 
     alignItems: 'center',
@@ -567,14 +568,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   label: {
-    fontSize: sizes.fontSizeLarge,
+    fontSize: sizes.fontSizeMedium,
     ...boldTextStyles,
     marginBottom: sizes.marginSmall,
   },
   commentInput: {
     fontSize: sizes.fontSizeLarge,
     color: colors.black,
-    backgroundColor: colors.white,
     padding: sizes.paddingMedium,
     minHeight: 48,
     borderRadius: sizes.borderRadiusMedium,
@@ -586,7 +586,6 @@ const styles = StyleSheet.create({
   costInput: {
     fontSize: sizes.fontSizeLarge,
     color: colors.black,
-    backgroundColor: colors.white,
     padding: sizes.paddingSmall,
     minHeight: 48,
     maxHeight: 48,
@@ -597,7 +596,6 @@ const styles = StyleSheet.create({
   addressInput: {
     fontSize: sizes.fontSizeLarge,
     color: colors.black,
-    backgroundColor: colors.white,
     padding: sizes.paddingSmall,
     minHeight: 48,
     maxHeight: 48,
@@ -606,7 +604,6 @@ const styles = StyleSheet.create({
     borderColor: colors.grey,
     flex: 1,
     justifyContent: 'space-between',
-    marginRight: sizes.marginMedium,
 
   },
   centeredView: {

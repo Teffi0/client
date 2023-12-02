@@ -3,12 +3,12 @@ import { View, Text, TouchableOpacity, FlatList, TextInput } from 'react-native'
 import { ChooseIcon, CancelIcon } from '../icons';
 import styles from '../styles/styles';
 
-function DropdownEmployee({ label, options, selectedValues, onValueChange }) {
+function DropdownEmployee({ options, selectedValues, onValueChange }) {
     const [showOptions, setShowOptions] = useState(false);
     const [selectedOptions, setSelectedOptions] = useState(selectedValues || []);
     const [searchText, setSearchText] = useState('');
 
-    const filteredOptions = useMemo(() => 
+    const filteredOptions = useMemo(() =>
         options.filter(option =>
             option.full_name.toLowerCase().includes(searchText.toLowerCase())
         ), [options, searchText]
@@ -42,17 +42,18 @@ function DropdownEmployee({ label, options, selectedValues, onValueChange }) {
         const selectedItem = options.find(option => option.id === item);
         return selectedItem ? (
             <View style={styles.selectedItemContainer}>
-                <Text style={styles.selectedItemText}>{selectedItem.full_name}</Text>
-                <TouchableOpacity onPress={() => handleSelectOption(selectedItem)}>
-                    <CancelIcon />
-                </TouchableOpacity>
+                <View style={styles.selectedItemTextRow}>
+                    <Text style={styles.selectedItemText}>{selectedItem.full_name}</Text>
+                    <TouchableOpacity onPress={() => handleSelectOption(selectedItem)}>
+                        <CancelIcon />
+                    </TouchableOpacity>
+                </View>
             </View>
         ) : null;
     };
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.label}>{label}</Text>
+        <View>
             <TouchableOpacity
                 onPress={() => setShowOptions(!showOptions)}
                 style={styles.searchContainer}
@@ -83,8 +84,6 @@ function DropdownEmployee({ label, options, selectedValues, onValueChange }) {
                 data={selectedOptions}
                 keyExtractor={(item) => item.toString()}
                 renderItem={renderSelectedItem}
-                style={styles.selectedItemsList}
-                horizontal={true}
                 scrollEnabled={false}
             />
         </View>

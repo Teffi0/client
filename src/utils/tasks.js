@@ -86,7 +86,6 @@ export const fetchTaskParticipants = async (taskId) => {
   try {
     const response = await axios.get(`http://31.129.101.174/task-participants/${taskId}`);
     if (response.data && Array.isArray(response.data)) {
-      console.log(response.data);
       return response.data; // Убедитесь, что это массив
     } else {
       throw new Error("Некорректный формат данных");

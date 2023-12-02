@@ -4,6 +4,7 @@ import { hideAsync as hideSplashScreen } from 'expo-splash-screen';
 import * as Font from 'expo-font';
 import LoadingIndicator from '../components/LoadingIndicator';
 import FontError from '../components/FontError';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const fonts = {
   'manrope-extrabold': require('../../assets/fonts/Manrope-ExtraBold.ttf'),
@@ -34,13 +35,13 @@ export default function SplashScreen({ onFontsLoaded }) {
   }, []);
 
   return (
-    <View style={styles.screen}>
+    <SafeAreaView style={styles.screen}>
       {fontError ? (
         <FontError message={fontError.message} />
       ) : (
         <LoadingIndicator />
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 

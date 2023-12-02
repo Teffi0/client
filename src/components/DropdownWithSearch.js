@@ -3,7 +3,7 @@ import { View, Text, TextInput, FlatList, TouchableOpacity, TouchableWithoutFeed
 import { ChooseIcon } from '../icons';
 import styles from '../styles/styles';
 
-function DropdownWithSearch({ label, options, selectedValue, onValueChange }) {
+function DropdownWithSearch({ options, selectedValue, onValueChange }) {
   const [searchText, setSearchText] = useState(selectedValue || '');
   const [showOptions, setShowOptions] = useState(false);
 
@@ -44,8 +44,7 @@ function DropdownWithSearch({ label, options, selectedValue, onValueChange }) {
 
   return (
     <TouchableWithoutFeedback onPress={() => setShowOptions(false)}>
-      <View style={[styles.container, { marginBottom: 36 }]}>
-        <Text style={styles.label}>{label}</Text>
+      <View>
         <View style={styles.searchContainer}>
           <TextInput
             style={styles.dropdownInput}

@@ -1,5 +1,5 @@
 export const initialState = {
-    status: 'новая',
+    status: 'отсутствует',
     service: '',
     paymentMethod: '',
     cost: '',

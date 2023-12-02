@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, ScrollView, TextInput } from 'react-nativ
 import { ChooseIcon, DeleteIcon } from '../icons';
 import styles from '../styles/styles';
 
-function DropdownService({ label, options, onValueChange, selectedValues = [], updateTotalCost }) {
+function DropdownService({ options, onValueChange, selectedValues = [], updateTotalCost }) {
     const [showOptions, setShowOptions] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedItems, setSelectedItems] = useState([]);
@@ -44,7 +44,6 @@ function DropdownService({ label, options, onValueChange, selectedValues = [], u
 
     return (
         <View>
-            <Text style={styles.label}>{label}</Text>
             <View style={styles.searchContainer}>
                 <TextInput
                     placeholder='Поиск...'
@@ -59,7 +58,7 @@ function DropdownService({ label, options, onValueChange, selectedValues = [], u
             </View>
 
             {showOptions && (
-                <ScrollView style={styles.dropdownList}>
+                <ScrollView overScrollMode="never" style={styles.dropdownList}>
                     {filteredOptions.map((item) => (
                         <TouchableOpacity key={`option-${item.id}`} style={styles.rowStyle} onPress={() => handleSelectOption(item)}>
                             <Text style={styles.itemName}>{`${item.service_name} - ${item.cost}`}</Text>
@@ -68,7 +67,7 @@ function DropdownService({ label, options, onValueChange, selectedValues = [], u
                 </ScrollView>
             )}
 
-            <ScrollView style={styles.selectedItemsList}>
+            <ScrollView overScrollMode="never">
                 {selectedItems.map((item) => (
                     <View key={`selected-${item.id}`} style={styles.selectedItemContainer}>
                         <View style={styles.selectedItemTextRow}>
@@ -78,7 +77,11 @@ function DropdownService({ label, options, onValueChange, selectedValues = [], u
                             </TouchableOpacity>
                         </View>
                         <View style={styles.itemCostRow}>
-                            <Text style={styles.bodyMedium}>{`Стоимость: ${item.cost} руб.`}</Text>
+                            <Text style={styles.bodyMedium}>
+                                Стоимость:
+                                <Text style={styles.title}>{item.cost} </Text>
+                                руб.
+                            </Text>
                         </View>
                     </View>
                 ))}

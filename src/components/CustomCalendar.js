@@ -100,7 +100,8 @@ const CustomCalendar = ({ selectedDate, onDateChange, tasks, taskDates }) => {
         {...panResponder.panHandlers}
         style={{
           flexDirection: 'row',
-          transform: [{ translateX }]
+          transform: [{ translateX }],
+          marginBottom: 24,
         }}
       >
         <View style={{ flex: 1, flexDirection: 'row' }}>
@@ -113,7 +114,7 @@ const CustomCalendar = ({ selectedDate, onDateChange, tasks, taskDates }) => {
         </View>
       </Animated.View>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView showsVerticalScrollIndicator={false}   overScrollMode="never">
         <TasksForSelectedDateComponent
           tasksByClient={tasksByClient}
           expandedClients={expandedClients}

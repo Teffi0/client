@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, ScrollView, StyleSheet, Button, Alert, TextInput } from 'react-native';
 import axios from 'axios';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const ClientBaseScreen = () => {
   const [clients, setClients] = useState([]);
@@ -64,9 +65,9 @@ const ClientBaseScreen = () => {
   );
 
   return (
-    <ScrollView horizontal>
-      <View>
-        <ScrollView>
+    <ScrollView horizontal   overScrollMode="never">
+      <SafeAreaView>
+        <ScrollView  overScrollMode="never">
           <View style={styles.header}>
             <Text style={styles.headerCell}>ФИО</Text>
             <Text style={styles.headerCell}>Телефон</Text>
@@ -113,7 +114,7 @@ const ClientBaseScreen = () => {
             />
           )}
         </View>
-      </View>
+      </SafeAreaView>
     </ScrollView>
   );
 };

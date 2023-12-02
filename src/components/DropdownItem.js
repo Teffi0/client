@@ -141,7 +141,6 @@ function DropdownItem({ label, options, onValueChange, selectedValues }) {
                 data={selectedItems}
                 keyExtractor={(item) => `selected-${item.id}`}
                 renderItem={renderSelectedItem}
-                style={styles.selectedItemsList}
                 scrollEnabled={true}
                 ListEmptyComponent={<Text style={styles.noItemsText}>Нет выбранных элементов</Text>}
             />

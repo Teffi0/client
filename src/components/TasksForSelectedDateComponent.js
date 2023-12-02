@@ -6,9 +6,12 @@ import { ExpandIcon, CollapseIcon } from '../icons';
 
 const TasksForSelectedDateComponent = ({ tasksByClient, expandedClients, toggleClient }) => {
   if (Object.keys(tasksByClient).length === 0) {
-    return <Text style={styles.noTasksText}>Нет задач.</Text>;
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <Text style={styles.noTasksText}>Задачи отсутствуют</Text>
+      </View>
+    );
   }
-
   return (
     <View style={styles.tasksContainer}>
       {Object.entries(tasksByClient).map(([client, clientTasks]) => (

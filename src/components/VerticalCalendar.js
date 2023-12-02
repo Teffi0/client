@@ -196,7 +196,7 @@ const VerticalCalendar = ({ tasks, taskDates, renderAddButton }) => {
               <View style={styles.taskHeader}>
                 <Text style={styles.modalText}>{format(selectedDate, 'd-MMMM', { locale: ru })}</Text>
               </View>
-              <ScrollView showsVerticalScrollIndicator={false} style={styles.modalScrollView}>
+              <ScrollView showsVerticalScrollIndicator={false} style={styles.modalScrollView}  overScrollMode="never">
                 <TasksForSelectedDateComponent
                   tasksByClient={tasksBySelectedDate}
                   expandedClients={expandedClients}
