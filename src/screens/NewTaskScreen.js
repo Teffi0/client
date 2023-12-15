@@ -17,7 +17,7 @@ function NewTaskScreen({ onClose, draftData, selectedDate }) {
   const [formData, dispatchFormData] = useReducer(formReducer, initialState);
 
   const handleSave = useCallback(async () => {
-    if (formData.status === '') {
+    if (formData.status === 'отсутствует') {
       formData.status="новая";
     }
     if (formData.status === 'черновик') {

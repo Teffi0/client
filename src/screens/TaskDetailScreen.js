@@ -36,6 +36,10 @@ const TaskDetailScreen = ({ route }) => {
     }
   };
 
+  const handleBackPress = () => {
+    navigation.goBack(); // Это вызовет возврат к предыдущему экрану в стеке навигации
+  };
+
   useEffect(() => {
   }, [task.id]);
 
@@ -57,7 +61,6 @@ const TaskDetailScreen = ({ route }) => {
   }, [task.status, task.id]);
 
   useEffect(() => {
-    console.log(task);
     (async () => {
       const data = await fetchDraftData(task.id);
       setDraftData(data);
@@ -178,7 +181,7 @@ const TaskDetailScreen = ({ route }) => {
     <SafeAreaView style={styles.container}>
       <View style={styles.contentContainerTask}>
         <View style={styles.taskHeader}>
-          <TouchableOpacity>
+        <TouchableOpacity onPress={handleBackPress}>
             <BackIcon />
           </TouchableOpacity>
           <Text style={[styles.titleMedium, { flex: 1, textAlign: 'center' }]}>Новая задача</Text>

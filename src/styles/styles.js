@@ -151,6 +151,9 @@ const styles = StyleSheet.create({
   },
   section: {
     marginBottom: sizes.marginLarge,
+    alignItems: 'flex-start',
+    justifyContent: 'flex-start',
+    flex: 1,
   },
   taskHeader: {
     flexDirection: 'row',
@@ -402,6 +405,10 @@ const styles = StyleSheet.create({
   tasksContainer: {
     marginBottom: 120,
   },
+  tasksScrollView: {
+    flex: 1, // Это свойство заставит контейнер растягиваться на всю доступную высоту
+    justifyContent: 'flex-start',
+  },
 
   taskFIO: {
     flexDirection: 'row',
@@ -548,14 +555,14 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     alignItems: 'flex-start',
     justifyContent: 'center',
-  },  
+  },
   quantityControl: {
-    flexDirection: 'row', 
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between', 
+    justifyContent: 'space-between',
     borderWidth: 1,
     borderColor: colors.grey,
-    borderRadius: sizes.borderRadiusSmall, 
+    borderRadius: sizes.borderRadiusSmall,
   },
   minusButton: {
     padding: 8,
@@ -571,6 +578,49 @@ const styles = StyleSheet.create({
     fontSize: sizes.fontSizeMedium,
     ...boldTextStyles,
     marginBottom: sizes.marginSmall,
+  },
+  backgroundStyle: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Полупрозрачный черный цвет
+  },
+  radioButton: {
+    height: 20,
+    width: 20,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#000',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  radioButtonSelected: {
+    height: 10,
+    width: 10,
+    borderRadius: 5,
+    backgroundColor: '#000',
+  },
+  checkboxContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 5,
+  },
+  checkbox: {
+    marginLeft: 'auto',
+    width: 20,
+    height: 20,
+    borderRadius: 3,
+    borderWidth: 1,
+    borderColor: '#000',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkboxSelected: {
+    width: 12,
+    height: 12,
+    backgroundColor: 'black', // Или другой цвет
   },
   commentInput: {
     fontSize: sizes.fontSizeLarge,
@@ -610,32 +660,31 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   filterChip: {
-    backgroundColor: '#ffffff',
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    marginHorizontal: 8,
-    height: 32, 
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center', 
-    elevation: 3, 
-    shadowColor: 'rgba(0, 0, 0, 0.1)', 
-    shadowOffset: { width: 0, height: 2 }, 
-    shadowOpacity: 1, 
-    shadowRadius: 4, 
-    marginLeft: 4, 
-    marginRight: 4, 
+    borderRadius: sizes.borderRadiusMedium, // Скругление углов
+    paddingHorizontal: sizes.paddingMedium, // Увеличенные горизонтальные отступы
+    paddingVertical: sizes.paddingSmall, // Увеличенные вертикальные отступы
+    borderWidth: 1, // Ширина границы
+    borderColor: colors.grey, // Цвет границы
+    backgroundColor: colors.white, // Цвет фона
+    flexDirection: 'row', // Элементы в ряд
+    alignItems: 'center', // Центрирование по вертикали
+    justifyContent: 'center', // Центрирование по горизонтали
+    marginHorizontal: sizes.marginSmall, // Горизонтальные отступы
   },
+
   filterChipText: {
-    color: '#000', 
-    fontSize: 14,
-    marginHorizontal: 4,
+    ...baseTextStyles, // Использовать базовые текстовые стили
+    fontSize: sizes.fontSizeSmall, // Установить размер шрифта
+    color: colors.darkGrey, // Установить цвет текста
+    marginHorizontal: sizes.marginSmall,
   },
   filterChipIcon: {
-    marginLeft: 4,
+    marginLeft: sizes.marginSmall,
   },
   filtersContentContainer: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'flex-start',
   },
   modalView: {
     flex: 1,
@@ -662,6 +711,29 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: sizes.fontSizeExtraLarge,
   },
+  filterModal: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  filterModalContent: {
+    backgroundColor: 'white', 
+    borderTopLeftRadius: 20, 
+    borderTopRightRadius: 20, 
+    padding: 16, 
+    shadowColor: 'black', 
+    shadowOffset: { width: 0, height: -1 }, 
+    shadowOpacity: 0.2, 
+    shadowRadius: 4, 
+    elevation: 5,
+    maxHeight: '60%',
+  },
+  filterModalHeader: {
+    textAlign: 'center', 
+    fontSize: 18, 
+    fontWeight: 'bold', 
+    paddingVertical: 12,
+    marginBottom: 400,
+  },
   buttonClose: {
     backgroundColor: colors.black,
     borderRadius: sizes.borderRadiusLarge,
@@ -681,6 +753,18 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
   },
+  optionButton: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16, // Или другой размер отступа в зависимости от дизайна
+    borderBottomWidth: 1, // Если нужна линия под кнопкой
+    borderBottomColor: '#E0E0E0', // Цвет линии под кнопкой
+  },
+  filterOptionRightSide: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   itemName: {
     fontSize: 16,
     flex: 3,
@@ -689,7 +773,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E0E0E0',
     padding: 8,
-    width: 50, 
+    width: 50,
     textAlign: 'center',
   },
   clientTaskContainer: {

@@ -56,6 +56,14 @@ export const BackIcon = () => (
   </Svg>
 );
 
+export const None = () => (
+  <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
+    <Path
+      fill="white"
+    />
+  </Svg>
+);
+
 export const BlockedIcon = () => (
   <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
     <Path
@@ -279,4 +287,4 @@ export const TodayIcon = () => (
 );
 
 
-export default { TasksIcon, FeedIcon, FinanceIcon, ProfileIcon, AttachIcon, BackIcon, DateIcon, EditIcon, TodayIcon, ImagesIcon, CameraIcon, CancelIcon, ChooseIcon, DeleteIcon, ExpandIcon, FilterIcon, FollowIcon, ReportIcon, RoubleIcon, BlockedIcon, DetailsIcon, PutAwayIcon, CalendarIcon, CheckboxIcon, CollapseIcon, DocumentIcon, LocationIcon, SwitchNoIcon, SwitchYesIcon, CheckboxAcceptIcon };
+export default { TasksIcon, FeedIcon, FinanceIcon, ProfileIcon, AttachIcon, BackIcon, None, DateIcon, EditIcon, TodayIcon, ImagesIcon, CameraIcon, CancelIcon, ChooseIcon, DeleteIcon, ExpandIcon, FilterIcon, FollowIcon, ReportIcon, RoubleIcon, BlockedIcon, DetailsIcon, PutAwayIcon, CalendarIcon, CheckboxIcon, CollapseIcon, DocumentIcon, LocationIcon, SwitchNoIcon, SwitchYesIcon, CheckboxAcceptIcon };

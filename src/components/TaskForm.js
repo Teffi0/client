@@ -1,14 +1,14 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { ScrollView, View, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { ScrollView, View, Text, TextInput, TouchableOpacity, Alert, BackHandler } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import styles from '../styles/styles';
 import DateInput from './DateInput';
 import DropdownEmployee from './DropdownEmployee';
 import DropdownService from './DropdownService';
+import DropdownItem from './DropdownItem';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { BackIcon, DeleteIcon } from '../icons';
 import { format } from 'date-fns';
-import SaveDraftModal from './SaveDraftModal';
 import DropdownWithSearch from './DropdownWithSearch';
 import axios from 'axios';
 import { fetchServiceNamesByIds, fetchTaskParticipants } from '../utils/tasks';
@@ -49,7 +49,7 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
 
     const handleOpenAddClientForm = () => {
         setIsAddingNewClient(true);
-        resetForm(); // Сбрасываем форму при открытии
+        resetForm();
     };
 
     const renderClientButton = () => {
@@ -139,7 +139,6 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
             (async () => {
                 const serviceNames = await fetchServiceNamesByIds(draftData.service);
                 if (!serviceNames.noServices) {
-                    // Если услуги были выбраны, восстанавливаем их
                     const serviceIds = Object.keys(serviceNames).map(Number);
                     setSelectedService(serviceIds);
                 }
@@ -167,7 +166,6 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
                     phone: draftData.phone || '',
                     selectedResponsible: draftData.responsible || '',
                     addressClient: draftData.address_client || '',
-                    // Добавьте другие поля, если они необходимы
                 };
 
                 if (formattedDraftData.fullnameClient) {
@@ -195,7 +193,6 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
             const selectedClient = clients.find(client => client.full_name === formData.fullnameClient);
 
             if (selectedClient) {
-                // Заполнение данных существующего клиента
                 const addressRegex = /город\s([^,]+), улица\s([^,]+), дом\s([^,]+), подъезд\s([^,]+), этаж\s([^,]+)/;
                 const addressMatch = selectedClient.address.match(addressRegex);
 
@@ -211,7 +208,6 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
                     setIsNewClientAdded(true);
                 }
             } else {
-                // Очистка полей для нового клиента
                 setAddress({
                     city: '',
                     street: '',
@@ -227,12 +223,11 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
 
     useEffect(() => {
         if (draftData) {
-          // Устанавливаем значения формы из draftData
-          Object.entries(draftData).forEach(([key, value]) => {
-            dispatchFormData({ type: 'UPDATE_FORM', payload: { [key]: value } });
-          });
+            Object.entries(draftData).forEach(([key, value]) => {
+                dispatchFormData({ type: 'UPDATE_FORM', payload: { [key]: value } });
+            });
         }
-      }, [draftData, dispatchFormData]);
+    }, [draftData, dispatchFormData]);
 
     useEffect(() => {
         let totalCost = 0;
@@ -271,10 +266,8 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
         try {
             const isUpdating = draftData && draftData.id;
             if (isUpdating) {
-                // Обновление существующего черновика
                 await updateDraft(draftData.id, updatedFormData);
             } else {
-                // Создание новой задачи
                 await handleSaveTask(updatedFormData);
             }
         } catch (error) {
@@ -284,7 +277,6 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
 
     const handleAddClient = async () => {
         const clientData = {
-            // Сбор данных из формы
             full_name: formData.fullnameClient,
             phone_number: formData.phoneClient,
             address: `город ${address.city}, улица ${address.street}, дом ${address.house}, подъезд ${address.entrance}, этаж ${address.floor}`
@@ -293,16 +285,36 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
         try {
             const response = await axios.post(`http://31.129.101.174/clients`, clientData);
             alert('Клиент успешно добавлен');
-            setClients([...clients, response.data]); // Обновляем список клиентов
-            setSelectedClient(response.data); // Устанавливаем добавленного клиента как выбранного
-            setIsAddingNewClient(false); // Закрываем форму добавления
+            setClients([...clients, response.data]);
+            setSelectedClient(response.data);
+            setIsAddingNewClient(false);
         } catch (error) {
             console.error('Ошибка при добавлении клиента:', error);
         }
     };
 
+    useEffect(() => {
+        if (selectedClient && !isNewClientAdded) {
+            const updatedClientData = {
+                ...selectedClient,
+                address: `город ${address.city}, улица ${address.street}, дом ${address.house}, подъезд ${address.entrance}, этаж ${address.floor}`,
+                phone_number: formData.phoneClient
+            };
+
+            setClients(prevClients => {
+                return prevClients.map(client =>
+                    client.id === selectedClient.id ? updatedClientData : client
+                );
+            });
+
+            // Это установит флаг в true, чтобы предотвратить повторное обновление
+            setIsNewClientAdded(true);
+        }
+    }, [selectedClient, address, formData.phoneClient]);
+
+
     const handleUpdateClient = async () => {
-        const { city, street, house, entrance, floor } = address; // Деструктуризация значений из объекта address
+        const { city, street, house, entrance, floor } = address;
         const fullAddress = `город ${city}, улица ${street}, дом ${house}, подъезд ${entrance}, этаж ${floor}`;
         setField('addressClient', fullAddress);
         if (!selectedClient) {
@@ -340,14 +352,59 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
         dispatchFormData({ type: 'UPDATE_FORM', payload: { cost: newText } });
     }, [dispatchFormData]);
 
-    const handleBackPress = useCallback(() => {
-        dispatchFormData({ type: 'UPDATE_FORM', payload: { isSaveDraftModalVisible: true } });
-    }, [formData, dispatchFormData]);
+    useEffect(() => {
+        const backHandler = BackHandler.addEventListener(
+            'hardwareBackPress',
+            () => {
+                Alert.alert(
+                    "Сохранить как черновик?",
+                    "Вы хотите сохранить эту задачу как черновик?",
+                    [
+                        {
+                            text: "Нет",
+                            onPress: onClose, // Это закроет модальное окно без сохранения
+                            style: "cancel"
+                        },
+                        {
+                            text: "Сохранить",
+                            onPress: () => {
+                                handleSave(); // Сохраняем данные
+                                onClose; // Затем закрываем модальное окно
+                            }
+                        }
+                    ],
+                    { cancelable: false }
+                );
+                return true; // Предотвращает действие по умолчанию
+            }
+        );
 
-    const handleSaveAsDraft = useCallback(async () => {
-        await AsyncStorage.setItem('taskFormData', JSON.stringify(formData));
-        dispatchFormData({ type: 'UPDATE_FORM', payload: { isSaveDraftModalVisible: false } });
-    }, [formData, dispatchFormData]);
+        return () => backHandler.remove();
+    }, [formData, onClose, handleSave]);
+
+
+    const handleBackPress = () => {
+        Alert.alert(
+            "Сохранить как черновик?",
+            "Вы хотите сохранить эту задачу как черновик?",
+            [
+                {
+                    text: "Нет",
+                    onPress: onClose, // Это закроет модальное окно без сохранения
+                    style: "cancel"
+                },
+                {
+                    text: "Сохранить",
+                    onPress: () => {
+                        handleSave(); // Сохраняем данные
+                        onClose(); // Затем закрываем модальное окно
+                    }
+                }
+            ],
+            { cancelable: false }
+        );
+        return true; // Возвращает true, чтобы предотвратить действие по умолчанию
+    };
 
     const handleDelete = useCallback(async () => {
         dispatchFormData({ type: 'RESET_FORM' });
@@ -357,9 +414,8 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
         try {
             const response = await axios.delete(`http://31.129.101.174/tasks/${formData.id}`);
             if (response.status === 200) {
-                // Если задача успешно удалена, очисти форму и закрой окно
                 dispatchFormData({ type: 'RESET_FORM' });
-                onClose(); // Закрытие модального окна
+                onClose();
             }
         } catch (error) {
             console.error('Ошибка при удалении задачи:', error);
@@ -368,12 +424,10 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
 
     const handleDeletePress = () => {
         if (formData.status && formData.status !== "отсутствует") {
-            // Если статус задачи существует и не равен "отсутствует", показываем подтверждение
             setDeleteConfirmationVisible(true);
         } else {
-            // Если статус задачи "отсутствует" или его нет, просто очисти форму и закрой окно
             dispatchFormData({ type: 'RESET_FORM' });
-            onClose(); // Закрытие модального окна
+            onClose();
         }
     };
 
@@ -405,7 +459,7 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
     const handleChange = useCallback((field) => (value) => {
         if (field === 'fullnameClient') {
             const client = clients.find(client => client.full_name === value);
-            setSelectedClient(client || null); // Устанавливаем selectedClient только если клиент найден
+            setSelectedClient(client || null);
         }
         setField(field, value);
     }, [setField, clients]);
@@ -429,7 +483,7 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
     }, [toggleEndPicker, dispatchFormData]);
 
     const handleServiceChange = useCallback((newSelectedServiceIds) => {
-        setSelectedService(newSelectedServiceIds); // Обновление selectedService
+        setSelectedService(newSelectedServiceIds);
         dispatchFormData({
             type: 'UPDATE_FORM',
             payload: { selectedService: newSelectedServiceIds }
@@ -443,16 +497,6 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
                     <TouchableOpacity onPress={handleBackPress}>
                         <BackIcon />
                     </TouchableOpacity>
-                    <SaveDraftModal
-                        isVisible={formData.isSaveDraftModalVisible}
-                        onDelete={handleDelete}
-                        onClose={() => {
-                            dispatchFormData({ type: 'UPDATE_FORM', payload: { isSaveDraftModalVisible: false } });
-                            onClose(); // Эта функция должна быть определена в NewTaskScreen для закрытия самого NewTaskScreen
-                        }}
-                        onSave={handleSave}
-                        formData={formData}
-                    />
                     <Text style={[styles.titleMedium, { flex: 1, textAlign: 'center' }]}>Добавление задачи</Text>
                     <TouchableOpacity onPress={handleDeletePress}>
                         <DeleteIcon />
@@ -492,7 +536,7 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
                                         <TextInput
                                             style={styles.costInput}
                                             placeholder="1000"
-                                            value={formData.cost}
+                                            value={formData.cost.toString()}
                                             onChangeText={handleCostChange}
                                             keyboardType="numeric"
                                         />
@@ -678,6 +722,13 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
                             </View>
                         ))}
                     </View>
+                    {formData.status === 'выполнено' && (
+                        <View style={{ marginBottom: 24 }}>
+                            <Text style={[styles.headlineMedium, { marginBottom: 24 }]}>Расходники</Text>
+                            <DropdownItem
+                            />
+                        </View>
+                    )}
                     <View style={{ marginBottom: 320 }}>
                         <View style={[styles.contentContainer, { backgroundColor: "#f9f9f9", borderRadius: 24 }]}>
                             {tryRender(() => (

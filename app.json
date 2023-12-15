@@ -1,7 +1,27 @@
 {
-  "name": "MyApp",
   "expo": {
+    "name": "ИСК crm",
+    "slug": "myapp",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/logo.png",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "updates": {
+      "fallbackToCacheTimeout": 0
+    },
+    "assetBundlePatterns": ["**/*"],
     "userInterfaceStyle": "automatic",
+    "android": {
+      "package": "com.iskrussian.iskcrm",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/logo.png",
+        "backgroundColor": "#FFFFFF"
+      },
+      "versionCode": 1
+    },
     "extra": {
       "eas": {
         "projectId": "e43a04ea-f40d-4a19-abd7-42dfb694f139"

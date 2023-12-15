@@ -73,7 +73,7 @@ const VerticalCalendar = ({ tasks, taskDates, renderAddButton }) => {
           listener: (event, gestureState) => {
             const currentHeight = modalHeight.current.__getValue();
             if (currentHeight < ModalFullHeight) {
-              modalHeight.current.setValue(ModalFullHeight);
+              modalHeight.current.setValue(0);
             }
           },
         }
@@ -196,14 +196,14 @@ const VerticalCalendar = ({ tasks, taskDates, renderAddButton }) => {
               <View style={styles.taskHeader}>
                 <Text style={styles.modalText}>{format(selectedDate, 'd-MMMM', { locale: ru })}</Text>
               </View>
-              <ScrollView showsVerticalScrollIndicator={false} style={styles.modalScrollView}  overScrollMode="never">
+              <ScrollView showsVerticalScrollIndicator={false} style={styles.modalScrollView} overScrollMode="never">
                 <TasksForSelectedDateComponent
                   tasksByClient={tasksBySelectedDate}
                   expandedClients={expandedClients}
                   toggleClient={handleToggleClient}
                 />
               </ScrollView>
-              
+
             </View>
           </View>
         </Animated.View>
