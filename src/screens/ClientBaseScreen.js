@@ -1,48 +1,275 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, ScrollView, StyleSheet, Button, Alert, TextInput } from 'react-native';
+import { View, Text, FlatList, ScrollView, Button, Alert, TextInput, TouchableOpacity, Modal } from 'react-native';
 import axios from 'axios';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import { BackIcon, EditIcon, DeleteIcon, None, DocumentIcon } from '../icons';
+import styles from '../styles/styles';
+import { debounce } from 'lodash';
 
 const ClientBaseScreen = () => {
+  const navigation = useNavigation();
   const [clients, setClients] = useState([]);
-  const [newClient, setNewClient] = useState({ full_name: '', phone_number: '', address: '' });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [newClient, setNewClient] = useState({
+    full_name: '',
+    phone_number: '',
+    address: { city: '', street: '', building: '', entrance: '', floor: '' }
+  });
   const [editingClientId, setEditingClientId] = useState(null);
+  const [selectedClients, setSelectedClients] = useState([]);
+  const [isEditing, setisEditing] = useState(false);
+  const [editableClients, setEditableClients] = useState({});
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const limit = 10;
+  const [isHistoryModalVisible, setIsHistoryModalVisible] = useState(false);
+  const [selectedHistoryClientId, setSelectedHistoryClientId] = useState(null);
 
   useEffect(() => {
     fetchClients();
   }, []);
 
+  useEffect(() => {
+    if (selectedClients.length === 0 && isEditing) {
+      confirmCancelEditing();
+    }
+  }, [selectedClients, isEditing]);
+
   const fetchClients = async () => {
     try {
-      const response = await axios.get('http://31.129.101.174/clients');
-      setClients(response.data);
+      const response = await axios.get('http://31.129.101.174/clientsbase', {
+        params: { page: currentPage, limit: limit }
+      });
+      setClients(response.data.clients);
+      setTotalPages(response.data.totalPages);
     } catch (error) {
       console.error('Ошибка при загрузке клиентов:', error);
     }
   };
 
-  const handleSaveClient = async (client) => {
-    if (!client.full_name || !client.phone_number) {
-      Alert.alert('Ошибка', 'ФИО и телефон необходимы.');
+  const openHistoryModal = () => {
+    setIsHistoryModalVisible(true);
+  };
+
+  // Компонент пагинации
+  const Pagination = ({ currentPage, totalPages, onPageChange }) => {
+    const pages = [];
+    for (let i = 1; i <= totalPages; i++) {
+      pages.push(i);
+    }
+
+    return (
+      <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
+        {pages.map(page => (
+          <TouchableOpacity key={page} onPress={() => onPageChange(page)}>
+            <Text style={{ marginHorizontal: 8, color: currentPage === page ? 'blue' : 'black' }}>
+              {page}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    );
+  };
+
+  const filterClients = (query) => {
+    if (!query) return clients;
+    const lowercasedQuery = query.toLowerCase();
+    return clients.filter(client =>
+      client.full_name.toLowerCase().includes(lowercasedQuery) ||
+      client.phone_number.toLowerCase().includes(lowercasedQuery) ||
+      client.address.toLowerCase().includes(lowercasedQuery)
+    );
+  };
+
+  const [filteredClients, setFilteredClients] = useState(clients);
+
+  // Использование debounce для оптимизации поиска
+  const debouncedSearch = debounce((query) => {
+    const filtered = filterClients(query);
+    setFilteredClients(filtered);
+  }, 300);
+
+  useEffect(() => {
+    debouncedSearch(searchQuery);
+  }, [searchQuery, clients]);
+
+  // Обработка изменения текста в поле поиска
+  const handleSearchChange = (text) => {
+    setSearchQuery(text);
+  };
+
+  const assembleFullAddress = (address) => {
+    return `город ${address.city}, улица ${address.street}, дом ${address.building}, подъезд ${address.entrance}, этаж ${address.floor}`;
+  };
+
+  const handleModalFormSubmit = async (clientData) => {
+    // Проверка валидности данных клиента
+    if (!clientData.full_name || !clientData.phone_number || Object.values(clientData.address).some(val => !val)) {
+      Alert.alert('Ошибка', 'Заполните все поля.');
       return;
     }
+
+    // Собираем данные для отправки
+    const fullAddress = assembleFullAddress(clientData.address);
+    const dataToSend = {
+      full_name: clientData.full_name,
+      phone_number: clientData.phone_number,
+      address: fullAddress
+    };
+
     try {
-      if (editingClientId) {
-        await axios.put(`http://31.129.101.174/clients/${editingClientId}`, client);
+      if (clientData.id && clientData.id !== 9999999) {
+        // Обновляем существующего клиента
+        await axios.put(`http://31.129.101.174/clients/${clientData.id}`, dataToSend);
       } else {
-        await axios.post('http://31.129.101.174/clients', client);
+        // Добавляем нового клиента
+        const response = await axios.post('http://31.129.101.174/clients', dataToSend);
+        if (response.data && response.data.id) {
+          setClients(prevClients => [...prevClients, { ...dataToSend, id: response.data.id }]);
+        }
       }
-      setNewClient({ full_name: '', phone_number: '', address: '' });
-      setEditingClientId(null);
-      fetchClients();
     } catch (error) {
-      console.error('Ошибка при сохранении клиента:', error);
+      console.error('Ошибка при отправке данных клиента:', error);
+      Alert.alert('Ошибка', 'Произошла ошибка при отправке данных');
     }
   };
 
-  const handleEditClient = (client) => {
-    setNewClient({ full_name: client.full_name, phone_number: client.phone_number, address: client.address });
-    setEditingClientId(client.id);
+  const clearEditingState = () => {
+    setNewClient({ full_name: '', phone_number: '', address: { city: '', street: '', building: '', entrance: '', floor: '' } });
+    setisEditing(false);
+    setEditableClients({});
+    setEditingClientId(null);
+    setSelectedClients([]);
+  };
+
+  const renderAddressFields = (clientId) => {
+    const address = editableClients[clientId].address;
+
+    return (
+      <View>
+        <TextInput
+          style={styles.cell}
+          placeholder="Город"
+          value={address.city}
+          onChangeText={(text) => handleClientDataChange(clientId, 'address', { ...address, city: text })}
+        />
+        <TextInput
+          style={styles.cell}
+          placeholder="Улица"
+          value={address.street}
+          onChangeText={(text) => handleClientDataChange(clientId, 'address', { ...address, street: text })}
+        />
+        <TextInput
+          style={styles.cell}
+          placeholder="Дом/Квартира"
+          value={address.building}
+          onChangeText={(text) => handleClientDataChange(clientId, 'address', { ...address, building: text })}
+        />
+        <TextInput
+          style={styles.cell}
+          placeholder="Подъезд"
+          value={address.entrance}
+          onChangeText={(text) => handleClientDataChange(clientId, 'address', { ...address, entrance: text })}
+        />
+        <TextInput
+          style={styles.cell}
+          placeholder="Этаж"
+          value={address.floor}
+          onChangeText={(text) => handleClientDataChange(clientId, 'address', { ...address, floor: text })}
+        />
+      </View>
+    );
+  };
+  const parseAddress = (fullAddress) => {
+    const defaultAddress = { city: '', street: '', building: '', entrance: '', floor: '' };
+    if (!fullAddress) return defaultAddress;
+
+    const addressRegex = /город\s([^,]*), улица\s([^,]*), дом\s([^,]*), подъезд\s([^,]*), этаж\s([^,]*)/;
+    const match = fullAddress.match(addressRegex);
+
+    if (!match || match.length < 6) {
+      return defaultAddress;
+    }
+
+    return {
+      city: match[1] || '',
+      street: match[2] || '',
+      building: match[3] || '',
+      entrance: match[4] || '',
+      floor: match[5] || ''
+    };
+  };
+
+  const isClientEmpty = (client) => {
+    return !client.full_name && !client.phone_number && Object.values(client.address).every(val => !val);
+  };
+
+  const handleButtonPress = async () => {
+    if (isEditing) {
+      try {
+        // Обрабатываем каждый выбранный для редактирования клиент
+        await Promise.all(Object.values(editableClients).map(async (clientData) => {
+          await handleModalFormSubmit(clientData);
+        }));
+
+        // Обновляем список клиентов после редактирования
+        await fetchClients();
+
+        // Очищаем состояние редактирования и сбрасываем выбранных клиентов
+        clearEditingState();
+      } catch (error) {
+        console.error('Ошибка при обновлении данных клиентов:', error);
+        Alert.alert('Ошибка', 'Произошла ошибка при обновлении данных клиентов');
+      }
+    } else {
+      const newClientId = 9999999; // Используйте текущий временной штамп для уникального ID
+      const newClientData = {
+        id: newClientId,
+        full_name: '',
+        phone_number: '',
+        address: { city: '', street: '', building: '', entrance: '', floor: '' }
+      };
+
+      // Добавляем нового клиента в список клиентов и в список редактируемых клиентов
+      setClients(prevClients => [...prevClients, newClientData]);
+      setEditableClients({ [newClientId]: newClientData });
+      setEditingClientId(newClientId);
+      setisEditing(true);
+      setSelectedClients([newClientId]); // Выбираем нового клиента для редактирования
+    }
+  };
+
+  const handleClientDataChange = (clientId, key, value) => {
+    setEditableClients(prev => ({
+      ...prev,
+      [clientId]: {
+        ...prev[clientId],
+        [key]: value
+      }
+    }));
+  };
+
+  const handleEditPress = () => {
+    if (selectedClients.length > 0) {
+      const editable = selectedClients.reduce((acc, clientId) => {
+        const client = clients.find(c => c.id === clientId);
+        if (client) {
+          // Разбиваем адрес на компоненты
+          const addressParts = parseAddress(client.address);
+          acc[clientId] = {
+            ...client,
+            address: addressParts
+          };
+        }
+        return acc;
+      }, {});
+
+      setEditableClients(editable);
+      setisEditing(true);
+    } else {
+      Alert.alert('Выберите клиента', 'Для редактирования выберите клиента из списка.');
+    }
   };
 
   const handleDeleteClient = async (clientId) => {
@@ -54,102 +281,216 @@ const ClientBaseScreen = () => {
     }
   };
 
+  const handleSelectClient = (clientId) => {
+    setSelectedClients(prevSelected => {
+      const newSelectedClients = prevSelected.includes(clientId)
+        ? prevSelected.filter(id => id !== clientId)
+        : [...prevSelected, clientId];
+
+      // Если после изменения выбора клиентов, список стал пустым
+      if (newSelectedClients.length === 0) {
+        // Вызываем функцию для отмены редактирования и сброса изменений
+        confirmCancelEditing();
+      }
+
+      return newSelectedClients;
+    });
+  };
+
+  const handleSelectAllClients = () => {
+    if (selectedClients.length === clients.length) {
+      setSelectedClients([]); // Снимаем выбор со всех, если все уже выбраны
+    } else {
+      setSelectedClients(clients.map(client => client.id)); // Выбираем всех, если не все выбраны
+    }
+  };
+
   const renderRow = ({ item }) => (
     <View style={styles.row}>
-      <Text style={styles.cell}>{item.full_name}</Text>
-      <Text style={styles.cell}>{item.phone_number || 'Нет номера'}</Text>
-      <Text style={styles.cell}>{item.address || 'Нет адреса'}</Text>
-      <Button title="Редактировать" onPress={() => handleEditClient(item)} />
-      <Button title="Удалить" onPress={() => handleDeleteClient(item.id)} />
+      <View style={styles.headercheckboxTableCell}>
+        <TouchableOpacity
+          style={styles.checkboxTable}
+          onPress={() => handleSelectClient(item.id)}
+        >
+          {selectedClients.includes(item.id) && <View style={styles.checkboxTableSelected} />}
+        </TouchableOpacity>
+      </View>
+      {editableClients[item.id] ? (
+        <React.Fragment>
+          <TextInput
+            style={styles.cell}
+            value={editableClients[item.id].full_name}
+            onChangeText={(text) => handleClientDataChange(item.id, 'full_name', text)}
+          />
+          <TextInput
+            style={styles.cell}
+            value={editableClients[item.id].phone_number}
+            onChangeText={(text) => handleClientDataChange(item.id, 'phone_number', text)}
+          />
+          {renderAddressFields(item.id)}
+        </React.Fragment>
+      ) : (
+        // Текстовое представление данных клиента
+        <React.Fragment>
+          <Text style={styles.cell}>{item.full_name}</Text>
+          <Text style={styles.cell}>{item.phone_number || 'Нет номера'}</Text>
+          <Text style={styles.cell}>{item.address || 'Нет адреса'}</Text>
+        </React.Fragment>
+      )}
     </View>
   );
 
+  const handleBackPress = () => {
+    if (isEditing) {
+      if (selectedClients.length === 0) {
+        confirmCancelEditing(); // Автоматическая отмена редактирования, если нет выбранных клиентов
+      } else {
+        Alert.alert(
+          "Предупреждение",
+          "Данные могут не сохраниться. Отменить редактирование?",
+          [
+            { text: "Нет" },
+            { text: "Да", onPress: confirmCancelEditing }
+          ],
+          { cancelable: false }
+        );
+      }
+    } else {
+      navigation.goBack(); // Возврат к предыдущему экрану, если не в режиме редактирования
+    }
+  };
+
+  const confirmCancelEditing = () => {
+    setisEditing(false); // Выход из режима редактирования
+
+    // Сброс изменений редактируемых клиентов
+    setEditableClients({});
+
+    setNewClient({ full_name: '', phone_number: '', address: { city: '', street: '', building: '', entrance: '', floor: '' } });
+    setEditingClientId(null);
+    setSelectedClients([]); // Сброс выбранных клиентов
+  };
+
+  const ChangeHistoryModal = ({ isVisible, onClose }) => {
+    const [history, setHistory] = useState([]);
+
+    useEffect(() => {
+      const fetchHistory = async () => {
+        try {
+          const response = await axios.get(`http://31.129.101.174/clients/changes/all`);
+          setHistory(response.data);
+        } catch (error) {
+          console.error('Ошибка при получении истории изменений:', error);
+        }
+      };
+
+      if (isVisible) {
+        fetchHistory();
+      }
+    }, [isVisible]);
+
+    return (
+      <Modal isVisible={isVisible} onBackdropPress={onClose}>
+        <SafeAreaView style={styles.container}>
+          <ScrollView>
+            <View style={styles.contentContainerTask}>
+              <View style={styles.taskHeader}>
+                <TouchableOpacity onPress={onClose}>
+                  <BackIcon />
+                </TouchableOpacity>
+                <Text style={[styles.titleMedium, { flex: 1, textAlign: 'center' }]}>Журнал изменений</Text>
+                <TouchableOpacity>
+                  <None />
+                </TouchableOpacity>
+              </View>
+            </View>
+            {history.map((change, index) => (
+              <View key={index} style={styles.historyItem}>
+                <Text>Дата: {change.change_timestamp}</Text>
+                <Text>Описание: {change.change_description}</Text>
+                <Text>Пользователь: {change.user_id}</Text>
+              </View>
+            ))}
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
+    );
+  };
+
   return (
-    <ScrollView horizontal   overScrollMode="never">
-      <SafeAreaView>
-        <ScrollView  overScrollMode="never">
-          <View style={styles.header}>
-            <Text style={styles.headerCell}>ФИО</Text>
-            <Text style={styles.headerCell}>Телефон</Text>
-            <Text style={styles.headerCell}>Адрес</Text>
-            <Text style={styles.headerCell}>Действия</Text>
-          </View>
-          <FlatList
-            data={clients}
-            keyExtractor={(item) => String(item.id)}
-            renderItem={renderRow}
-            scrollEnabled={false} // Отключаем внутреннюю прокрутку
-          />
-        </ScrollView>
-        <View style={styles.inputContainer}>
-          <TextInput 
-            style={styles.input} 
-            placeholder="ФИО" 
-            value={newClient.full_name} 
-            onChangeText={(text) => setNewClient({ ...newClient, full_name: text })}
-          />
-          <TextInput 
-            style={styles.input} 
-            placeholder="Телефон" 
-            value={newClient.phone_number} 
-            onChangeText={(text) => setNewClient({ ...newClient, phone_number: text })}
-          />
-          <TextInput 
-            style={styles.input} 
-            placeholder="Адрес" 
-            value={newClient.address} 
-            onChangeText={(text) => setNewClient({ ...newClient, address: text })}
-          />
-          <Button 
-            title={editingClientId ? "Сохранить изменения" : "Добавить клиента"} 
-            onPress={() => handleSaveClient(newClient)} 
-          />
-          {editingClientId && (
-            <Button 
-              title="Отменить редактирование" 
-              onPress={() => {
-                setNewClient({ full_name: '', phone_number: '', address: '' });
-                setEditingClientId(null);
-              }} 
-            />
+    <SafeAreaView style={styles.container}>
+      <View style={styles.contentContainerTask}>
+        <View style={styles.taskHeader}>
+          <TouchableOpacity onPress={handleBackPress}>
+            <BackIcon />
+          </TouchableOpacity>
+          <Text style={[styles.titleMedium, { flex: 1, textAlign: 'center' }]}>Клиентская база</Text>
+          {selectedClients.length === 0 ? (
+            <TouchableOpacity onPress={openHistoryModal}>
+              <DocumentIcon />
+            </TouchableOpacity>
+          ) : isEditing ? (
+            <TouchableOpacity onPress={() => handleDeleteClient(selectedClients[0])}>
+              <DeleteIcon />
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity onPress={handleEditPress}>
+              <EditIcon />
+            </TouchableOpacity>
           )}
         </View>
-      </SafeAreaView>
-    </ScrollView>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Поиск по клиентам"
+          onChangeText={handleSearchChange}
+          value={searchQuery}
+        />
+        {isHistoryModalVisible && (
+          <ChangeHistoryModal
+            isVisible={isHistoryModalVisible}
+            onClose={() => setIsHistoryModalVisible(false)}
+          />
+        )}
+        <ScrollView horizontal overScrollMode="never">
+          <SafeAreaView>
+            <ScrollView overScrollMode="never">
+              <View style={styles.headerTable}>
+                <View style={styles.headercheckboxTableCell}>
+                  <TouchableOpacity
+                    style={styles.checkboxTable}
+                    onPress={handleSelectAllClients}
+                  >
+                    {selectedClients.length === clients.length ? (
+                      <View style={styles.checkboxTableSelected} />
+                    ) : null}
+                  </TouchableOpacity>
+                </View>
+                <Text style={styles.headerCell}>ФИО</Text>
+                <Text style={styles.headerCell}>Телефон</Text>
+                <Text style={styles.headerCell}>Адрес</Text>
+              </View>
+              <FlatList
+                data={filteredClients} // Используем отфильтрованный список клиентов
+                keyExtractor={(item) => String(item.id)}
+                renderItem={renderRow}
+                scrollEnabled={false}
+              />
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={(page) => setCurrentPage(page)}
+              />
+            </ScrollView>
+          </SafeAreaView>
+        </ScrollView>
+        <TouchableOpacity style={styles.addButton} onPress={handleButtonPress}>
+          <Text style={styles.addButtonText}>
+            {isEditing ? "Применить изменения" : "Добавить клиента"}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    backgroundColor: '#f2f2f2',
-  },
-  headerCell: {
-    width: 200, // Фиксированная ширина для заголовков ячеек
-    padding: 10,
-    borderWidth: 1,
-    borderColor: '#ccc',
-  },
-  row: {
-    flexDirection: 'row',
-    backgroundColor: '#fff',
-  },
-  cell: {
-    width: 200, // Фиксированная ширина для ячеек
-    padding: 10,
-    borderWidth: 1,
-    borderColor: '#ccc',
-  },
-  inputContainer: {
-    padding: 10,
-  },
-  input: {
-    height: 40,
-    borderColor: 'gray',
-    borderWidth: 1,
-    marginBottom: 10,
-    paddingHorizontal: 5,
-  },
-});
 
 export default ClientBaseScreen;

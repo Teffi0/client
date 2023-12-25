@@ -790,6 +790,47 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     padding: sizes.paddingMedium,
   },
+  headerTable: {
+    flexDirection: 'row',
+    backgroundColor: '#f2f2f2',
+  },
+  headerCell: {
+    width: 200, // Фиксированная ширина для заголовков ячеек
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#ccc',
+  },
+  row: {
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+  },
+  cell: {
+    width: 200, // Фиксированная ширина для ячеек
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#ccc',
+  },
+  checkboxTable: {
+    width: 20,
+    height: 20,
+    borderRadius: 3,
+    borderWidth: 1,
+    borderColor: '#000',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkboxTableSelected: {
+    width: 12,
+    height: 12,
+    backgroundColor: 'black', // Или другой цвет
+  },
+  headercheckboxTableCell: {
+    width: 40, // Или другая ширина, соответствующая чекбоксу
+    borderWidth: 1,
+    borderColor: '#ccc',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 });
 
 export default styles;

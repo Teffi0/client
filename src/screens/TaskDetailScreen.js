@@ -126,8 +126,6 @@ const TaskDetailScreen = ({ route }) => {
     }
   };
 
-
-
   const fetchInventoryItems = async () => {
     try {
       const response = await fetch('http://31.129.101.174/inventory');

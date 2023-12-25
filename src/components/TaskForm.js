@@ -722,13 +722,7 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
                             </View>
                         ))}
                     </View>
-                    {formData.status === 'выполнено' && (
-                        <View style={{ marginBottom: 24 }}>
-                            <Text style={[styles.headlineMedium, { marginBottom: 24 }]}>Расходники</Text>
-                            <DropdownItem
-                            />
-                        </View>
-                    )}
+                    
                     <View style={{ marginBottom: 320 }}>
                         <View style={[styles.contentContainer, { backgroundColor: "#f9f9f9", borderRadius: 24 }]}>
                             {tryRender(() => (
