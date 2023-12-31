@@ -1,5 +1,5 @@
 import React, { useState, useReducer, useEffect, useCallback } from 'react';
-import { View, TouchableOpacity, Text } from 'react-native';
+import { View, TouchableOpacity, Text, Alert } from 'react-native';
 import styles from '../styles/styles';
 import TaskForm from '../components/TaskForm';
 import { SuccessModal } from '../components/SuccessModal';
@@ -29,10 +29,10 @@ function NewTaskScreen({ onClose, draftData, selectedDate }) {
       }
     } else {
       // В противном случае обновляем статус и вызываем handleSaveTask
-      const isValid = await handleSaveTask(formData, setIsSuccessModalVisible);
-      if (isValid) {
-        setIsSuccessModalVisible(true); // Показываем модальное окно об успешном добавлении
-      }
+      const isValid = await handleSaveTask(formData);
+      Alert.alert("Успешно", "Задача успешно добавлена", [
+        { text: "OK", onPress: () => onClose() } // Закрытие формы при нажатии OK
+      ]);
     }
   }, [formData, draftData]);
   

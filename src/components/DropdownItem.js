@@ -57,7 +57,7 @@ function DropdownItem({ label, options, onValueChange, selectedValues }) {
 
     const renderItem = ({ item }) => (
         <TouchableOpacity style={styles.rowStyle} onPress={() => handleSelectOption(item)}>
-            <Text style={styles.itemName}>{`${item.name} - ${item.measure}`}</Text>
+            <Text style={styles.itemName}>{`${item.name} - ${item.quantity} ${item.measure}`}</Text>
         </TouchableOpacity>
     );
 

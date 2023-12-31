@@ -108,6 +108,7 @@ export const handleSaveTask = async (formData) => {
     // После изменения
     formattedData.employees = formData.selectedEmployee;
     try {
+        console.log("данные", formattedData);
         const response = await axios.post(`${SERVER_URL}/tasks`, formattedData);
         const taskId = response.data.task_id;
         console.log('Задача успешно добавлена. Данные ответа:', response.data);

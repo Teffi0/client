@@ -831,6 +831,36 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  photoPickerContainer: {
+    borderWidth: 1,
+    borderColor: 'grey',
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: 100,
+    width: '100%',
+    alignSelf: 'center',
+  },
+  
+  photoPickerPlusIcon: {
+    fontSize: 30,
+    color: 'grey',
+  },
+  imagePreviewContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+  },
+  
+  imageContainer: {
+    marginRight: 10,
+  },
+  
+  image: {
+    width: 100,
+    height: 100,
+    borderRadius: 12,
+  },
 });
 
 export default styles;

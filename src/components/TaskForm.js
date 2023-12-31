@@ -6,6 +6,7 @@ import DateInput from './DateInput';
 import DropdownEmployee from './DropdownEmployee';
 import DropdownService from './DropdownService';
 import DropdownItem from './DropdownItem';
+import DropdownClient from './DropdownClient';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { BackIcon, DeleteIcon } from '../icons';
 import { format } from 'date-fns';
@@ -189,37 +190,35 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
     }, [draftData, formData, dispatchFormData, isFormInitialized, fetchServiceNamesByIds, fetchTaskParticipants, clients]);
 
     useEffect(() => {
-        if (formData.fullnameClient) {
-            const selectedClient = clients.find(client => client.full_name === formData.fullnameClient);
+        if (selectedClient) {
+            const addressRegex = /город\s([^,]+), улица\s([^,]+), дом\s([^,]+), подъезд\s([^,]+), этаж\s([^,]+)/;
+            console.log('выбранный клиент', selectedClient);
+            const addressMatch = selectedClient.address.match(addressRegex);
 
-            if (selectedClient) {
-                const addressRegex = /город\s([^,]+), улица\s([^,]+), дом\s([^,]+), подъезд\s([^,]+), этаж\s([^,]+)/;
-                const addressMatch = selectedClient.address.match(addressRegex);
-
-                if (addressMatch) {
-                    setAddress({
-                        city: addressMatch[1] || '',
-                        street: addressMatch[2] || '',
-                        house: addressMatch[3] || '',
-                        entrance: addressMatch[4] || '',
-                        floor: addressMatch[5] || ''
-                    });
-                    setField('phoneClient', selectedClient.phone_number || '');
-                    setIsNewClientAdded(true);
-                }
-            } else {
+            if (addressMatch) {
                 setAddress({
-                    city: '',
-                    street: '',
-                    house: '',
-                    entrance: '',
-                    floor: ''
+                    city: addressMatch[1] || '',
+                    street: addressMatch[2] || '',
+                    house: addressMatch[3] || '',
+                    entrance: addressMatch[4] || '',
+                    floor: addressMatch[5] || ''
                 });
-                setField('phoneClient', '');
-                setIsNewClientAdded(false);
+                setField('phoneClient', selectedClient.phone_number || '');
+                setIsNewClientAdded(true);
             }
+        } else {
+            // обнуление данных при отсутствии выбранного клиента
+            setAddress({
+                city: '',
+                street: '',
+                house: '',
+                entrance: '',
+                floor: ''
+            });
+            setField('phoneClient', '');
+            setIsNewClientAdded(false);
         }
-    }, [formData.fullnameClient, clients]);
+    }, [selectedClient]);
 
     useEffect(() => {
         if (draftData) {
@@ -281,12 +280,11 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
             phone_number: formData.phoneClient,
             address: `город ${address.city}, улица ${address.street}, дом ${address.house}, подъезд ${address.entrance}, этаж ${address.floor}`
         };
-
         try {
             const response = await axios.post(`http://31.129.101.174/clients`, clientData);
             alert('Клиент успешно добавлен');
-            setClients([...clients, response.data]);
-            setSelectedClient(response.data);
+            setClients([...clients, clientData]);
+            setSelectedClient(clientData);
             setIsAddingNewClient(false);
         } catch (error) {
             console.error('Ошибка при добавлении клиента:', error);
@@ -342,6 +340,31 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
         }
     };
 
+    const handleAutoUpdateClient = async () => {
+        const { city, street, house, entrance, floor } = address;
+        const fullAddress = `город ${city}, улица ${street}, дом ${house}, подъезд ${entrance}, этаж ${floor}`;
+        setField('addressClient', fullAddress);
+        if (!selectedClient) {
+            alert('Клиент не выбран.');
+            return;
+        }
+
+        const updatedClientData = {
+            full_name: formData.fullnameClient,
+            phone_number: formData.phoneClient,
+            address: `город ${address.city}, улица ${address.street}, дом ${address.house}, подъезд ${address.entrance}, этаж ${address.floor}`
+        };
+
+        try {
+            const updatedClients = clients.map(client =>
+                client.id === selectedClient.id ? { ...client, ...updatedClientData } : client
+            );
+            setClients(updatedClients);
+
+        } catch (error) {
+            console.error('Ошибка при выборе клиента:', error);
+        }
+    };
 
     const handleAddressChange = useCallback((field, value) => {
         setAddress(prev => ({ ...prev, [field]: value }));
@@ -457,12 +480,17 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
     }, [dispatchFormData]);
 
     const handleChange = useCallback((field) => (value) => {
+        setField(field, value);
+    
         if (field === 'fullnameClient') {
             const client = clients.find(client => client.full_name === value);
-            setSelectedClient(client || null);
+            if (client) {
+                setSelectedClient(client);
+                setField('addressClient', client.address || '');
+                setField('phoneClient', client.phone_number || '');
+            }
         }
-        setField(field, value);
-    }, [setField, clients]);
+    }, [setField, clients]);    
 
     const toggleStartPicker = useCallback(() => {
         setField('isStartPickerVisible', !formData.isStartPickerVisible);
@@ -643,9 +671,10 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
                                 <Text style={[styles.headlineMedium, { marginBottom: 24 }]}>Данные клиента</Text>
                                 <View style={{ marginBottom: 24 }}>
                                     <Text style={styles.label}>ФИО клиента</Text>
-                                    <DropdownWithSearch
+                                    <DropdownClient
                                         options={formData.fullnameClientOptions}
                                         selectedValue={formData.fullnameClient}
+                                        disabled={isAddingNewClient}
                                         onValueChange={(value) => {
                                             handleChange('fullnameClient')(value);
                                             setAddress(prevAddress => ({
@@ -722,7 +751,7 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
                             </View>
                         ))}
                     </View>
-                    
+
                     <View style={{ marginBottom: 320 }}>
                         <View style={[styles.contentContainer, { backgroundColor: "#f9f9f9", borderRadius: 24 }]}>
                             {tryRender(() => (

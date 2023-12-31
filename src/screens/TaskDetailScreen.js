@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Modal } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Modal, Platform, Alert, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import styles from '../styles/styles';
@@ -7,8 +7,9 @@ import { formatDate, formatTime } from '../utils/dateFormatter';
 import { updateTaskStatus } from '../utils/taskScreenHelpers';
 import DropdownItem from '../components/DropdownItem';
 import { fetchTaskParticipants, fetchDraftData } from '../utils/tasks';
-import { BackIcon, EditIcon } from '../icons';
+import { BackIcon, EditIcon, None } from '../icons';
 import NewTaskScreen from './NewTaskScreen';
+import * as ImagePicker from 'expo-image-picker';
 
 const TaskDetailScreen = ({ route }) => {
   const navigation = useNavigation();
@@ -20,6 +21,63 @@ const TaskDetailScreen = ({ route }) => {
   const [taskInventory, setTaskInventory] = useState([]);
   const [isNewTaskScreenVisible, setNewTaskScreenVisible] = useState(false);
   const [draftData, setDraftData] = useState(null);
+  const [selectedImages, setSelectedImages] = useState([]);
+
+  const handleChoosePhoto = async () => {
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permissionResult.granted) {
+      Alert.alert('Уведомление', 'Необходим доступ к фотографиям для загрузки в отчет');
+      return;
+    }
+
+    try {
+      const pickerResult = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsMultipleSelection: true,
+        quality: 1,
+      });
+
+      if (!pickerResult.cancelled) {
+        setSelectedImages(pickerResult.assets || []);
+      }
+    } catch (error) {
+      Alert.alert('Ошибка', 'Произошла ошибка при выборе фотографий');
+    }
+  };
+
+  const uploadImages = async () => {
+    if (selectedImages.length === 0) {
+      Alert.alert('Уведомление', 'Пожалуйста, выберите фотографии для загрузки');
+      return;
+    }
+
+    const formData = new FormData();
+    selectedImages.forEach((image, index) => {
+      formData.append('photos', {
+        name: `photo_${index}.jpg`,
+        type: 'image/jpeg', // Используем стандартный MIME-тип для JPEG
+        uri: Platform.OS === 'android' ? image.uri : image.uri.replace('file://', ''),
+      });
+    });
+
+    try {
+      // Предполагаем, что taskId доступен в текущем состоянии
+      const taskId = task.id; // или получить его из другого источника в зависимости от структуры приложения
+
+      const response = await fetch(`http://31.129.101.174/tasks/${taskId}/photos`, {
+        method: 'POST',
+        body: formData,
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      if (!response.ok) throw new Error('Сетевая ошибка при загрузке изображений');
+
+      setSelectedImages([]);
+    } catch (error) {
+      Alert.alert('Ошибка', 'Произошла ошибка при загрузке фотографий');
+    }
+  };
+
 
   const handleAddTaskPress = async () => {
     if (task.status === 'в процессе') {
@@ -60,6 +118,21 @@ const TaskDetailScreen = ({ route }) => {
     fetchTaskInventory();
   }, [task.status, task.id]);
 
+  const ImagePreview = ({ images, onAddPress }) => (
+    <ScrollView horizontal style={styles.imagePreviewContainer} showsHorizontalScrollIndicator={false}>
+      {images.map((image, index) => (
+        <View key={index} style={styles.imageContainer}>
+          <Image source={{ uri: image.uri }} style={styles.image} />
+        </View>
+      ))}
+      <TouchableOpacity onPress={onAddPress} style={styles.image}>
+        <View style={styles.photoPickerContainer}>
+          <Text style={styles.photoPickerPlusIcon}>+</Text>
+        </View>
+      </TouchableOpacity>
+    </ScrollView>
+  );
+
   useEffect(() => {
     (async () => {
       const data = await fetchDraftData(task.id);
@@ -79,6 +152,19 @@ const TaskDetailScreen = ({ route }) => {
         screen: 'TaskDetailScreen',
         params: { ...task, serviceName },
       });
+    }
+  };
+
+  const getHeaderTitle = () => {
+    switch (task.status) {
+      case 'новая':
+        return 'Новая задача';
+      case 'в процессе':
+        return 'Задача в процессе';
+      case 'выполнено':
+        return 'Завершенная задача';
+      default:
+        return 'Детали задачи'; // Для случая, если статус неизвестен
     }
   };
 
@@ -117,6 +203,7 @@ const TaskDetailScreen = ({ route }) => {
 
       // Получаем ответ от сервера
       const inventoryResult = await inventoryResponse.json();
+      await uploadImages();
 
       // Закрыть модальное окно и перейти к списку задач
       setModalVisible(false);
@@ -179,10 +266,12 @@ const TaskDetailScreen = ({ route }) => {
     <SafeAreaView style={styles.container}>
       <View style={styles.contentContainerTask}>
         <View style={styles.taskHeader}>
-        <TouchableOpacity onPress={handleBackPress}>
+          <TouchableOpacity onPress={handleBackPress}>
             <BackIcon />
           </TouchableOpacity>
-          <Text style={[styles.titleMedium, { flex: 1, textAlign: 'center' }]}>Новая задача</Text>
+          <Text style={[styles.titleMedium, { flex: 1, textAlign: 'center' }]}>
+            {getHeaderTitle()}
+          </Text>
           <TouchableOpacity onPress={handleEditPress}>
             <EditIcon />
           </TouchableOpacity>
@@ -230,17 +319,34 @@ const TaskDetailScreen = ({ route }) => {
           animationType="slide"
           onRequestClose={() => setModalVisible(false)}
         >
-          <View style={styles.contentContainer}>
-            <DropdownItem
-              label="Расходники"
-              options={inventoryItems}
-              selectedValues={selectedInventory}
-              onValueChange={handleInventoryChange}
-            />
-            <TouchableOpacity style={styles.addButton} onPress={completeTask}>
-              <Text style={styles.addButtonText}>Завершить работу</Text>
-            </TouchableOpacity>
-          </View>
+          <SafeAreaView style={styles.container}>
+            <View style={styles.contentContainerTask}>
+              <View style={styles.taskHeader}>
+                <TouchableOpacity onPress={() => setModalVisible(false)}>
+                  <BackIcon />
+                </TouchableOpacity>
+                <Text style={[styles.titleMedium, { flex: 1, textAlign: 'center' }]}> Отчёт </Text>
+                <TouchableOpacity>
+                  <None />
+                </TouchableOpacity>
+              </View>
+              <View style={styles.contentContainer}>
+                <DropdownItem
+                  label="Расходники"
+                  options={inventoryItems}
+                  selectedValues={selectedInventory}
+                  onValueChange={handleInventoryChange}
+                />
+                <ImagePreview images={selectedImages} onAddPress={handleChoosePhoto} />
+                <TouchableOpacity onPress={uploadImages}>
+                  <Text>Загрузить фотографии</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.addButton} onPress={completeTask}>
+                  <Text style={styles.addButtonText}>Завершить работу</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </SafeAreaView>
         </Modal>
 
         {task.status !== 'выполнено' && (

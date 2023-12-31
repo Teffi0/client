@@ -1,72 +1,86 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Modal, FlatList } from 'react-native';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { View, Text, TextInput, FlatList, TouchableOpacity, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import { ChooseIcon } from '../icons';
 import styles from '../styles/styles';
 
-function DropdownClient({ label, options, selectedValue, onValueChange }) {
-  const [searchText, setSearchText] = useState('');
-  const [modalVisible, setModalVisible] = useState(false);
-  const [selectedOption, setSelectedOption] = useState(selectedValue);
+function DropdownClient({ options, selectedValue, onValueChange, disabled }) {
+  const [searchText, setSearchText] = useState(selectedValue || '');
+  const [showOptions, setShowOptions] = useState(false);
+
+  const maxVisibleItems = 4;
+  const filteredOptions = useMemo(() => {
+    return options
+      .filter((option) => 
+        typeof option === 'string' 
+        ? option.toLowerCase().includes(searchText.toLowerCase()) 
+        : option.label.toLowerCase().includes(searchText.toLowerCase()))
+      .slice(0, maxVisibleItems);
+  }, [options, searchText]);
 
   useEffect(() => {
-    if (selectedValue !== selectedOption) {
-      setSelectedOption(selectedValue);
-    }
+    setSearchText(selectedValue);
   }, [selectedValue]);
 
-  const handleSelectOption = (item) => {
-    setSelectedOption(item);
+
+  const handleSelectOption = useCallback((item) => {
+    const client = options.find(option => option === item);
+    onValueChange(client);
     setSearchText(item);
-    setModalVisible(false);
-    onValueChange(item);
-  };
+    setShowOptions(false);
+    Keyboard.dismiss();
+  }, [onValueChange, options]);
+  
+
+  const renderItem = useCallback(({ item }) => (
+    <TouchableOpacity
+      style={styles.rowStyle}
+      onPress={() => handleSelectOption(item)}
+    >
+      <View style={styles.dropdownOption}>
+        <Text>{item}</Text>
+      </View>
+    </TouchableOpacity>
+  ), [handleSelectOption]);
+
+  const handleTextChange = (text) => {
+    setSearchText(text);
+    onValueChange(text); // Обновляет selectedValue при каждом изменении текста
+    if (!showOptions && !disabled) {
+      setShowOptions(true);
+    }
+  };  
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.label}>{label}</Text>
-      <TouchableOpacity
-        style={styles.searchContainer}
-        onPress={() => setModalVisible(true)}
-      >
-        <TextInput
-          style={styles.dropdownInput}
-          placeholder="Найти клиента"
-          value={selectedOption}
-          editable={false}
-          onChangeText={(text) => setSearchText(text)}
-        />
-        <ChooseIcon />
-      </TouchableOpacity>
-
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View style={styles.modalView}>
+    <TouchableWithoutFeedback onPress={() => setShowOptions(false)}>
+      <View>
+      <View style={styles.searchContainer}>
           <TextInput
-            style={styles.modalTextInput}
-            placeholder="Search..."
+            style={styles.dropdownInput}
+            placeholder=""
             value={searchText}
-            onChangeText={(text) => setSearchText(text)}
-            autoFocus={true}
+            onChangeText={handleTextChange}
+            onFocus={() => !disabled && setShowOptions(true)}
           />
-          <FlatList
-            data={options.filter((option) =>
-              option.toLowerCase().includes(searchText.toLowerCase())
-            )}
-            keyExtractor={(item) => item}
-            renderItem={({ item }) => (
-              <TouchableOpacity onPress={() => handleSelectOption(item)}>
-                <Text style={styles.modalTextItem}>{item}</Text>
-              </TouchableOpacity>
-            )}
-          />
+          {!disabled && (
+            <TouchableOpacity onPress={() => setShowOptions(!showOptions)}>
+              <ChooseIcon />
+            </TouchableOpacity>
+          )}
         </View>
-      </Modal>
-    </View>
+        {showOptions && !disabled && (
+          <View style={styles.dropdownList}>
+            <FlatList
+              data={filteredOptions}
+              keyExtractor={(item, index) => `key-${index}-${item}`}
+              renderItem={renderItem}
+              scrollEnabled={false}
+            />
+          </View>
+        )}
+      </View>
+    </TouchableWithoutFeedback>
   );
 }
+
 
 export default DropdownClient;

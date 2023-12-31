@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, Text, FlatList, ScrollView, Button, Alert, TextInput, TouchableOpacity, Modal } from 'react-native';
 import axios from 'axios';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -7,16 +7,78 @@ import { BackIcon, EditIcon, DeleteIcon, None, DocumentIcon } from '../icons';
 import styles from '../styles/styles';
 import { debounce } from 'lodash';
 
+const apiClient = axios.create({
+  baseURL: 'http://31.129.101.174/',
+});
+
+const Pagination = React.memo(({ currentPage, totalPages, onPageChange }) => {
+  const pages = React.useMemo(() => {
+    return Array.from({ length: totalPages }, (_, i) => i + 1);
+  }, [totalPages]);
+
+  return (
+    <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
+      {pages.map(page => (
+        <TouchableOpacity key={page} onPress={() => onPageChange(page)}>
+          <Text style={{ marginHorizontal: 8, color: currentPage === page ? 'blue' : 'black' }}>
+            {page}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+});
+
+const ChangeHistoryModal = ({ isVisible, onClose }) => {
+  const [history, setHistory] = useState([]);
+
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        const response = await axios.get(`http://31.129.101.174/clients/changes/all`);
+        setHistory(response.data);
+      } catch (error) {
+        console.error('Ошибка при получении истории изменений:', error);
+      }
+    };
+
+    if (isVisible) {
+      fetchHistory();
+    }
+  }, [isVisible]);
+
+  return (
+    <Modal isVisible={isVisible} onBackdropPress={onClose}>
+      <SafeAreaView style={styles.container}>
+        <ScrollView>
+          <View style={styles.contentContainerTask}>
+            <View style={styles.taskHeader}>
+              <TouchableOpacity onPress={onClose}>
+                <BackIcon />
+              </TouchableOpacity>
+              <Text style={[styles.titleMedium, { flex: 1, textAlign: 'center' }]}>Журнал изменений</Text>
+              <TouchableOpacity>
+                <None />
+              </TouchableOpacity>
+            </View>
+          </View>
+          {history.map((change, index) => (
+            <View key={index} style={styles.historyItem}>
+              <Text>Дата: {change.change_timestamp}</Text>
+              <Text>Описание: {change.change_description}</Text>
+              <Text>Пользователь: {change.user_id}</Text>
+            </View>
+          ))}
+        </ScrollView>
+      </SafeAreaView>
+    </Modal>
+  );
+};
+
 const ClientBaseScreen = () => {
   const navigation = useNavigation();
   const [clients, setClients] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [newClient, setNewClient] = useState({
-    full_name: '',
-    phone_number: '',
-    address: { city: '', street: '', building: '', entrance: '', floor: '' }
-  });
-  const [editingClientId, setEditingClientId] = useState(null);
   const [selectedClients, setSelectedClients] = useState([]);
   const [isEditing, setisEditing] = useState(false);
   const [editableClients, setEditableClients] = useState({});
@@ -24,11 +86,10 @@ const ClientBaseScreen = () => {
   const [totalPages, setTotalPages] = useState(0);
   const limit = 10;
   const [isHistoryModalVisible, setIsHistoryModalVisible] = useState(false);
-  const [selectedHistoryClientId, setSelectedHistoryClientId] = useState(null);
 
   useEffect(() => {
     fetchClients();
-  }, []);
+  }, [currentPage]);
 
   useEffect(() => {
     if (selectedClients.length === 0 && isEditing) {
@@ -36,81 +97,49 @@ const ClientBaseScreen = () => {
     }
   }, [selectedClients, isEditing]);
 
-  const fetchClients = async () => {
+  const fetchClients = useCallback(async () => {
     try {
-      const response = await axios.get('http://31.129.101.174/clientsbase', {
-        params: { page: currentPage, limit: limit }
+      const response = await apiClient.get('/clientsbase', {
+        params: { page: currentPage, limit }
       });
       setClients(response.data.clients);
       setTotalPages(response.data.totalPages);
     } catch (error) {
       console.error('Ошибка при загрузке клиентов:', error);
     }
-  };
+  }, [currentPage]);
 
-  const openHistoryModal = () => {
-    setIsHistoryModalVisible(true);
-  };
+  const openHistoryModal = () => setIsHistoryModalVisible(true);
 
-  // Компонент пагинации
-  const Pagination = ({ currentPage, totalPages, onPageChange }) => {
-    const pages = [];
-    for (let i = 1; i <= totalPages; i++) {
-      pages.push(i);
+  const debouncedSearch = useCallback(debounce((query) => {
+    if (!query) {
+      fetchClients();
+    } else {
+      const lowercasedQuery = query.toLowerCase();
+      setClients(clients.filter(client =>
+        client.full_name.toLowerCase().includes(lowercasedQuery) ||
+        client.phone_number.toLowerCase().includes(lowercasedQuery) ||
+        client.address.toLowerCase().includes(lowercasedQuery)
+      ));
     }
-
-    return (
-      <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
-        {pages.map(page => (
-          <TouchableOpacity key={page} onPress={() => onPageChange(page)}>
-            <Text style={{ marginHorizontal: 8, color: currentPage === page ? 'blue' : 'black' }}>
-              {page}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-    );
-  };
-
-  const filterClients = (query) => {
-    if (!query) return clients;
-    const lowercasedQuery = query.toLowerCase();
-    return clients.filter(client =>
-      client.full_name.toLowerCase().includes(lowercasedQuery) ||
-      client.phone_number.toLowerCase().includes(lowercasedQuery) ||
-      client.address.toLowerCase().includes(lowercasedQuery)
-    );
-  };
-
-  const [filteredClients, setFilteredClients] = useState(clients);
-
-  // Использование debounce для оптимизации поиска
-  const debouncedSearch = debounce((query) => {
-    const filtered = filterClients(query);
-    setFilteredClients(filtered);
-  }, 300);
+  }, 300), [clients]);
 
   useEffect(() => {
     debouncedSearch(searchQuery);
-  }, [searchQuery, clients]);
+  }, [searchQuery]);
 
-  // Обработка изменения текста в поле поиска
-  const handleSearchChange = (text) => {
-    setSearchQuery(text);
-  };
+  const handleSearchChange = (text) => setSearchQuery(text);
 
-  const assembleFullAddress = (address) => {
+  const assembleFullAddress = useCallback((address) => {
     return `город ${address.city}, улица ${address.street}, дом ${address.building}, подъезд ${address.entrance}, этаж ${address.floor}`;
-  };
+  }, []);
 
-  const handleModalFormSubmit = async (clientData) => {
-    // Проверка валидности данных клиента
+  const handleModalFormSubmit = useCallback(async (clientData) => {
     if (!clientData.full_name || !clientData.phone_number || Object.values(clientData.address).some(val => !val)) {
       Alert.alert('Ошибка', 'Заполните все поля.');
       return;
     }
 
-    // Собираем данные для отправки
     const fullAddress = assembleFullAddress(clientData.address);
     const dataToSend = {
       full_name: clientData.full_name,
@@ -120,11 +149,9 @@ const ClientBaseScreen = () => {
 
     try {
       if (clientData.id && clientData.id !== 9999999) {
-        // Обновляем существующего клиента
-        await axios.put(`http://31.129.101.174/clients/${clientData.id}`, dataToSend);
+        await apiClient.put(`/clients/${clientData.id}`, dataToSend);
       } else {
-        // Добавляем нового клиента
-        const response = await axios.post('http://31.129.101.174/clients', dataToSend);
+        const response = await apiClient.post('/clients', dataToSend);
         if (response.data && response.data.id) {
           setClients(prevClients => [...prevClients, { ...dataToSend, id: response.data.id }]);
         }
@@ -133,13 +160,11 @@ const ClientBaseScreen = () => {
       console.error('Ошибка при отправке данных клиента:', error);
       Alert.alert('Ошибка', 'Произошла ошибка при отправке данных');
     }
-  };
+  }, [assembleFullAddress]);
 
   const clearEditingState = () => {
-    setNewClient({ full_name: '', phone_number: '', address: { city: '', street: '', building: '', entrance: '', floor: '' } });
     setisEditing(false);
     setEditableClients({});
-    setEditingClientId(null);
     setSelectedClients([]);
   };
 
@@ -205,7 +230,7 @@ const ClientBaseScreen = () => {
     return !client.full_name && !client.phone_number && Object.values(client.address).every(val => !val);
   };
 
-  const handleButtonPress = async () => {
+  const handleButtonPress = React.useCallback(async () => {
     if (isEditing) {
       try {
         // Обрабатываем каждый выбранный для редактирования клиент
@@ -234,11 +259,10 @@ const ClientBaseScreen = () => {
       // Добавляем нового клиента в список клиентов и в список редактируемых клиентов
       setClients(prevClients => [...prevClients, newClientData]);
       setEditableClients({ [newClientId]: newClientData });
-      setEditingClientId(newClientId);
       setisEditing(true);
       setSelectedClients([newClientId]); // Выбираем нового клиента для редактирования
     }
-  };
+  }, [isEditing, editableClients]);
 
   const handleClientDataChange = (clientId, key, value) => {
     setEditableClients(prev => ({
@@ -274,7 +298,7 @@ const ClientBaseScreen = () => {
 
   const handleDeleteClient = async (clientId) => {
     try {
-      await axios.delete(`http://31.129.101.174/clients/${clientId}`);
+      await apiClient.delete(`/clients/${clientId}`);
       fetchClients();
     } catch (error) {
       console.error('Ошибка при удалении клиента:', error);
@@ -305,7 +329,7 @@ const ClientBaseScreen = () => {
     }
   };
 
-  const renderRow = ({ item }) => (
+  const renderRow = useCallback(({ item }) => (
     <View style={styles.row}>
       <View style={styles.headercheckboxTableCell}>
         <TouchableOpacity
@@ -338,7 +362,7 @@ const ClientBaseScreen = () => {
         </React.Fragment>
       )}
     </View>
-  );
+  ), [editableClients, selectedClients]);
 
   const handleBackPress = () => {
     if (isEditing) {
@@ -361,60 +385,9 @@ const ClientBaseScreen = () => {
   };
 
   const confirmCancelEditing = () => {
-    setisEditing(false); // Выход из режима редактирования
-
-    // Сброс изменений редактируемых клиентов
+    setisEditing(false);
     setEditableClients({});
-
-    setNewClient({ full_name: '', phone_number: '', address: { city: '', street: '', building: '', entrance: '', floor: '' } });
-    setEditingClientId(null);
     setSelectedClients([]); // Сброс выбранных клиентов
-  };
-
-  const ChangeHistoryModal = ({ isVisible, onClose }) => {
-    const [history, setHistory] = useState([]);
-
-    useEffect(() => {
-      const fetchHistory = async () => {
-        try {
-          const response = await axios.get(`http://31.129.101.174/clients/changes/all`);
-          setHistory(response.data);
-        } catch (error) {
-          console.error('Ошибка при получении истории изменений:', error);
-        }
-      };
-
-      if (isVisible) {
-        fetchHistory();
-      }
-    }, [isVisible]);
-
-    return (
-      <Modal isVisible={isVisible} onBackdropPress={onClose}>
-        <SafeAreaView style={styles.container}>
-          <ScrollView>
-            <View style={styles.contentContainerTask}>
-              <View style={styles.taskHeader}>
-                <TouchableOpacity onPress={onClose}>
-                  <BackIcon />
-                </TouchableOpacity>
-                <Text style={[styles.titleMedium, { flex: 1, textAlign: 'center' }]}>Журнал изменений</Text>
-                <TouchableOpacity>
-                  <None />
-                </TouchableOpacity>
-              </View>
-            </View>
-            {history.map((change, index) => (
-              <View key={index} style={styles.historyItem}>
-                <Text>Дата: {change.change_timestamp}</Text>
-                <Text>Описание: {change.change_description}</Text>
-                <Text>Пользователь: {change.user_id}</Text>
-              </View>
-            ))}
-          </ScrollView>
-        </SafeAreaView>
-      </Modal>
-    );
   };
 
   return (
@@ -453,34 +426,35 @@ const ClientBaseScreen = () => {
         )}
         <ScrollView horizontal overScrollMode="never">
           <SafeAreaView>
-            <ScrollView overScrollMode="never">
-              <View style={styles.headerTable}>
-                <View style={styles.headercheckboxTableCell}>
-                  <TouchableOpacity
-                    style={styles.checkboxTable}
-                    onPress={handleSelectAllClients}
-                  >
-                    {selectedClients.length === clients.length ? (
-                      <View style={styles.checkboxTableSelected} />
-                    ) : null}
-                  </TouchableOpacity>
+            <FlatList
+              data={clients}
+              keyExtractor={(item) => String(item.id)}
+              renderItem={renderRow}
+              ListHeaderComponent={
+                <View style={styles.headerTable}>
+                  <View style={styles.headercheckboxTableCell}>
+                    <TouchableOpacity
+                      style={styles.checkboxTable}
+                      onPress={handleSelectAllClients}
+                    >
+                      {selectedClients.length === clients.length ? (
+                        <View style={styles.checkboxTableSelected} />
+                      ) : null}
+                    </TouchableOpacity>
+                  </View>
+                  <Text style={styles.headerCell}>ФИО</Text>
+                  <Text style={styles.headerCell}>Телефон</Text>
+                  <Text style={styles.headerCell}>Адрес</Text>
                 </View>
-                <Text style={styles.headerCell}>ФИО</Text>
-                <Text style={styles.headerCell}>Телефон</Text>
-                <Text style={styles.headerCell}>Адрес</Text>
-              </View>
-              <FlatList
-                data={filteredClients} // Используем отфильтрованный список клиентов
-                keyExtractor={(item) => String(item.id)}
-                renderItem={renderRow}
-                scrollEnabled={false}
-              />
-              <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={(page) => setCurrentPage(page)}
-              />
-            </ScrollView>
+              }
+              ListFooterComponent={
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={setCurrentPage}
+                />
+              }
+            />
           </SafeAreaView>
         </ScrollView>
         <TouchableOpacity style={styles.addButton} onPress={handleButtonPress}>
