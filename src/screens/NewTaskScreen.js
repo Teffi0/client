@@ -11,14 +11,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 function NewTaskScreen({ onClose, draftData, selectedDate }) {
   const [isSuccessModalVisible, setIsSuccessModalVisible] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
-
   const addButtonTextStyles = styles.addButtonText;
-
   const [formData, dispatchFormData] = useReducer(formReducer, initialState);
+  const addButtonTitle = formData.status !== 'отсутствует' ? "Применить изменения" : "Добавить задачу";
 
   const handleSave = useCallback(async () => {
     if (formData.status === 'отсутствует') {
-      formData.status="новая";
+      formData.status = "новая";
     }
     if (formData.status === 'черновик') {
       const updatedFormData = { ...formData, status: 'новая' };
@@ -35,7 +34,7 @@ function NewTaskScreen({ onClose, draftData, selectedDate }) {
       ]);
     }
   }, [formData, draftData]);
-  
+
   useEffect(() => {
     if (draftData) {
       // Инициализируем форму данными для редактирования
@@ -77,7 +76,7 @@ function NewTaskScreen({ onClose, draftData, selectedDate }) {
         draftData={draftData}
       />
       <TouchableOpacity style={addButtonStyles} onPress={handleSave}>
-        <Text style={addButtonTextStyles}>Добавить задачу</Text>
+        <Text style={addButtonTextStyles}>{addButtonTitle}</Text>
       </TouchableOpacity>
       <SuccessModal isVisible={isSuccessModalVisible} onClose={closeSuccessModal} />
     </SafeAreaView>

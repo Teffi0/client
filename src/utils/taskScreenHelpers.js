@@ -108,10 +108,15 @@ export const handleSaveTask = async (formData) => {
     // После изменения
     formattedData.employees = formData.selectedEmployee;
     try {
-        console.log("данные", formattedData);
-        const response = await axios.post(`${SERVER_URL}/tasks`, formattedData);
-        const taskId = response.data.task_id;
-        console.log('Задача успешно добавлена. Данные ответа:', response.data);
+        let taskId;
+        if (formData.id) {
+            taskId = formData.id;
+        } else {
+            // Если это новая задача, создаем ее и получаем новый id
+            const response = await axios.post(`${SERVER_URL}/tasks`, formattedData);
+            taskId = response.data.task_id;
+        }
+
         // Добавление услуг к задаче, если они есть
         if (formData.selectedService && formData.selectedService.length > 0) {
             await axios.post(`${SERVER_URL}/tasks/${taskId}/services`, {
@@ -119,7 +124,22 @@ export const handleSaveTask = async (formData) => {
             });
             console.log('Услуги успешно добавлены к задаче');
         }
-        
+
+        if (formData.status === 'выполнено') {
+            // Фильтрация элементов с количеством, равным нулю
+            const filteredInventory = formData.selectedInventory.filter(item => item.quantity > 0);
+
+            // Формирование данных для обновления инвентаря
+            const inventoryData = filteredInventory.map(item => ({
+                inventory_id: item.id,
+                quantity: item.quantity
+            }));
+
+            await axios.put(`${SERVER_URL}/tasks/${taskId}/inventory`, {
+                inventory: inventoryData
+            });
+        }
+
         taskEventEmitter.emit('taskUpdated');
     } catch (error) {
         console.error('Ошибка при добавлении задачи:', error);

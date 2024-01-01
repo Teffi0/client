@@ -14,6 +14,7 @@ import DropdownWithSearch from './DropdownWithSearch';
 import axios from 'axios';
 import { fetchServiceNamesByIds, fetchTaskParticipants } from '../utils/tasks';
 import { handleSaveTask, updateDraft } from '../utils/taskScreenHelpers';
+import * as ImagePicker from 'expo-image-picker';
 
 function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
     const [selectedService, setSelectedService] = useState([]);
@@ -21,7 +22,11 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
     const [service, setServices] = useState([]);
     const [employees, setEmployees] = useState([]);
     const [clients, setClients] = useState([]);
+    const [inventoryItems, setInventoryItems] = useState([]);
+    const [selectedInventory, setSelectedInventory] = useState([]);
+    const [preselectedInventory, setPreselectedInventory] = useState([]);
     const [selectedClient, setSelectedClient] = useState(null);
+    const [selectedImages, setSelectedImages] = useState([]);
     const [isFormInitialized, setIsFormInitialized] = useState(false);
     const [isNewClientAdded, setIsNewClientAdded] = useState(false);
     const [isAddingNewClient, setIsAddingNewClient] = useState(false);
@@ -87,6 +92,56 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
     useEffect(() => {
         fetchClients();
     }, [fetchClients]);
+
+    const fetchInventoryItems = async () => {
+        try {
+            const response = await fetch('http://31.129.101.174/inventory');
+            const data = await response.json();
+            setInventoryItems(data);
+        } catch (error) {
+            console.error('Ошибка при получении инвентаря:', error);
+        }
+    };
+
+    useEffect(() => {
+        fetchInventoryItems();
+    }, []);
+
+    const handleInventoryChange = (newSelectedInventory) => {
+        setSelectedInventory(newSelectedInventory);
+
+        // Создаем массив объектов, содержащих id и количество каждого выбранного предмета
+        const selectedInventoryData = newSelectedInventory.map(item => {
+            return { id: item.id, quantity: item.quantity };
+        });
+
+        // Обновляем formData
+        dispatchFormData({
+            type: 'UPDATE_FORM',
+            payload: { selectedInventory: selectedInventoryData }
+        });
+    };
+
+    const fetchSelectedInventory = async (taskId) => {
+        try {
+            const response = await axios.get(`http://31.129.101.174/tasks/${taskId}/selected-inventory`);
+            return response.data;
+        } catch (error) {
+            console.error('Ошибка при получении выбранного инвентаря:', error);
+            return [];
+        }
+    };
+
+    useEffect(() => {
+        const loadData = async () => {
+            if (draftData && draftData.id) {
+                const selectedInventoryData = await fetchSelectedInventory(draftData.id);
+                setPreselectedInventory(selectedInventoryData);
+            }
+        };
+
+        loadData();
+    }, [draftData]);
 
     const fetchServices = useCallback(async () => {
         try {
@@ -192,7 +247,6 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
     useEffect(() => {
         if (selectedClient) {
             const addressRegex = /город\s([^,]+), улица\s([^,]+), дом\s([^,]+), подъезд\s([^,]+), этаж\s([^,]+)/;
-            console.log('выбранный клиент', selectedClient);
             const addressMatch = selectedClient.address.match(addressRegex);
 
             if (addressMatch) {
@@ -366,6 +420,76 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
         }
     };
 
+    const handleChoosePhoto = async () => {
+        const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (!permissionResult.granted) {
+            Alert.alert('Уведомление', 'Необходим доступ к фотографиям для загрузки в отчет');
+            return;
+        }
+
+        try {
+            const pickerResult = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                allowsMultipleSelection: true,
+                quality: 1,
+            });
+
+            if (!pickerResult.cancelled) {
+                setSelectedImages(pickerResult.assets || []);
+            }
+        } catch (error) {
+            Alert.alert('Ошибка', 'Произошла ошибка при выборе фотографий');
+        }
+    };
+
+    const uploadImages = async () => {
+        if (selectedImages.length === 0) {
+            Alert.alert('Уведомление', 'Пожалуйста, выберите фотографии для загрузки');
+            return;
+        }
+
+        const formData = new FormData();
+        selectedImages.forEach((image, index) => {
+            formData.append('photos', {
+                name: `photo_${index}.jpg`,
+                type: 'image/jpeg', // Используем стандартный MIME-тип для JPEG
+                uri: Platform.OS === 'android' ? image.uri : image.uri.replace('file://', ''),
+            });
+        });
+
+        try {
+            // Предполагаем, что taskId доступен в текущем состоянии
+            const taskId = task.id; // или получить его из другого источника в зависимости от структуры приложения
+
+            const response = await fetch(`http://31.129.101.174/tasks/${taskId}/photos`, {
+                method: 'POST',
+                body: formData,
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
+
+            if (!response.ok) throw new Error('Сетевая ошибка при загрузке изображений');
+
+            setSelectedImages([]);
+        } catch (error) {
+            Alert.alert('Ошибка', 'Произошла ошибка при загрузке фотографий');
+        }
+    };
+
+    const ImagePreview = ({ images, onAddPress }) => (
+        <ScrollView horizontal style={styles.imagePreviewContainer} showsHorizontalScrollIndicator={false}>
+            {images.map((image, index) => (
+                <View key={index} style={styles.imageContainer}>
+                    <Image source={{ uri: image.uri }} style={styles.image} />
+                </View>
+            ))}
+            <TouchableOpacity onPress={onAddPress} style={styles.image}>
+                <View style={styles.photoPickerContainer}>
+                    <Text style={styles.photoPickerPlusIcon}>+</Text>
+                </View>
+            </TouchableOpacity>
+        </ScrollView>
+    );
+
     const handleAddressChange = useCallback((field, value) => {
         setAddress(prev => ({ ...prev, [field]: value }));
     }, []);
@@ -407,26 +531,42 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
 
 
     const handleBackPress = () => {
-        Alert.alert(
-            "Сохранить как черновик?",
-            "Вы хотите сохранить эту задачу как черновик?",
-            [
-                {
-                    text: "Нет",
-                    onPress: onClose, // Это закроет модальное окно без сохранения
-                    style: "cancel"
-                },
-                {
-                    text: "Сохранить",
-                    onPress: () => {
-                        handleSave(); // Сохраняем данные
-                        onClose(); // Затем закрываем модальное окно
+        if (formData.status === 'отсутствует') {
+            Alert.alert(
+                "Сохранить как черновик?",
+                "Вы хотите сохранить эту задачу как черновик?",
+                [
+                    {
+                        text: "Нет",
+                        onPress: onClose,
+                        style: "cancel"
+                    },
+                    {
+                        text: "Сохранить",
+                        onPress: () => {
+                            handleSave();
+                            onClose();
+                        }
                     }
-                }
-            ],
-            { cancelable: false }
-        );
-        return true; // Возвращает true, чтобы предотвратить действие по умолчанию
+                ],
+                { cancelable: false }
+            );
+        } else {
+            Alert.alert(
+                "Отменить редактирование?",
+                "Вы хотите отменить редактирование?",
+                [
+                    {
+                        text: "Да",
+                        onPress: onClose,
+                        style: "cancel"
+                    },
+                    { text: "Нет" }
+                ],
+                { cancelable: false }
+            );
+        }
+        return true;
     };
 
     const handleDelete = useCallback(async () => {
@@ -481,7 +621,7 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
 
     const handleChange = useCallback((field) => (value) => {
         setField(field, value);
-    
+
         if (field === 'fullnameClient') {
             const client = clients.find(client => client.full_name === value);
             if (client) {
@@ -490,7 +630,7 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
                 setField('phoneClient', client.phone_number || '');
             }
         }
-    }, [setField, clients]);    
+    }, [setField, clients]);
 
     const toggleStartPicker = useCallback(() => {
         setField('isStartPickerVisible', !formData.isStartPickerVisible);
@@ -751,6 +891,28 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
                             </View>
                         ))}
                     </View>
+                    {formData.status === "выполнено" && (
+                        <View style={{ marginBottom: 24 }}>
+                            <View style={[styles.contentContainer, { backgroundColor: "#f9f9f9", borderRadius: 24 }]}>
+                                {tryRender(() => (
+                                    <View>
+                                        <Text style={[styles.headlineMedium, { marginBottom: 24 }]}>Отчёт</Text>
+                                        <View style={styles.commentContainer}>
+                                            <DropdownItem
+                                                label="Расходники"
+                                                options={inventoryItems}
+                                                selectedValues={selectedInventory}
+                                                onValueChange={handleInventoryChange}
+                                                preselectedItems={preselectedInventory}
+                                            />
+                                            <ImagePreview images={selectedImages} onAddPress={handleChoosePhoto} />
+                                        </View>
+                                    </View>
+                                ))}
+                            </View>
+                        </View>
+                    )}
+
 
                     <View style={{ marginBottom: 320 }}>
                         <View style={[styles.contentContainer, { backgroundColor: "#f9f9f9", borderRadius: 24 }]}>
