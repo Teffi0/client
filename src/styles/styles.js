@@ -861,6 +861,18 @@ const styles = StyleSheet.create({
     height: 100,
     borderRadius: 12,
   },
+  removeIconContainer: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    paddingRight: 8,
+    zIndex: 1, // Убедитесь, что крестик находится над изображением
+  },
+  
+  removeIcon: {
+    fontSize: 24, // Регулируем размер крестика
+    color: 'white', // Цвет крестика
+  },
 });
 
 export default styles;

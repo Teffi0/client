@@ -138,6 +138,25 @@ export const handleSaveTask = async (formData) => {
             await axios.put(`${SERVER_URL}/tasks/${taskId}/inventory`, {
                 inventory: inventoryData
             });
+
+            if (formData.selectedImages && formData.selectedImages.length > 0) {
+                const imagesFormData = new FormData();
+                formData.selectedImages.forEach((imageUri, index) => {
+                    imagesFormData.append('photos', {
+                        name: `photo_${index}.jpg`,
+                        type: 'image/jpeg',
+                        uri: Platform.OS === 'android' ? imageUri : imageUri.replace('file://', ''),
+                    });
+                });
+
+                await axios.post(`${SERVER_URL}/tasks/${taskId}/photos`, imagesFormData, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data',
+                    },
+                });
+
+                console.log('Изображения успешно загружены на сервер');
+            }
         }
 
         taskEventEmitter.emit('taskUpdated');

@@ -22,6 +22,69 @@ const TaskDetailScreen = ({ route }) => {
   const [isNewTaskScreenVisible, setNewTaskScreenVisible] = useState(false);
   const [draftData, setDraftData] = useState(null);
   const [selectedImages, setSelectedImages] = useState([]);
+  const [fullScreenImageModalVisible, setFullScreenImageModalVisible] = useState(false);
+  const [currentImage, setCurrentImage] = useState(null);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  const openFullScreenImage = (index) => {
+    setCurrentImageIndex(index);
+    setFullScreenImageModalVisible(true);
+  };
+
+  const showNextImage = () => {
+    if (currentImageIndex < selectedImages.length - 1) {
+      setCurrentImageIndex(currentImageIndex + 1);
+    }
+  };
+
+  const showPreviousImage = () => {
+    if (currentImageIndex > 0) {
+      setCurrentImageIndex(currentImageIndex - 1);
+    }
+  };
+
+  const FullScreenImageModal = ({ isVisible, onClose }) => {
+    const imageUri = selectedImages[currentImageIndex]?.uri;
+
+    return (
+      <Modal
+        visible={isVisible}
+        transparent={false}
+        animationType="fade"
+        onRequestClose={onClose}
+      >
+        <View style={{ flex: 1, backgroundColor: 'black', justifyContent: 'center', alignItems: 'center' }}>
+          {imageUri && (
+            <Image
+              source={{ uri: imageUri }}
+              style={{ width: '100%', height: '100%', resizeMode: 'contain' }}
+            />
+          )}
+          <TouchableOpacity style={{ position: 'absolute', top: 40, right: 20 }} onPress={onClose}>
+            <Text style={{ color: 'white', fontSize: 30 }}>×</Text>
+          </TouchableOpacity>
+
+          {currentImageIndex > 0 && (
+            <TouchableOpacity
+              style={{ position: 'absolute', left: 0, top: 0, bottom: 0, right: '50%', justifyContent: 'center' }}
+              onPress={showPreviousImage}
+            >
+              <Text style={{ color: 'white', fontSize: 42, textAlign: 'left', marginLeft: 20 }}>‹</Text>
+            </TouchableOpacity>
+          )}
+
+          {currentImageIndex < selectedImages.length - 1 && (
+            <TouchableOpacity
+              style={{ position: 'absolute', right: 0, top: 0, bottom: 0, left: '50%', justifyContent: 'center' }}
+              onPress={showNextImage}
+            >
+              <Text style={{ color: 'white', fontSize: 42, textAlign: 'right', marginRight: 20 }}>›</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </Modal>
+    );
+  };
 
   const handleChoosePhoto = async () => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -37,8 +100,8 @@ const TaskDetailScreen = ({ route }) => {
         quality: 1,
       });
 
-      if (!pickerResult.cancelled) {
-        setSelectedImages(pickerResult.assets || []);
+      if (!pickerResult.canceled) {
+        setSelectedImages(prevImages => [...prevImages, ...(pickerResult.assets || [])]);
       }
     } catch (error) {
       Alert.alert('Ошибка', 'Произошла ошибка при выборе фотографий');
@@ -78,6 +141,9 @@ const TaskDetailScreen = ({ route }) => {
     }
   };
 
+  const handleRemoveImage = (index) => {
+    setSelectedImages(currentImages => currentImages.filter((_, i) => i !== index));
+  };
 
   const handleAddTaskPress = async () => {
     if (task.status === 'в процессе') {
@@ -118,14 +184,19 @@ const TaskDetailScreen = ({ route }) => {
     fetchTaskInventory();
   }, [task.status, task.id]);
 
-  const ImagePreview = ({ images, onAddPress }) => (
+  const ImagePreview = ({ images, onRemovePress }) => (
     <ScrollView horizontal style={styles.imagePreviewContainer} showsHorizontalScrollIndicator={false}>
       {images.map((image, index) => (
         <View key={index} style={styles.imageContainer}>
-          <Image source={{ uri: image.uri }} style={styles.image} />
+          <TouchableOpacity onPress={() => openFullScreenImage(index)} style={styles.imagePreview}>
+            <Image source={{ uri: image.uri }} style={styles.image} />
+            <TouchableOpacity style={styles.removeIconContainer} onPress={() => onRemovePress(index)}>
+              <Text style={styles.removeIcon}>×</Text>
+            </TouchableOpacity>
+          </TouchableOpacity>
         </View>
       ))}
-      <TouchableOpacity onPress={onAddPress} style={styles.image}>
+      <TouchableOpacity onPress={handleChoosePhoto} style={styles.image}>
         <View style={styles.photoPickerContainer}>
           <Text style={styles.photoPickerPlusIcon}>+</Text>
         </View>
@@ -265,6 +336,11 @@ const TaskDetailScreen = ({ route }) => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.contentContainerTask}>
+        <FullScreenImageModal
+          isVisible={fullScreenImageModalVisible}
+          imageUri={currentImage}
+          onClose={() => setFullScreenImageModalVisible(false)}
+        />
         <View style={styles.taskHeader}>
           <TouchableOpacity onPress={handleBackPress}>
             <BackIcon />
@@ -337,7 +413,11 @@ const TaskDetailScreen = ({ route }) => {
                   selectedValues={selectedInventory}
                   onValueChange={handleInventoryChange}
                 />
-                <ImagePreview images={selectedImages} onAddPress={handleChoosePhoto} />
+                <ImagePreview
+                  images={selectedImages}
+                  onAddPress={handleChoosePhoto}
+                  onRemovePress={handleRemoveImage}
+                />
                 <TouchableOpacity onPress={uploadImages}>
                   <Text>Загрузить фотографии</Text>
                 </TouchableOpacity>

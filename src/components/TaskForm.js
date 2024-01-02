@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { ScrollView, View, Text, TextInput, TouchableOpacity, Alert, BackHandler } from 'react-native';
+import { ScrollView, View, Text, TextInput, TouchableOpacity, Alert, BackHandler, Image, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import styles from '../styles/styles';
 import DateInput from './DateInput';
@@ -27,6 +27,9 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
     const [preselectedInventory, setPreselectedInventory] = useState([]);
     const [selectedClient, setSelectedClient] = useState(null);
     const [selectedImages, setSelectedImages] = useState([]);
+    const [currentImageIndex, setCurrentImageIndex] = useState(0);
+    const [fullScreenImageModalVisible, setFullScreenImageModalVisible] = useState(false);
+    const [currentImage, setCurrentImage] = useState(null);
     const [isFormInitialized, setIsFormInitialized] = useState(false);
     const [isNewClientAdded, setIsNewClientAdded] = useState(false);
     const [isAddingNewClient, setIsAddingNewClient] = useState(false);
@@ -419,6 +422,76 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
             console.error('Ошибка при выборе клиента:', error);
         }
     };
+    const openFullScreenImage = (index) => {
+        setCurrentImageIndex(index);
+        setFullScreenImageModalVisible(true);
+    };
+
+    const showNextImage = () => {
+        if (currentImageIndex < selectedImages.length - 1) {
+            setCurrentImageIndex(currentImageIndex + 1);
+        }
+    };
+
+    const showPreviousImage = () => {
+        if (currentImageIndex > 0) {
+            setCurrentImageIndex(currentImageIndex - 1);
+        }
+    };
+
+    const FullScreenImageModal = ({ isVisible, onClose }) => {
+        const imageUri = selectedImages[currentImageIndex]?.uri;
+
+        return (
+            <Modal
+                visible={isVisible}
+                transparent={false}
+                animationType="fade"
+                onRequestClose={onClose}
+            >
+                <View style={{ flex: 1, backgroundColor: 'black', justifyContent: 'center', alignItems: 'center' }}>
+                    {imageUri && (
+                        <Image
+                            source={{ uri: imageUri }}
+                            style={{ width: '100%', height: '100%', resizeMode: 'contain' }}
+                        />
+                    )}
+                    <TouchableOpacity style={{ position: 'absolute', top: 40, right: 20 }} onPress={onClose}>
+                        <Text style={{ color: 'white', fontSize: 30 }}>×</Text>
+                    </TouchableOpacity>
+
+                    {currentImageIndex > 0 && (
+                        <TouchableOpacity
+                            style={{ position: 'absolute', left: 0, top: 0, bottom: 0, right: '50%', justifyContent: 'center' }}
+                            onPress={showPreviousImage}
+                        >
+                            <Text style={{ color: 'white', fontSize: 42, textAlign: 'left', marginLeft: 20 }}>‹</Text>
+                        </TouchableOpacity>
+                    )}
+
+                    {currentImageIndex < selectedImages.length - 1 && (
+                        <TouchableOpacity
+                            style={{ position: 'absolute', right: 0, top: 0, bottom: 0, left: '50%', justifyContent: 'center' }}
+                            onPress={showNextImage}
+                        >
+                            <Text style={{ color: 'white', fontSize: 42, textAlign: 'right', marginRight: 20 }}>›</Text>
+                        </TouchableOpacity>
+                    )}
+                </View>
+            </Modal>
+        );
+    };
+
+    const handleRemoveImage = (index) => {
+        setSelectedImages(currentImages => {
+            const updatedImages = currentImages.filter((_, i) => i !== index);
+            dispatchFormData({
+                type: 'UPDATE_FORM',
+                payload: { selectedImages: updatedImages.map(img => img.uri) }
+            });
+            return updatedImages;
+        });
+    };
 
     const handleChoosePhoto = async () => {
         const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -434,8 +507,15 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
                 quality: 1,
             });
 
-            if (!pickerResult.cancelled) {
-                setSelectedImages(pickerResult.assets || []);
+            if (!pickerResult.canceled) {
+                const newImages = pickerResult.assets || [];
+                setSelectedImages(prevImages => [...prevImages, ...newImages]);
+
+                // Обновляем formData
+                dispatchFormData({
+                    type: 'UPDATE_FORM',
+                    payload: { selectedImages: [...formData.selectedImages, ...newImages.map(img => img.uri)] }
+                });
             }
         } catch (error) {
             Alert.alert('Ошибка', 'Произошла ошибка при выборе фотографий');
@@ -475,20 +555,56 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
         }
     };
 
-    const ImagePreview = ({ images, onAddPress }) => (
+    const ImagePreview = ({ images, onRemovePress }) => (
         <ScrollView horizontal style={styles.imagePreviewContainer} showsHorizontalScrollIndicator={false}>
             {images.map((image, index) => (
                 <View key={index} style={styles.imageContainer}>
-                    <Image source={{ uri: image.uri }} style={styles.image} />
+                    <TouchableOpacity onPress={() => openFullScreenImage(index)} style={styles.imagePreview}>
+                        <Image source={{ uri: image.uri }} style={styles.image} />
+                        <TouchableOpacity style={styles.removeIconContainer} onPress={() => onRemovePress(index)}>
+                            <Text style={styles.removeIcon}>×</Text>
+                        </TouchableOpacity>
+                    </TouchableOpacity>
                 </View>
             ))}
-            <TouchableOpacity onPress={onAddPress} style={styles.image}>
+            <TouchableOpacity onPress={handleChoosePhoto} style={styles.image}>
                 <View style={styles.photoPickerContainer}>
                     <Text style={styles.photoPickerPlusIcon}>+</Text>
                 </View>
             </TouchableOpacity>
         </ScrollView>
     );
+
+    const processServerImages = (serverImages) => {
+        return serverImages.map(img => ({
+            uri: `http://31.129.101.174${img.photo_url}`, // Добавляем базовый URL сервера
+            width: null, // Ширина и высота обычно неизвестны для серверных изображений, если только сервер их не предоставляет
+            height: null,
+            type: 'image', // Тип можно установить статически, если все файлы являются изображениями
+        }));
+    };
+
+    // Функция для получения фотографий с сервера и их загрузки
+    const fetchTaskImages = async (taskId) => {
+        try {
+            const response = await axios.get(`http://31.129.101.174/tasks/${taskId}/photos`);
+            if (response.data && Array.isArray(response.data)) {
+                // Преобразуем и загружаем изображения с сервера
+                const serverImages = processServerImages(response.data);
+                setSelectedImages(prevImages => [...prevImages, ...serverImages]);
+            }
+        } catch (error) {
+            console.error('Ошибка при загрузке изображений задачи:', error);
+        }
+    };
+
+    // Вызов функции загрузки при инициализации компонента
+    useEffect(() => {
+        if (draftData && draftData.id) {
+            fetchTaskImages(draftData.id); // Загружаем изображения, если есть ID задачи
+        }
+    }, [draftData]);
+
 
     const handleAddressChange = useCallback((field, value) => {
         setAddress(prev => ({ ...prev, [field]: value }));
@@ -661,6 +777,11 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.contentContainerTask}>
+                <FullScreenImageModal
+                    isVisible={fullScreenImageModalVisible}
+                    imageUri={currentImage}
+                    onClose={() => setFullScreenImageModalVisible(false)}
+                />
                 <View style={styles.taskHeader}>
                     <TouchableOpacity onPress={handleBackPress}>
                         <BackIcon />
@@ -905,7 +1026,11 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
                                                 onValueChange={handleInventoryChange}
                                                 preselectedItems={preselectedInventory}
                                             />
-                                            <ImagePreview images={selectedImages} onAddPress={handleChoosePhoto} />
+                                            <ImagePreview
+                                                images={selectedImages}
+                                                onAddPress={handleChoosePhoto}
+                                                onRemovePress={handleRemoveImage}
+                                            />
                                         </View>
                                     </View>
                                 ))}

@@ -19,6 +19,7 @@ export const initialState = {
     employeesOptions: [],
     fullnameClientOptions: [],
     selectedInventory: [],
+    selectedImages: [],
     isStartPickerVisible: false,
     isEndPickerVisible: false,
     isSaveDraftModalVisible: false,
