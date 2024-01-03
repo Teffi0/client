@@ -7,10 +7,6 @@ import { BackIcon, EditIcon, DeleteIcon, None, DocumentIcon } from '../icons';
 import styles from '../styles/styles';
 import { debounce } from 'lodash';
 
-const apiClient = axios.create({
-  baseURL: 'http://31.129.101.174/',
-});
-
 const Pagination = React.memo(({ currentPage, totalPages, onPageChange }) => {
   const pages = React.useMemo(() => {
     return Array.from({ length: totalPages }, (_, i) => i + 1);
@@ -35,7 +31,7 @@ const ChangeHistoryModal = ({ isVisible, onClose }) => {
   useEffect(() => {
     const fetchHistory = async () => {
       try {
-        const response = await apiClient.get(`/inventory/changes/all`);
+        const response = await axios.get(`http://31.129.101.174/inventory/changes/all`);
         setHistory(response.data);
       } catch (error) {
         console.error('Ошибка при получении истории изменений инвентаря:', error);
@@ -99,7 +95,7 @@ const InventoryScreen = () => {
 
   const fetchInventory = useCallback(async () => {
     try {
-      const response = await apiClient.get('/inventory', {
+      const response = await axios.get('http://31.129.101.174/inventory', {
         params: { page: currentPage, limit }
       });
       setInventory(response.data);
@@ -145,9 +141,9 @@ const InventoryScreen = () => {
 
     try {
       if (itemData.id && itemData.id !== 'new') {
-        await apiClient.put(`/inventory/${itemData.id}`, dataToSend);
+        await axios.put(`http://31.129.101.174/inventory/${itemData.id}`, dataToSend);
       } else {
-        await apiClient.post('/inventory', dataToSend);
+        await axios.post('http://31.129.101.174/inventory', dataToSend);
       }
       fetchInventory();
       clearEditingState();
@@ -222,7 +218,7 @@ const InventoryScreen = () => {
 
   const handleDeleteItem = async (itemId) => {
     try {
-      await apiClient.delete(`/inventory/${itemId}`);
+      await axios.delete(`http://31.129.101.174/inventory/${itemId}`);
       fetchInventory();
     } catch (error) {
       console.error('Ошибка при удалении элемента инвентаря:', error);

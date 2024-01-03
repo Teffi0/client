@@ -13,7 +13,7 @@ import * as ImagePicker from 'expo-image-picker';
 
 const TaskDetailScreen = ({ route }) => {
   const navigation = useNavigation();
-  const { params: { serviceName, ...initialTask } = {} } = route;
+  const { params: { serviceName, ...initialTask } = {} } = route.params;
   const [task, setTask] = useState(initialTask);
   const [isModalVisible, setModalVisible] = useState(false);
   const [selectedInventory, setSelectedInventory] = useState([]);

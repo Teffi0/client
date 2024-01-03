@@ -7,10 +7,6 @@ import { BackIcon, EditIcon, DeleteIcon, None, DocumentIcon } from '../icons';
 import styles from '../styles/styles';
 import { debounce } from 'lodash';
 
-const apiClient = axios.create({
-  baseURL: 'http://31.129.101.174/',
-});
-
 const Pagination = React.memo(({ currentPage, totalPages, onPageChange }) => {
   const pages = React.useMemo(() => {
     return Array.from({ length: totalPages }, (_, i) => i + 1);
@@ -99,7 +95,7 @@ const ClientBaseScreen = () => {
 
   const fetchClients = useCallback(async () => {
     try {
-      const response = await apiClient.get('/clientsbase', {
+      const response = await axios.get('http://31.129.101.174/clientsbase', {
         params: { page: currentPage, limit }
       });
       setClients(response.data.clients);
@@ -149,9 +145,9 @@ const ClientBaseScreen = () => {
 
     try {
       if (clientData.id && clientData.id !== 9999999) {
-        await apiClient.put(`/clients/${clientData.id}`, dataToSend);
+        await axios.put(`http://31.129.101.174/clients/${clientData.id}`, dataToSend);
       } else {
-        const response = await apiClient.post('/clients', dataToSend);
+        const response = await axios.post('http://31.129.101.174/clients', dataToSend);
         if (response.data && response.data.id) {
           setClients(prevClients => [...prevClients, { ...dataToSend, id: response.data.id }]);
         }
@@ -298,7 +294,7 @@ const ClientBaseScreen = () => {
 
   const handleDeleteClient = async (clientId) => {
     try {
-      await apiClient.delete(`/clients/${clientId}`);
+      await axios.delete(`http://31.129.101.174/clients/${clientId}`);
       fetchClients();
     } catch (error) {
       console.error('Ошибка при удалении клиента:', error);

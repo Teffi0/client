@@ -20,26 +20,26 @@ function ProfileScreen() {
         <View style={styles.header}>
           <TouchableOpacity
             style={styles.headerItem}
-            onPress={() => handleHeaderItemClick('ClientBase')} // Changed to the route name
+            onPress={() => handleHeaderItemClick('ProfileClientBase')} // Changed to the route name
           >
             <Text style={styles.headerItemText}>Клиентская база</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.headerItem}
-            onPress={() => handleHeaderItemClick('Inventory')} // Changed to the route name
+            onPress={() => handleHeaderItemClick('ProfileInventory')} // Changed to the route name
           >
             <Text style={styles.headerItemText}>Складской учёт</Text>
           </TouchableOpacity>
           
           <TouchableOpacity
             style={styles.headerItem}
-            onPress={() => handleHeaderItemClick('Employees')} // Changed to the route name
+            onPress={() => handleHeaderItemClick('ProfileEmployees')} // Changed to the route name
           >
             <Text style={styles.headerItemText}>Сотрудники</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.headerItem}
-            onPress={() => handleHeaderItemClick('Notifications')} // Changed to the route name
+            onPress={() => handleHeaderItemClick('ProfileNotifications')} // Changed to the route name
           >
             <Text style={styles.headerItemText}>Уведомления</Text>
           </TouchableOpacity>

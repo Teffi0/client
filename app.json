@@ -26,6 +26,18 @@
       "eas": {
         "projectId": "e43a04ea-f40d-4a19-abd7-42dfb694f139"
       }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "splash": {
+        "resizeMode": "contain",
+        "backgroundColor": "#ffffff"
+      },
+      "build": {
+        "babel": {
+          "include": ["@react-navigation", "react-native-safe-area-context"]
+        }
+      }
     }
   }
 }

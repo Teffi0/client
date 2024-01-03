@@ -7,10 +7,6 @@ import { BackIcon, EditIcon, DeleteIcon, None, DocumentIcon } from '../icons';
 import styles from '../styles/styles';
 import { debounce } from 'lodash';
 
-const apiClient = axios.create({
-  baseURL: 'http://31.129.101.174/',
-});
-
 const Pagination = React.memo(({ currentPage, totalPages, onPageChange }) => {
   const pages = React.useMemo(() => {
     return Array.from({ length: totalPages }, (_, i) => i + 1);
@@ -99,7 +95,7 @@ const EmployeesScreen = () => {
 
   const fetchEmployees = useCallback(async () => {
     try {
-      const response = await apiClient.get('/employees', {
+      const response = await axios.get('http://31.129.101.174/employees', {
         params: { page: currentPage, limit }
       });
       setEmployees(response.data);
@@ -150,9 +146,9 @@ const EmployeesScreen = () => {
 
     try {
       if (employeeData.id && employeeData.id !== 9999999) {
-        await apiClient.put(`/employees/${employeeData.id}`, dataToSend);
+        await axios.put(`http://31.129.101.174/employees/${employeeData.id}`, dataToSend);
       } else {
-        const response = await apiClient.post('/employees', dataToSend);
+        const response = await axios.post('http://31.129.101.174/employees', dataToSend);
         if (response.data && response.data.id) {
           setEmployees(prevEmployees => [...prevEmployees, { ...dataToSend, id: response.data.id }]);
         }
@@ -229,7 +225,7 @@ const EmployeesScreen = () => {
 
   const handleDeleteEmployee = async (employeeId) => {
     try {
-      await apiClient.delete(`/employees/${employeeId}`);
+      await axios.delete(`http://31.129.101.174/employees/${employeeId}`);
       fetchEmployees();
     } catch (error) {
       console.error('Ошибка при удалении сотрудника:', error);
