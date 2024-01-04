@@ -18,9 +18,9 @@ const TasksForSelectedDateComponent = ({ tasksByClient, expandedClients, toggleC
         <View key={client} style={styles.clientTaskContainer}>
           <TouchableOpacity style={styles.clientHeader} onPress={() => toggleClient(client)}>
             <Text style={styles.clientName}>{client}</Text>
-            {expandedClients.includes(client) ? <CollapseIcon /> : <ExpandIcon />}
+            {expandedClients.has(client) ? <CollapseIcon /> : <ExpandIcon />}
           </TouchableOpacity>
-          {expandedClients.includes(client) && (
+          {expandedClients.has(client) && (
             <View style={styles.clientTasks}>
               {clientTasks.map((task) => (
                 <TaskComponent key={task.id} {...task} />

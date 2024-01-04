@@ -423,14 +423,15 @@ const styles = StyleSheet.create({
     fontSize: sizes.fontSizeXXLarge,
   },
   dayButton: {
-    width: '100%', // Кнопка dayButton займет всю ширину dayContainer
+    flex: 1,
+    marginHorizontal: 2,
+    paddingTop: 6,
+    paddingBottom: 8,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 8, // Устанавливаем паддинг для вертикальных границ
-    borderWidth: 1,
-    borderColor: 'white',
-    borderRadius: 10,
-    backgroundColor: '#f9f9f9',
+    borderColor: '#f0f0f0',
+    backgroundColor: 'transparent'
   },
   dayText: {
     fontSize: sizes.fontSizeLarge,
@@ -716,21 +717,21 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   filterModalContent: {
-    backgroundColor: 'white', 
-    borderTopLeftRadius: 20, 
-    borderTopRightRadius: 20, 
-    padding: 16, 
-    shadowColor: 'black', 
-    shadowOffset: { width: 0, height: -1 }, 
-    shadowOpacity: 0.2, 
-    shadowRadius: 4, 
+    backgroundColor: 'white',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 16,
+    shadowColor: 'black',
+    shadowOffset: { width: 0, height: -1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
     elevation: 5,
     maxHeight: '60%',
   },
   filterModalHeader: {
-    textAlign: 'center', 
-    fontSize: 18, 
-    fontWeight: 'bold', 
+    textAlign: 'center',
+    fontSize: 18,
+    fontWeight: 'bold',
     paddingVertical: 12,
     marginBottom: 400,
   },
@@ -841,7 +842,7 @@ const styles = StyleSheet.create({
     width: '100%',
     alignSelf: 'center',
   },
-  
+
   photoPickerPlusIcon: {
     fontSize: 30,
     color: 'grey',
@@ -851,11 +852,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 10,
   },
-  
+
   imageContainer: {
     marginRight: 10,
   },
-  
+
   image: {
     width: 100,
     height: 100,
@@ -868,7 +869,7 @@ const styles = StyleSheet.create({
     paddingRight: 8,
     zIndex: 1, // Убедитесь, что крестик находится над изображением
   },
-  
+
   removeIcon: {
     fontSize: 24, // Регулируем размер крестика
     color: 'white', // Цвет крестика

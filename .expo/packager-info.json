@@ -4,6 +4,6 @@
   "webpackServerPort": 19006,
   "expoServerNgrokUrl": "https://ug-cnu.mateniaku.client.exp.direct",
   "packagerNgrokUrl": "https://ug-cnu.mateniaku.client.exp.direct",
-  "ngrokPid": 3620,
+  "ngrokPid": 5360,
   "packagerPid": null
 }

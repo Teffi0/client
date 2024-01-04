@@ -22,23 +22,25 @@ const VerticalCalendar = ({ tasks, taskDates, renderAddButton }) => {
   const ModalHeight = screenHeight * 0.35;
   const modalHeight = useRef(new Animated.Value(ModalHeight));
 
-  const [expandedClients, setExpandedClients] = useState([]);
+  const [expandedClients, setExpandedClients] = useState(new Set());
 
   const handleToggleClient = useCallback((client) => {
-    setExpandedClients((current) =>
-      current.includes(client)
-        ? current.filter((c) => c !== client)
-        : [...current, client]
-    );
+    setExpandedClients((current) => {
+      const updated = new Set(current);
+      if (updated.has(client)) {
+        updated.delete(client);
+      } else {
+        updated.add(client);
+      }
+      return updated;
+    });
   }, []);
 
   const tasksBySelectedDate = useMemo(() => tasks.filter(task =>
     format(parseISO(task.start_date), 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd')
   ).reduce((acc, task) => {
     const client = task.fullname_client;
-    if (!acc[client]) {
-      acc[client] = [];
-    }
+    acc[client] = acc[client] || [];
     acc[client].push(task);
     return acc;
   }, {}), [tasks, selectedDate]);

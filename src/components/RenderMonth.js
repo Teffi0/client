@@ -1,111 +1,78 @@
-import React, { memo, useMemo, useCallback } from 'react';
+import React, { memo, useMemo } from 'react';
 import { View, Text, TouchableOpacity, VirtualizedList } from 'react-native';
-import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSameMonth, isSameDay } from 'date-fns';
+import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import styles from '../styles/styles';
 import PropTypes from 'prop-types';
 
-const Day = memo(({ day, handleDatePress, isSelectedDay, hasTask }) => {
-    const onPress = useCallback(() => {
-        if (day) {
-            handleDatePress(day);
-        }
-    }, [day, handleDatePress]);
+const calculateWeeks = (date) => {
+    const start = startOfWeek(startOfMonth(date));
+    const end = endOfWeek(endOfMonth(date));
+    let currentDay = start;
+    const weeks = [];
 
-    const dayButtonStyle = day ? [styles.dayButton, { flex: 1 }] : null;
-    const formattedDay = day ? format(day, 'd', { locale: ru }) : '';  // Оптимизированная проверка
+    while (currentDay <= end) {
+        weeks.push(Array.from({ length: 7 }, (_, i) => {
+            const day = addDays(currentDay, i);
+            return day.getMonth() === date.getMonth() ? day : null;
+        }));
+        currentDay = addDays(currentDay, 7);
+    }
+    return weeks;
+};
 
-    return (
-        <View style={styles.dayContainer}>
+const Day = memo(({ day, handleDatePress, isSelectedDay, hasTask }) => (
+    <View style={styles.dayContainer}>
+        {day ? (
             <TouchableOpacity
-                style={dayButtonStyle}
-                onPress={onPress}
-                disabled={!day}
+                style={[styles.dayButton, { flex: 1 }]}
+                onPress={() => handleDatePress(day)}
             >
-                {day && (
-                    <>
-                        <Text style={[styles.dayText, isSelectedDay ? styles.today : null]}>
-                            {formattedDay}
-                        </Text>
-                        <View style={[styles.taskDot, hasTask && styles.taskDotActive]} />
-                    </>
-                )}
+                <Text style={[styles.dayText, isSelectedDay && styles.today]}>
+                    {format(day, 'd', { locale: ru })}
+                </Text>
+                {hasTask && <View style={styles.taskDotActive} />}
             </TouchableOpacity>
-        </View>
-    );
-});
+        ) : null}
+    </View>
+));
 
 Day.propTypes = {
     day: PropTypes.instanceOf(Date),
     handleDatePress: PropTypes.func.isRequired,
     isSelectedDay: PropTypes.bool.isRequired,
-    hasTask: PropTypes.bool.isRequired,
+    hasTask: PropTypes.bool
 };
 
-const RenderMonth = React.memo(({ date, handleDatePress, taskDates }) => {
-    const memoizedHandleDatePress = useCallback(handleDatePress, []);
+Day.defaultProps = {
+    hasTask: false
+};
 
-    const weeks = useMemo(() => {
-        const weeksArray = [];
-        let currentWeek = [];
-        let currentDay = startOfWeek(startOfMonth(date));
-
-        while (currentDay <= endOfWeek(endOfMonth(date))) {
-            for (let i = 0; i < 7; i++) {
-                currentWeek.push(isSameMonth(currentDay, date) ? currentDay : null);
-                currentDay = addDays(currentDay, 1);
-            }
-
-            weeksArray.push(currentWeek);
-            currentWeek = [];
-        }
-
-        return weeksArray;
-    }, [date]);
-
-    const renderItem = useCallback(({ item: week, index: weekIndex }) => (
-        <View style={styles.weekContainer}>
-            {week.map((day, dayIndex) => {
-                if (!day) {
-                    return (
-                        <Day
-                            key={`empty-${weekIndex}-${dayIndex}`}
-                            day={null}
-                            handleDatePress={handleDatePress}
-                            isSelectedDay={false}
-                            hasTask={false}
-                        />
-                    );
-                }
-                const isSelectedDay = isSameDay(day, new Date());
-                const formattedDate = format(day, 'yyyy-MM-dd');
-                const hasTask = taskDates[formattedDate] === 'в процессе' || taskDates[formattedDate] === 'новая';
-    
-                return (
-                    <Day
-                        key={formattedDate}
-                        day={day}
-                        handleDatePress={handleDatePress}
-                        isSelectedDay={isSelectedDay}
-                        hasTask={hasTask}
-                    />
-                );
-            })}
-        </View>
-    ), [memoizedHandleDatePress, taskDates]);
-
-    const getItemCount = () => weeks.length;
-    const getItem = (data, index) => weeks[index];
+const RenderMonth = memo(({ date, handleDatePress, taskDates }) => {
+    const weeks = useMemo(() => calculateWeeks(date), [date]);
+    const todayFormatted = format(new Date(), 'yyyy-MM-dd');
 
     return (
         <View style={styles.monthContainer}>
             <Text style={styles.monthName}>{format(date, 'MMMM', { locale: ru })}</Text>
             <VirtualizedList
                 data={weeks}
-                renderItem={renderItem}
-                keyExtractor={(item, index) => `week-${index}`}
-                getItemCount={getItemCount}
-                getItem={getItem}
+                renderItem={({ item: week }) => (
+                    <View style={styles.weekContainer}>
+                        {week.map((day, index) => (
+                            <Day
+                                key={day ? format(day, 'yyyy-MM-dd') : `empty-${index}`}
+                                day={day}
+                                handleDatePress={handleDatePress}
+                                isSelectedDay={!!day && format(day, 'yyyy-MM-dd') === todayFormatted}
+                                hasTask={day ? ['в процессе', 'новая'].includes(taskDates[format(day, 'yyyy-MM-dd')]) : false}
+                            />
+                        ))}
+                    </View>
+                )}
+                keyExtractor={(_, index) => `week-${index}`}
+                getItemCount={() => weeks.length}
+                getItem={(data, index) => weeks[index]}
             />
         </View>
     );
@@ -118,4 +85,3 @@ RenderMonth.propTypes = {
 };
 
 export default RenderMonth;
-
