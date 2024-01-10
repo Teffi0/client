@@ -7,18 +7,6 @@ import { formatTime, formatAddress } from '../utils/utils'; // Импорт фу
 import { fetchServiceNamesByIds, fetchDraftData } from '../utils/tasks';
 import NewTaskScreen from '../screens/NewTaskScreen';
 
-/**
- * Компонент для отображения задачи в списке.
- * @param {Object} props - Пропсы компонента.
- * @param {string} props.status - Статус задачи.
- * @param {string} props.start_time - Время начала задачи.
- * @param {string} props.end_time - Время начала задачи.
- * @param {string} props.service - Название услуги.
- * @param {string} props.address_client - Адрес клиента.
- * @param {number} props.employees - Количество сотрудников.
- * @param {number} props.id - ID задачи.
- */
-
 const getStatusColor = (status) => {
   switch (status) {
     case 'новая':

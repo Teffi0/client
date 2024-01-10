@@ -1,48 +1,29 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, Modal } from 'react-native';
 import axios from 'axios';
-import { formatISO, parseISO, isBefore, format } from 'date-fns';
-import styles from '../styles/styles';
+import { formatISO, format } from 'date-fns';
 import { SERVER_URL } from '../utils/tasks';
 import { taskEventEmitter } from '../Events';
 
 export async function updateTaskStatus(taskId, taskData) {
     try {
-        const response = await fetch(`http://31.129.101.174/tasks/${taskId}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(taskData), // Отправляем полный объект задачи
-        });
+        console.log(taskData);
+        const response = await axios.put(`${SERVER_URL}/tasks/${taskId}`, taskData);
         taskEventEmitter.emit('taskUpdated');
-        return response; // Возвращает объект ответа fetch
+        return response;
     } catch (error) {
         console.error('Ошибка при обновлении задачи:', error);
-        throw error; // В случае ошибки пробрасываем исключение
+        throw error;
     }
 }
 
 
-
 export const validateFormData = (formData) => {
     const requiredFields = ['selectedService', 'paymentMethod', 'cost', 'startDate', 'endDate', 'startDateTime', 'endDateTime', 'selectedEmployee', 'selectedResponsible', 'fullnameClient'];
-    for (let field of requiredFields) {
-        if (!formData[field] || (Array.isArray(formData[field]) && formData[field].length === 0)) {
-            alert(`Пожалуйста, заполните поле ${field}.`);
-            return false;
-        }
-    }
-
-    // Проверка дат на корректность (дата окончания после даты начала)
-    if (isBefore(parseISO(formData.endDate), parseISO(formData.startDate))) {
-        alert('Дата окончания должна быть позже даты начала.');
+    if (requiredFields.some(field => !formData[field])) {
+        alert('Пожалуйста, заполните все обязательные поля.');
         return false;
     }
-
     return true;
 };
-
 
 const formatTaskData = (formData) => {
     const taskData = {
@@ -92,84 +73,50 @@ export const fetchOptions = async (dispatchFormData) => {
 };
 
 export const handleSaveTask = async (formData) => {
-    // Если статус не "черновик", проводим валидацию
-    if (formData.status !== 'черновик' && !validateFormData(formData)) {
-        return; // Если валидация не пройдена, прекращаем выполнение функции
-    }
+    if (formData.status !== 'черновик' && !validateFormData(formData)) return;
 
     const serviceString = formData.selectedService.join(', ');
-
-    const formattedData = formatTaskData({ ...formData, service: serviceString });
-
-    // Преобразуем данные сотрудников в массив ID
     const employees = formData.employeesOptions.map(employee => employee.id);
-    formattedData.employees = employees;
 
-    // После изменения
-    formattedData.employees = formData.selectedEmployee;
-    try {
-        let taskId;
-        if (formData.id) {
-            taskId = formData.id;
-        } else {
-            // Если это новая задача, создаем ее и получаем новый id
-            const response = await axios.post(`${SERVER_URL}/tasks`, formattedData);
-            taskId = response.data.task_id;
-        }
+    const formattedData = {
+        ...formatTaskData({ ...formData, service: serviceString }),
+        employees: formData.selectedEmployee || employees
+    };
 
-        // Добавление услуг к задаче, если они есть
-        if (formData.selectedService && formData.selectedService.length > 0) {
-            await axios.post(`${SERVER_URL}/tasks/${taskId}/services`, {
-                services: formData.selectedService
-            });
-            console.log('Услуги успешно добавлены к задаче');
-        }
+    const taskId = formData.id || (await axios.post(`${SERVER_URL}/tasks`, formattedData)).data.task_id;
 
-        if (formData.status === 'выполнено') {
-            // Фильтрация элементов с количеством, равным нулю
-            const filteredInventory = formData.selectedInventory.filter(item => item.quantity > 0);
-
-            // Формирование данных для обновления инвентаря
-            const inventoryData = filteredInventory.map(item => ({
-                inventory_id: item.id,
-                quantity: item.quantity
-            }));
-
-            await axios.put(`${SERVER_URL}/tasks/${taskId}/inventory`, {
-                inventory: inventoryData
-            });
-
-            if (formData.selectedImages && formData.selectedImages.length > 0) {
-                const imagesFormData = new FormData();
-                formData.selectedImages.forEach((imageUri, index) => {
-                    imagesFormData.append('photos', {
-                        name: `photo_${index}.jpg`,
-                        type: 'image/jpeg',
-                        uri: Platform.OS === 'android' ? imageUri : imageUri.replace('file://', ''),
-                    });
-                });
-
-                await axios.post(`${SERVER_URL}/tasks/${taskId}/photos`, imagesFormData, {
-                    headers: {
-                        'Content-Type': 'multipart/form-data',
-                    },
-                });
-
-                console.log('Изображения успешно загружены на сервер');
-            }
-        }
-
-        taskEventEmitter.emit('taskUpdated');
-    } catch (error) {
-        console.error('Ошибка при добавлении задачи:', error);
+    if (formData.selectedService?.length > 0) {
+        await axios.post(`${SERVER_URL}/tasks/${taskId}/services`, { services: formData.selectedService });
+        console.log('Услуги успешно добавлены к задаче');
     }
+
+    if (formData.status === 'выполнено') {
+        const filteredInventory = formData.selectedInventory.filter(item => item.quantity > 0);
+        const inventoryData = filteredInventory.map(({ id, quantity }) => ({ inventory_id: id, quantity }));
+
+        await axios.put(`${SERVER_URL}/tasks/${taskId}/inventory`, { inventory: inventoryData });
+
+        if (formData.selectedImages?.length > 0) {
+            const imagesFormData = new FormData();
+            formData.selectedImages.forEach((imageUri, index) => {
+                imagesFormData.append('photos', {
+                    name: `photo_${index}.jpg`,
+                    type: 'image/jpeg',
+                    uri: Platform.OS === 'android' ? imageUri : imageUri.replace('file://', ''),
+                });
+            });
+            await axios.post(`${SERVER_URL}/tasks/${taskId}/photos`, imagesFormData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
+            console.log('Изображения успешно загружены на сервер');
+        }
+    }
+
+    taskEventEmitter.emit('taskUpdated');
 };
 
-// Функция для обновления черновика
 export const updateDraft = async (draftId, formData) => {
-    console.log('Отправляемые данные:', formData);
 
-    // Преобразование данных в формат, ожидаемый сервером
     const dataToSend = {
         status: formData.status,
         service: formData.selectedService.join(', '),
@@ -184,9 +131,8 @@ export const updateDraft = async (draftId, formData) => {
         address_client: formData.addressClient,
         phone: formData.phone,
         description: formData.description,
-        employees: formData.selectedEmployee.join(','), // Предполагается, что это массив ID сотрудников
-        services: formData.selectedService, // Предполагается, что это массив ID услуг
-        // Добавьте другие поля, если они необходимы
+        employees: formData.selectedEmployee.join(','),
+        services: formData.selectedService,
     };
     console.log('dataToSend данные:', dataToSend);
     try {
@@ -196,26 +142,3 @@ export const updateDraft = async (draftId, formData) => {
         console.error('Ошибка при обновлении черновика:', error);
     }
 };
-
-export const SuccessModal = React.memo(({ isVisible, onClose }) => {
-    if (!isVisible) return null;
-
-    return (
-        <Modal
-            visible={isVisible}
-            transparent={false}
-            animationType="slide"
-        >
-            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                <Text style={{ fontSize: 20, marginBottom: 20 }}>Задача успешно добавлена!</Text>
-                <TouchableOpacity
-                    onPress={onClose}
-                    style={{ backgroundColor: 'blue', padding: 10, borderRadius: 5 }}
-                >
-                    <Text style={{ color: 'white' }}>Отлично</Text>
-                </TouchableOpacity>
-            </View>
-        </Modal>
-    );
-});
-

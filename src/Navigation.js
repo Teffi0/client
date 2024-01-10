@@ -75,8 +75,6 @@ function TabNavigator() {
   );
 }
 
-console.log(Stack);
-
 export default function Navigation() {
   return (
     <NavigationContainer>

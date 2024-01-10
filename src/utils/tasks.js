@@ -1,107 +1,68 @@
-import { format } from 'date-fns';
+import { format, isToday as fnsIsToday } from 'date-fns';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const SERVER_URL = 'http://31.129.101.174';
 
-export const isToday = (date) => {
-  const today = new Date();
-  return date.getDate() === today.getDate() &&
-    date.getMonth() === today.getMonth() &&
-    date.getFullYear() === today.getFullYear();
-};
+// Упрощенная функция для проверки сегодняшней даты
+export const isToday = (date) => fnsIsToday(date);
+
+// Универсальная функция для запросов к API
+async function makeApiRequest(method, url, data = null, params = null) {
+  try {
+    const response = await axios[method](`${SERVER_URL}${url}`, data, { params });
+    return response.data;
+  } catch (e) {
+    console.error(`Ошибка при запросе к ${url}: `, e);
+    throw e;
+  }
+}
 
 export const fetchTaskDates = async (setTaskDates) => {
-  try {
-    const response = await axios.get(`${SERVER_URL}/task-dates`);
-    setTaskDates(response.data); // Прямо сохраняем данные из ответа сервера
-    await AsyncStorage.setItem('taskDates', JSON.stringify(response.data));
-  } catch (e) {
-    console.error('Ошибка при загрузке индекса дат задач: ', e);
-    setTaskDates({});
-  }
+  const data = await makeApiRequest('get', '/task-dates');
+  setTaskDates(data);
+  await AsyncStorage.setItem('taskDates', JSON.stringify(data));
 };
 
-
-
 export const fetchTasksForSelectedDate = async (selectedDate, setTasks) => {
-  try {
-    const formattedDate = format(selectedDate, 'yyyy-MM-dd');
-    const response = await axios.get(`${SERVER_URL}/tasks`, { params: { date: formattedDate } });
-    setTasks(response.data);
-  } catch (e) {
-    console.error('Не удалось загрузить задачи для выбранной даты: ', e);
-    setTasks([]);
-  }
+  const formattedDate = format(selectedDate, 'yyyy-MM-dd');
+  const data = await makeApiRequest('get', '/tasks', null, { date: formattedDate });
+  setTasks(data);
 };
 
 export const fetchTasksForDetail = async (setTasks) => {
-  try {
-    const response = await axios.get(`${SERVER_URL}/tasks`);
-    setTasks(response.data);
-  } catch (e) {
-    console.error('Не удалось загрузить задачи для выбранной даты: ', e);
-    setTasks([]);
-  }
+  const data = await makeApiRequest('get', '/tasks');
+  setTasks(data);
 };
 
 export const fetchServiceNamesByIds = async (serviceIds) => {
-  try {
-    if (typeof serviceIds !== 'string') {
-      throw new Error('serviceIds должна быть строкой с идентификаторами, разделенными запятой');
-    }
-
-    // Проверка, есть ли выбранные услуги
-    if (serviceIds.trim().length === 0) {
-      return { noServices: 'Услуга не выбрана' };
-    }
-
-    // Преобразуем строку в массив чисел
-    const idsArray = serviceIds.split(',').map(id => parseInt(id.trim(), 10));
-    const response = await axios.post(`${SERVER_URL}/services/names`, { ids: idsArray });
-
-    // Возвращаем объект с названиями услуг, индексированный по ID услуг
-    return response.data.reduce((acc, service) => {
-      acc[service.id] = service.service_name;
-      return acc;
-    }, {});
-  } catch (e) {
-    console.error('Ошибка при загрузке названий услуг: ', e);
-    return {};
+  if (typeof serviceIds !== 'string') {
+    throw new Error('serviceIds должна быть строкой с идентификаторами, разделенными запятой');
   }
+  if (serviceIds.trim().length === 0) {
+    return { noServices: 'Услуга не выбрана' };
+  }
+  const idsArray = serviceIds.split(',').map(id => parseInt(id.trim(), 10));
+  const services = await makeApiRequest('post', '/services/names', { ids: idsArray });
+  return services.reduce((acc, service) => {
+    acc[service.id] = service.service_name;
+    return acc;
+  }, {});
 };
 
 export const fetchDraftData = async (taskId) => {
-  try {
-    const response = await axios.get(`${SERVER_URL}/tasks/draft/${taskId}`);
-    return response.data;
-  } catch (error) {
-    // Здесь можно более тонко обработать ошибку, возможно, даже возвращать разные ошибки в зависимости от статуса ответа сервера
-    console.error('Ошибка при получении данных черновика:', error);
-    throw error;
-  }
+  return await makeApiRequest('get', `/tasks/draft/${taskId}`);
 };
 
 export const fetchTaskParticipants = async (taskId) => {
-  try {
-    const response = await axios.get(`http://31.129.101.174/task-participants/${taskId}`);
-    if (response.data && Array.isArray(response.data)) {
-      return response.data; // Убедитесь, что это массив
-    } else {
-      throw new Error("Некорректный формат данных");
-    }
-  } catch (error) {
-    console.error('Ошибка при получении участников:', error);
-    throw error; // Перебрасываем ошибку дальше
+  const data = await makeApiRequest('get', `/task-participants/${taskId}`);
+  if (!Array.isArray(data)) {
+    throw new Error("Некорректный формат данных");
   }
+  return data;
 };
 
-export const fetchTaskDetails = async (taskId) => {
-  try {
-    // Загрузка данных о задаче
-    const response = await axios.get(`${SERVER_URL}/tasks/${taskId}`);
-    setTask(response.data);
-  } catch (error) {
-    console.error('Ошибка при загрузке деталей задачи:', error);
-  }
+export const fetchTaskDetails = async (taskId, setTask) => {
+  const data = await makeApiRequest('get', `/tasks/${taskId}`);
+  setTask(data);
 };

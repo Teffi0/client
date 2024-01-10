@@ -41,8 +41,8 @@ const CustomCalendar = ({ selectedDate, onDateChange, tasks, taskDates }) => {
   }), [selectedDate, translateX]);
 
   const handleDateChange = useCallback((day) => {
-    onDateChange(day < startOfWeek(selectedDate) ? subWeeks(day, 1) : addWeeks(day, 1));
-  }, [selectedDate, onDateChange]);
+    onDateChange(day);
+  }, [onDateChange]);
 
   const currentWeek = useMemo(() => {
     const start = startOfWeek(selectedDate);

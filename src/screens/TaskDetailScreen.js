@@ -102,6 +102,7 @@ const TaskDetailScreen = ({ route }) => {
 
       if (!pickerResult.canceled) {
         setSelectedImages(prevImages => [...prevImages, ...(pickerResult.assets || [])]);
+        console.log(selectedImages);
       }
     } catch (error) {
       Alert.alert('Ошибка', 'Произошла ошибка при выборе фотографий');

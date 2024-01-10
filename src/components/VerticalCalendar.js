@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useRef, useLayoutEffect, useEffect, useCallback } from 'react';
 import { View, Text, FlatList, Modal, Animated, PanResponder, Dimensions, ScrollView } from 'react-native';
 import { format, addMonths, startOfMonth, parseISO } from 'date-fns';
 import { ru } from 'date-fns/locale';
@@ -12,54 +12,35 @@ const screenHeight = Dimensions.get('window').height;
 const VerticalCalendar = ({ tasks, taskDates, renderAddButton }) => {
   const flatListRef = useRef(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [data, setData] = useState(Array.from({ length: 5 }, (_, i) => addMonths(startOfMonth(new Date()), i - 2)));
-  const [page, setPage] = useState(0);
   const [modalVisible, setModalVisible] = useState(false);
-  const [isFullSize, setIsFullSize] = useState(false);
-  const [isClosing, setIsClosing] = useState(false);
+  const [expandedClients, setExpandedClients] = useState(new Set());
+
+  const data = Array.from({ length: 5 }, (_, i) => addMonths(startOfMonth(new Date()), i - 2));
+  const tasksBySelectedDate = tasks.filter(task => format(parseISO(task.start_date), 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd'))
+    .reduce((acc, task) => ((acc[task.fullname_client] = acc[task.fullname_client] || []).push(task), acc), {});
+
+  useLayoutEffect(() => flatListRef.current?.scrollToIndex({ index: 1, animated: false }), []);
+
+  const handleDatePress = day => {
+    setSelectedDate(day);
+    setModalVisible(true);
+    openModal();
+  };
+
+  const handleToggleClient = client => setExpandedClients(current => new Set(current.has(client) ? current.delete(client) : current.add(client)));
 
   const ModalFullHeight = screenHeight * 0.05;
   const ModalHeight = screenHeight * 0.35;
   const modalHeight = useRef(new Animated.Value(ModalHeight));
-
-  const [expandedClients, setExpandedClients] = useState(new Set());
-
-  const handleToggleClient = useCallback((client) => {
-    setExpandedClients((current) => {
-      const updated = new Set(current);
-      if (updated.has(client)) {
-        updated.delete(client);
-      } else {
-        updated.add(client);
-      }
-      return updated;
-    });
-  }, []);
-
-  const tasksBySelectedDate = useMemo(() => tasks.filter(task =>
-    format(parseISO(task.start_date), 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd')
-  ).reduce((acc, task) => {
-    const client = task.fullname_client;
-    acc[client] = acc[client] || [];
-    acc[client].push(task);
-    return acc;
-  }, {}), [tasks, selectedDate]);
+  const [isFullSize, setIsFullSize] = useState(false);
 
   useEffect(() => {
-    if (isFullSize) {
-      Animated.timing(modalHeight.current, {
-        toValue: ModalFullHeight,
-        duration: 300,
-        useNativeDriver: false,
-      }).start();
-    } else {
-      Animated.timing(modalHeight.current, {
-        toValue: ModalHeight,
-        duration: 300,
-        useNativeDriver: false,
-      }).start();
-    }
-  }, [isFullSize]);
+    Animated.timing(modalHeight.current, {
+      toValue: isFullSize ? ModalFullHeight : ModalHeight,
+      duration: 300,
+      useNativeDriver: true, // Изменено здесь
+    }).start();
+  }, [isFullSize, ModalFullHeight, ModalHeight]);
 
   const panResponder = useRef(
     PanResponder.create({
@@ -73,118 +54,58 @@ const VerticalCalendar = ({ tasks, taskDates, renderAddButton }) => {
         {
           useNativeDriver: false,
           listener: (event, gestureState) => {
-            const currentHeight = modalHeight.current.__getValue();
-            if (currentHeight < ModalFullHeight) {
+            if (modalHeight.current.__getValue() < ModalFullHeight) {
               modalHeight.current.setValue(0);
             }
           },
         }
       ),
-
       onPanResponderRelease: (event, gestureState) => {
         modalHeight.current.flattenOffset();
         const currentHeight = modalHeight.current._value + gestureState.dy;
         const upwardThreshold = ModalHeight + (screenHeight - ModalHeight) / 2;
 
         if (gestureState.dy < 0) {
-          if (currentHeight < upwardThreshold) {
-            openFullModal();
-          } else {
-            openModal();
-          }
+          currentHeight < upwardThreshold ? openFullModal() : openModal();
         } else {
-          if (currentHeight > ModalHeight) {
-            closeModal();
-          } else {
-            openModal();
-          }
+          currentHeight > ModalHeight ? closeModal() : openModal();
         }
       },
-
-
     })
   ).current;
 
-  const onEndReached = useCallback(() => {
-    setData(prevData => {
-      const start = addMonths(startOfMonth(new Date()), page * 5 - 2);
-      const newData = Array.from({ length: 5 }, (_, i) => addMonths(start, i));
-      return [...new Set([...prevData, ...newData])];
-    });
-    setPage(prevPage => prevPage + 1);
-  }, [page]);
-
-  useEffect(() => {
-    flatListRef.current?.scrollToIndex({ index: 2, animated: false });
-  }, []);
-
-  const handleDatePress = useCallback((day) => {
-    setSelectedDate(day);
-    setModalVisible(true);
-    openModal();
-  }, []);
-
-  const openFullModal = useCallback(() => {
+  const animateModal = useCallback((value, fullSize) => {
     Animated.spring(modalHeight.current, {
-      toValue: ModalFullHeight,
-      useNativeDriver: false,
-      bounciness: 0
-    }).start(() => setIsFullSize(true));
-  }, [ModalFullHeight]);
+        toValue: value,
+        useNativeDriver: true, // Изменено здесь
+        bounciness: 0
+    }).start(() => setIsFullSize(fullSize));
+}, []);
 
-  const openModal = useCallback(() => {
-    setModalVisible(true);
-    Animated.spring(modalHeight.current, {
-      toValue: ModalHeight,
-      useNativeDriver: false,
-      bounciness: 0
-    }).start(() => setIsFullSize(false));
-  }, [ModalHeight]);
-
+  const openFullModal = useCallback(() => animateModal(ModalFullHeight, true), [ModalFullHeight, animateModal]);
+  const openModal = useCallback(() => animateModal(ModalHeight, false), [ModalHeight, animateModal]);
   const closeModal = useCallback(() => {
-    setIsClosing(true); // Начало процесса закрытия модального окна
-    Animated.spring(modalHeight.current, {
-      toValue: screenHeight,
-      useNativeDriver: false,
-      bounciness: 0
-    }).start(() => {
-      setModalVisible(false);
-      setIsFullSize(false);
-      modalHeight.current.setValue(ModalHeight - screenHeight);
-      setIsClosing(false); // Завершение процесса закрытия модального окна
-    });
-  }, [screenHeight, ModalHeight]);
+    animateModal(screenHeight, false);
+    modalHeight.current.setValue(ModalHeight);
+    setModalVisible(false);
+  }, [ModalHeight, screenHeight, animateModal]);
 
-  const renderItem = useCallback(({ item }) => (
-    <RenderMonth date={item} handleDatePress={handleDatePress} taskDates={taskDates} />
-  ), [handleDatePress, taskDates]);
-
-  const getItemLayout = useCallback((_, index) => ({
-    length: 400, offset: 400 * index, index
-  }), []);
-
-  const keyExtractor = useCallback((item, index) => `${format(item, 'yyyy-MM')}-${index}`, []);
-
-  const modifiedRenderAddButton = useCallback(() => {
-    if (!isClosing) return renderAddButton();
-  }, [isClosing, renderAddButton]);
 
   return (
     <>
       <FlatList
         ref={flatListRef}
         data={data}
+        renderItem={({ item }) => <RenderMonth date={item} handleDatePress={handleDatePress} taskDates={taskDates} />}
+        keyExtractor={(item, index) => `${format(item, 'yyyy-MM')}-${index}`}
+        getItemLayout={(_, index) => ({ length: 400, offset: 400 * index, index })}
         initialNumToRender={5}
         maxToRenderPerBatch={5}
         windowSize={5}
-        renderItem={renderItem}
-        keyExtractor={keyExtractor}
-        getItemLayout={getItemLayout}
-        onEndReached={onEndReached}
         onEndReachedThreshold={0.5}
         showsVerticalScrollIndicator={false}
         removeClippedSubviews={true}
-        initialScrollIndex={1}
+        initialScrollIndex={2}
       />
       <Modal
         animationType="slide"
@@ -192,7 +113,7 @@ const VerticalCalendar = ({ tasks, taskDates, renderAddButton }) => {
         visible={modalVisible}
         onRequestClose={() => closeModal()}
       >
-        <Animated.View style={[styles.modalOverlay, { top: modalHeight.current }]} {...panResponder.panHandlers}>
+        <Animated.View style={[styles.modalOverlay, { transform: [{ translateY: modalHeight.current }] }]} {...panResponder.panHandlers}>
           <View style={styles.container}>
             <View style={styles.contentContainer}>
               <View style={styles.taskHeader}>
@@ -209,7 +130,6 @@ const VerticalCalendar = ({ tasks, taskDates, renderAddButton }) => {
             </View>
           </View>
         </Animated.View>
-        {modifiedRenderAddButton()}
       </Modal>
     </>
   );
