@@ -26,12 +26,12 @@ export const fetchTaskDates = async (setTaskDates) => {
 
 export const fetchTasksForSelectedDate = async (selectedDate, setTasks) => {
   const formattedDate = format(selectedDate, 'yyyy-MM-dd');
-  const data = await makeApiRequest('get', '/tasks', null, { date: formattedDate });
+  const data = await makeApiRequest('get', '/user_tasks', null, { date: formattedDate });
   setTasks(data);
 };
 
 export const fetchTasksForDetail = async (setTasks) => {
-  const data = await makeApiRequest('get', '/tasks');
+  const data = await makeApiRequest('get', '/user_tasks');
   setTasks(data);
 };
 

@@ -11,6 +11,7 @@ import VerticalCalendar from '../components/VerticalCalendar';
 import NewTaskScreen from './NewTaskScreen';
 import { isToday, fetchTaskDates, fetchTasksForSelectedDate } from '../utils/tasks';
 import { taskEventEmitter } from '../Events'; 
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const VIEW_MODES = {
   TODAY: 'today',
@@ -24,6 +25,24 @@ const TasksScreen = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState(VIEW_MODES.TODAY);
   const [headerTitle, setHeaderTitle] = useState(format(selectedDate, 'd MMMM', { locale: ru }));
+  const [isUserResponsible, setIsUserResponsible] = useState(false);
+
+  const checkIfUserIsResponsible = async () => {
+    try {
+      const userId = await AsyncStorage.getItem('userId');
+      // Замените URL на ваш серверный API для проверки
+      const response = await fetch(`http://31.129.101.174/responsibles/check/${userId}`);
+      const data = await response.json();
+
+      setIsUserResponsible(data.isResponsible);
+    } catch (error) {
+      console.error('Ошибка при проверке ответственности:', error);
+    }
+  };
+
+  useEffect(() => {
+    checkIfUserIsResponsible();
+  }, []);
 
   const fetchData = async () => {
     try {
@@ -51,9 +70,9 @@ const TasksScreen = () => {
       : <VerticalCalendar selectedDate={selectedDate} onDateChange={setSelectedDate} tasks={tasks} taskDates={taskDates}  renderAddButton={renderAddButton}/>
   );
 
-  const renderAddButton = () => (
-    <AddButton onPress={handleAddButtonPress} />
-  );
+  const renderAddButton = () => {
+    return isUserResponsible ? <AddButton onPress={handleAddButtonPress} /> : null;
+  };
   
   const handleAddButtonPress = useCallback(() => {
     setNewTaskScreenVisible(true);
@@ -72,7 +91,7 @@ const TasksScreen = () => {
           </View>
         </View>
         {renderCalendar()}
-        {viewMode === VIEW_MODES.TODAY && <AddButton onPress={() => setNewTaskScreenVisible(true)} />}
+        {viewMode === VIEW_MODES.TODAY && renderAddButton()}
       </View>
       <Modal visible={isNewTaskScreenVisible} onRequestClose={() => setNewTaskScreenVisible(false)}>
         <NewTaskScreen onClose={() => setNewTaskScreenVisible(false)} />

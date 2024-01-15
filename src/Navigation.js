@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import ProfileScreen from './screens/ProfileScreen';
 import ClientBaseScreen from './screens/ClientBaseScreen';
@@ -12,6 +13,7 @@ import TasksScreen from './screens/TasksScreen';
 import FeedScreen from './screens/FeedScreen';
 import FinanceScreen from './screens/FinanceScreen';
 import TaskDetailScreen from './screens/TaskDetailScreen';
+import LoginScreen from './screens/LoginScreen';
 
 import TabIconLabel from './components/TabIconLabel';
 import styles from './styles/styles';
@@ -76,12 +78,34 @@ function TabNavigator() {
 }
 
 export default function Navigation() {
+  const [initialRouteName, setInitialRouteName] = useState('Login');
+  const [isTokenChecked, setIsTokenChecked] = useState(false); // Новое состояние для отслеживания загрузки токена
+
+  useEffect(() => {
+    const checkToken = async () => {
+      const token = await AsyncStorage.getItem('userToken');
+      if (token) {
+        setInitialRouteName('Tabs');
+      }
+      setIsTokenChecked(true); // Обновление состояния после проверки токена
+    };
+
+    checkToken();
+  }, []);
+
+  // Рендерим NavigationContainer только после загрузки токена
+  if (!isTokenChecked) {
+    return null; // Или индикатор загрузки
+  }
+
   return (
     <NavigationContainer>
-      <Stack.Navigator>
+      <Stack.Navigator initialRouteName={initialRouteName}>
         <Stack.Screen name="Tabs" component={TabNavigator} options={{ headerShown: false }} />
         <Stack.Screen name="TaskDetail" component={TaskDetailScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="Login" component={LoginScreen}  options={{ headerShown: false }} />
       </Stack.Navigator>
     </NavigationContainer>
   );
 }
+

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import SplashScreen from './src/screens/SplashScreen';
 import Navigation from './src/Navigation';
+import LoginScreen from './src/screens/LoginScreen';
 import FontError from './src/components/FontError';
 
 export default function App() {
