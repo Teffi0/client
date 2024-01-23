@@ -27,6 +27,8 @@ function ProfileScreen() {
     loadUserInfo();
   }, []);
 
+  console.log(userInfo.position);
+
   const handleLogout = async () => {
     await AsyncStorage.removeItem('userToken'); // Удаление токена пользователя
     navigation.navigate('Login'); // Перенаправление на экран входа

@@ -7,13 +7,24 @@ import { formReducer, initialState } from '../reducers/formReducer';
 import { fetchOptions, handleSaveTask, updateDraft, validateFormData } from '../utils/taskScreenHelpers';
 import PropTypes from 'prop-types';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 function NewTaskScreen({ onClose, draftData, selectedDate }) {
+  const [userId, setUserId] = useState(null);
   const [isSuccessModalVisible, setIsSuccessModalVisible] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
   const addButtonTextStyles = styles.addButtonText;
   const [formData, dispatchFormData] = useReducer(formReducer, initialState);
   const addButtonTitle = formData.status !== 'отсутствует' ? "Применить изменения" : "Добавить задачу";
+
+  const getUserId = async () => {
+    const userId = await AsyncStorage.getItem('userId');
+    setUserId(userId);
+  };
+
+  useEffect(() => {
+    getUserId();
+  }, []);
 
   const handleSave = useCallback(async () => {
     if (formData.status === 'отсутствует') {
@@ -33,7 +44,7 @@ function NewTaskScreen({ onClose, draftData, selectedDate }) {
         { text: "OK", onPress: () => onClose() } // Закрытие формы при нажатии OK
       ]);
     }
-  }, [formData, draftData]);
+  }, [formData, draftData, userId]);
 
   useEffect(() => {
     if (draftData) {
@@ -48,8 +59,10 @@ function NewTaskScreen({ onClose, draftData, selectedDate }) {
   };
 
   useEffect(() => {
-    fetchOptions(dispatchFormData);
-  }, []);
+    if (userId) {
+      fetchOptions(userId, dispatchFormData);
+    }
+  }, [userId]);
 
   useEffect(() => {
     if (selectedDate) {

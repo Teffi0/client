@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Alert, TouchableOpacity } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { useNavigation } from '@react-navigation/native';
@@ -42,6 +42,21 @@ const LoginScreen = () => {
     const [position, setPosition] = useState('Монтажник');
     const [isResponsible, setIsResponsible] = useState(false);
     const navigation = useNavigation();
+    const [userId, setUserId] = useState(null); 
+    const [userData, setUserData] = useState(null);
+
+    useEffect(() => {
+        if (userId) {
+            // Вызов функции fetchUserData при изменении userId
+            const fetchData = async () => {
+                const data = await fetchUserData(userId);
+                if (data) {
+                    setUserData(data); // Сохранение полученных данных пользователя
+                }
+            };
+            fetchData();
+        }
+    }, [userId]);
 
     const handleLogin = () => {
         const { errors, isValid } = validateLoginInput({ username, password });
@@ -72,7 +87,7 @@ const LoginScreen = () => {
                         await AsyncStorage.setItem('username', username);
                         await AsyncStorage.setItem('password', password);
     
-                        // Преобразуем userId в строку перед сохранением
+                        setUserId(data.userId.toString());
                         await AsyncStorage.setItem('userId', data.userId.toString());
     
                         // Получаем и сохраняем данные пользователя

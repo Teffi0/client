@@ -48,29 +48,30 @@ const formatTaskData = (formData) => {
     return taskData;
 };
 
-export const fetchOptions = async (dispatchFormData) => {
+export const fetchOptions = async (userId, dispatchFormData) => {
     try {
-        const [servicesResponse, paymentMethodsResponse, employeesResponse, responsiblesResponse, clientsResponse] = await Promise.all([
-            axios.get('http://31.129.101.174/services'),
-            axios.get('http://31.129.101.174/paymentmethods'),
-            axios.get('http://31.129.101.174/employees'),
-            axios.get('http://31.129.101.174/responsibles'),
-            axios.get('http://31.129.101.174/clients')
-        ]);
-        dispatchFormData({
-            type: 'UPDATE_FORM',
-            payload: {
-                serviceOptions: servicesResponse.data,
-                paymentMethodOptions: paymentMethodsResponse.data,
-                responsibleOptions: responsiblesResponse.data,
-                employeesOptions: employeesResponse.data,
-                fullnameClientOptions: clientsResponse.data.map(client => client.full_name)
-            }
-        });
+      const url = `http://31.129.101.174/responsibles?userId=${userId}`;
+      const [servicesResponse, paymentMethodsResponse, employeesResponse, responsiblesResponse, clientsResponse] = await Promise.all([
+        axios.get('http://31.129.101.174/services'),
+        axios.get('http://31.129.101.174/paymentmethods'),
+        axios.get('http://31.129.101.174/employees'),
+        axios.get(url),
+        axios.get('http://31.129.101.174/clients')
+      ]);
+      dispatchFormData({
+        type: 'UPDATE_FORM',
+        payload: {
+          serviceOptions: servicesResponse.data,
+          paymentMethodOptions: paymentMethodsResponse.data,
+          responsibleOptions: responsiblesResponse.data,
+          employeesOptions: employeesResponse.data,
+          fullnameClientOptions: clientsResponse.data.map(client => client.full_name)
+        }
+      });
     } catch (error) {
-        console.error('Ошибка при получении данных:', error);
+      console.error('Ошибка при получении данных:', error);
     }
-};
+  };  
 
 export const handleSaveTask = async (formData) => {
     if (formData.status !== 'черновик' && !validateFormData(formData)) return;

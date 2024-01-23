@@ -7,6 +7,16 @@ export const SERVER_URL = 'http://31.129.101.174';
 // Упрощенная функция для проверки сегодняшней даты
 export const isToday = (date) => fnsIsToday(date);
 
+const getUserId = async () => {
+  try {
+    const userId = await AsyncStorage.getItem('userId');
+    return userId ? parseInt(userId, 10) : null;
+  } catch (e) {
+    console.error('Ошибка при получении userId из AsyncStorage:', e);
+    return null;
+  }
+};
+
 // Универсальная функция для запросов к API
 async function makeApiRequest(method, url, data = null, params = null) {
   try {
@@ -19,19 +29,38 @@ async function makeApiRequest(method, url, data = null, params = null) {
 }
 
 export const fetchTaskDates = async (setTaskDates) => {
-  const data = await makeApiRequest('get', '/task-dates');
+  const userId = await getUserId(); // Получаем userId
+  if (!userId) {
+    console.error('UserId не найден');
+    return;
+  }
+
+  const url = `/task-dates?userId=${userId}`; // Добавляем userId в параметры запроса
+  const data = await makeApiRequest('get', url);
+
   setTaskDates(data);
   await AsyncStorage.setItem('taskDates', JSON.stringify(data));
 };
 
+
 export const fetchTasksForSelectedDate = async (selectedDate, setTasks) => {
+  const userId = await getUserId(); // Получаем userId
+  if (!userId) {
+    console.error('UserId не найден');
+    return;
+  }
+
   const formattedDate = format(selectedDate, 'yyyy-MM-dd');
-  const data = await makeApiRequest('get', '/user_tasks', null, { date: formattedDate });
+  const url = `/user_tasks?date=${formattedDate}&userId=${userId}`;
+  const data = await makeApiRequest('get', url);
+
   setTasks(data);
 };
 
-export const fetchTasksForDetail = async (setTasks) => {
-  const data = await makeApiRequest('get', '/user_tasks');
+export const fetchTasksForCurrentUser = async (selectedDate, setTasks) => {
+  const formattedDate = format(selectedDate, 'yyyy-MM-dd');
+  const data = await makeApiRequest('get', '/user-tasks', null, { date: formattedDate });
+
   setTasks(data);
 };
 

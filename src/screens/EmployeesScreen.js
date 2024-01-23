@@ -82,6 +82,7 @@ const EmployeesScreen = () => {
   const [totalPages, setTotalPages] = useState(0);
   const limit = 10;
   const [isHistoryModalVisible, setIsHistoryModalVisible] = useState(false);
+  const [passwordEdited, setPasswordEdited] = useState({});
 
   useEffect(() => {
     fetchEmployees();
@@ -95,7 +96,7 @@ const EmployeesScreen = () => {
 
   const fetchEmployees = useCallback(async () => {
     try {
-      const response = await axios.get('http://31.129.101.174/employees', {
+      const response = await axios.get('http://31.129.101.174/employeesBase', {
         params: { page: currentPage, limit }
       });
       setEmployees(response.data);
@@ -126,27 +127,34 @@ const EmployeesScreen = () => {
 
   const handleSearchChange = (text) => setSearchQuery(text);
 
-  const assembleFullAddress = useCallback((address) => {
-    return `город ${address.city}, улица ${address.street}, дом ${address.building}, подъезд ${address.entrance}, этаж ${address.floor}`;
-  }, []);
-
   const handleModalFormSubmit = useCallback(async (employeeData) => {
     // Изменил clientData на employeeData
-    if (!employeeData.full_name || !employeeData.phone_number || Object.values(employeeData).some(val => !val)) {
+    if (!employeeData.full_name || !employeeData.phone_number || Object.values(employeeData).some(val => !val && val !== undefined)) {
       Alert.alert('Ошибка', 'Заполните все поля.');
       return;
     }
 
-    const dataToSend = {
+    let dataToSend = {
       full_name: employeeData.full_name,
       phone_number: employeeData.phone_number,
       email: employeeData.email,
       position: employeeData.position,
+      username: employeeData.username
     };
+
+    // Отправляем новый пароль или оригинальный хеш в зависимости от изменений
+    if (employeeData.password === employeeData.originalPasswordHash) {
+      dataToSend.password = employeeData.originalPasswordHash;
+    } else {
+      dataToSend.password = employeeData.password;
+    }
 
     try {
       if (employeeData.id && employeeData.id !== 9999999) {
-        await axios.put(`http://31.129.101.174/employees/${employeeData.id}`, dataToSend);
+        await axios.put(`http://31.129.101.174/employees/${employeeData.id}`, {
+          ...dataToSend,
+          isResponsible: employeeData.isResponsible,
+        });
       } else {
         const response = await axios.post('http://31.129.101.174/employees', dataToSend);
         if (response.data && response.data.id) {
@@ -186,7 +194,10 @@ const EmployeesScreen = () => {
         full_name: '',
         phone_number: '',
         email: '',
-        position: ''
+        position: '',
+        username: '', // Добавлено поле для логина
+        password: '', // Добавлено поле для пароля
+        isResponsible: 'Нет' // Добавлено поле для статуса ответственного
       };
 
       setEmployees(prevEmployees => [...prevEmployees, newEmployeeData]);
@@ -201,9 +212,14 @@ const EmployeesScreen = () => {
       ...prev,
       [employeeId]: {
         ...prev[employeeId],
-        [key]: value
+        [key]: value,
+        isPasswordChanged: key === 'password' ? true : prev[employeeId].isPasswordChanged
       }
     }));
+
+    if (key === 'password') {
+      setPasswordEdited(prev => ({ ...prev, [employeeId]: true }));
+    }
   };
 
   const handleEditPress = () => {
@@ -281,6 +297,23 @@ const EmployeesScreen = () => {
             value={editableEmployees[item.id].position}
             onChangeText={(text) => handleEmployeeDataChange(item.id, 'position', text)}
           />
+          <TextInput
+            style={styles.cell}
+            value={editableEmployees[item.id].username}
+            onChangeText={(text) => handleEmployeeDataChange(item.id, 'username', text)}
+          />
+          <TextInput
+            style={styles.cell}
+            value={passwordEdited[item.id] ? editableEmployees[item.id].password : "12345"}
+            onChangeText={(text) => handleEmployeeDataChange(item.id, 'password', text)}
+            placeholder="Пароль"
+            secureTextEntry
+          />
+          <TextInput
+            style={styles.cell}
+            value={editableEmployees[item.id].isResponsible}
+            onChangeText={(text) => handleEmployeeDataChange(item.id, 'isResponsible', text)}
+          />
         </React.Fragment>
       ) : (
         <React.Fragment>
@@ -288,6 +321,9 @@ const EmployeesScreen = () => {
           <Text style={styles.cell}>{item.phone_number}</Text>
           <Text style={styles.cell}>{item.email}</Text>
           <Text style={styles.cell}>{item.position}</Text>
+          <Text style={styles.cell}>{item.username || 'N/A'}</Text>
+          <Text style={styles.cell}>{item.password ? "******" : 'N/A'}</Text>
+          <Text style={styles.cell}>{item.isResponsible}</Text>
         </React.Fragment>
       )}
     </View>
@@ -375,6 +411,9 @@ const EmployeesScreen = () => {
                   <Text style={styles.headerCell}>Телефон</Text>
                   <Text style={styles.headerCell}>Email</Text>
                   <Text style={styles.headerCell}>Должность</Text>
+                  <Text style={styles.headerCell}>Логин</Text>
+                  <Text style={styles.headerCell}>Пароль</Text>
+                  <Text style={styles.headerCell}>Ответственный</Text>
                 </View>
               }
               ListFooterComponent={
