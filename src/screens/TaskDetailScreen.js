@@ -146,6 +146,33 @@ const TaskDetailScreen = ({ route }) => {
     setSelectedImages(currentImages => currentImages.filter((_, i) => i !== index));
   };
 
+  const handleCancelTaskPress = () => {
+    Alert.alert(
+      "Отмена задачи",
+      "Вы уверены, что хотите отменить задачу?",
+      [
+        { text: "Нет", style: "cancel" },
+        { text: "Да", onPress: () => updateTaskStatusToCancelled() }
+      ]
+    );
+  };
+
+  const updateTaskStatusToCancelled = async () => {
+    try {
+      const updatedTask = { ...task, status: 'отменено' };
+      await updateTaskStatus(task.id, updatedTask);
+      setTask(updatedTask);
+      // После успешного обновления статуса, закрываем текущий экран или модальное окно
+      if (isModalVisible) {
+        setModalVisible(false);
+      } else {
+        navigation.goBack();
+      }
+    } catch (error) {
+      console.error('Ошибка при обновлении статуса задачи:', error);
+    }
+  };
+
   const handleAddTaskPress = async () => {
     if (task.status === 'в процессе') {
       setModalVisible(true);
@@ -349,9 +376,13 @@ const TaskDetailScreen = ({ route }) => {
           <Text style={[styles.titleMedium, { flex: 1, textAlign: 'center' }]}>
             {getHeaderTitle()}
           </Text>
-          <TouchableOpacity onPress={handleEditPress}>
-            <EditIcon />
-          </TouchableOpacity>
+          {task.status !== 'отменено' ? (
+            <TouchableOpacity onPress={handleEditPress}>
+              <EditIcon />
+            </TouchableOpacity>
+          ) : (
+            <None />
+          )}
         </View>
         <ScrollView contentContainerStyle={styles.scrollViewContent} showsVerticalScrollIndicator={false} overScrollMode="never">
           <Text style={styles.headlineMedium}>{serviceName}</Text>
@@ -430,12 +461,17 @@ const TaskDetailScreen = ({ route }) => {
           </SafeAreaView>
         </Modal>
 
-        {task.status !== 'выполнено' && (
-          <TouchableOpacity style={styles.addButton} onPress={handleAddTaskPress}>
+        {task.status !== 'выполнено' && task.status !== 'отменено' && (
+          <>
+          <TouchableOpacity style={[styles.addButton, { marginBottom: 68 }]} onPress={handleAddTaskPress}>
             <Text style={styles.addButtonText}>
               {task.status === 'в процессе' ? 'Добавить расходники' : 'Начать выполнение'}
             </Text>
           </TouchableOpacity>
+          <TouchableOpacity style={[styles.addButton, { backgroundColor: 'black' }]} onPress={handleCancelTaskPress}>
+            <Text style={styles.addButtonText}>Отменить задачу</Text>
+          </TouchableOpacity>
+        </>
         )}
       </View>
       <Modal

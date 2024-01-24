@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, TouchableOpacity, Modal } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { format } from 'date-fns';
+import { format, subYears, getYear } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import styles from '../styles/styles';
 import { CalendarIcon, TodayIcon } from '../icons';
@@ -10,7 +11,7 @@ import CustomCalendar from '../components/CustomCalendar';
 import VerticalCalendar from '../components/VerticalCalendar';
 import NewTaskScreen from './NewTaskScreen';
 import { isToday, fetchTaskDates, fetchTasksForSelectedDate } from '../utils/tasks';
-import { taskEventEmitter } from '../Events'; 
+import { taskEventEmitter } from '../Events';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const VIEW_MODES = {
@@ -26,6 +27,8 @@ const TasksScreen = () => {
   const [viewMode, setViewMode] = useState(VIEW_MODES.TODAY);
   const [headerTitle, setHeaderTitle] = useState(format(selectedDate, 'd MMMM', { locale: ru }));
   const [isUserResponsible, setIsUserResponsible] = useState(false);
+  const [currentYear, setCurrentYear] = useState(getYear(new Date())); // Текущий год
+  const [selectedYear, setSelectedYear] = useState(currentYear);
 
   const checkIfUserIsResponsible = async () => {
     try {
@@ -64,20 +67,24 @@ const TasksScreen = () => {
     setViewMode(prevMode => prevMode === VIEW_MODES.TODAY ? VIEW_MODES.CALENDAR : VIEW_MODES.TODAY);
   }, []);
 
+  const handleYearChange = (year) => { // Добавляем функцию для обработки изменения года
+    setSelectedYear(year);
+  };
+
   const renderCalendar = () => (
     viewMode === VIEW_MODES.TODAY
       ? <CustomCalendar selectedDate={selectedDate} onDateChange={setSelectedDate} tasks={tasks} taskDates={taskDates} />
-      : <VerticalCalendar selectedDate={selectedDate} onDateChange={setSelectedDate} tasks={tasks} taskDates={taskDates}  renderAddButton={renderAddButton}/>
+      : <VerticalCalendar selectedDate={selectedDate} onDateChange={setSelectedDate} tasks={tasks} taskDates={taskDates} renderAddButton={renderAddButton} selectedYear={selectedYear} onYearChange={handleYearChange} />
   );
 
   const renderAddButton = () => {
     return isUserResponsible ? <AddButton onPress={handleAddButtonPress} /> : null;
   };
-  
+
   const handleAddButtonPress = useCallback(() => {
     setNewTaskScreenVisible(true);
   }, []);
-  
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.contentContainer}>
@@ -85,6 +92,17 @@ const TasksScreen = () => {
           <Text style={styles.titleMedium}>{viewMode === VIEW_MODES.TODAY ? headerTitle : 'Календарь'}</Text>
           <View style={styles.calendarBlock}>
             {viewMode === VIEW_MODES.TODAY && <Text style={styles.title}>{format(selectedDate, 'MMMM, yyyy', { locale: ru })}</Text>}
+            {viewMode === VIEW_MODES.CALENDAR && (
+              <Picker
+                selectedValue={selectedYear}
+                style={{ height: 50, width: 150 }}
+                onValueChange={(itemValue) => handleYearChange(itemValue)}
+              >
+                <Picker.Item label={`${currentYear - 2}`} value={currentYear - 2} />
+                <Picker.Item label={`${currentYear - 1}`} value={currentYear - 1} />
+                <Picker.Item label={`${currentYear}`} value={currentYear} />
+              </Picker>
+            )}
             <TouchableOpacity onPress={handleViewModeToggle}>
               {viewMode === VIEW_MODES.TODAY ? <CalendarIcon /> : <TodayIcon />}
             </TouchableOpacity>

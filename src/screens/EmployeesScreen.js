@@ -84,6 +84,8 @@ const EmployeesScreen = () => {
   const [isHistoryModalVisible, setIsHistoryModalVisible] = useState(false);
   const [passwordEdited, setPasswordEdited] = useState({});
 
+  console.log(editableEmployees);
+
   useEffect(() => {
     fetchEmployees();
   }, [currentPage]);
@@ -197,7 +199,7 @@ const EmployeesScreen = () => {
         position: '',
         username: '', // Добавлено поле для логина
         password: '', // Добавлено поле для пароля
-        isResponsible: 'Нет' // Добавлено поле для статуса ответственного
+        isResponsible: '' // Добавлено поле для статуса ответственного
       };
 
       setEmployees(prevEmployees => [...prevEmployees, newEmployeeData]);
@@ -281,30 +283,35 @@ const EmployeesScreen = () => {
             style={styles.cell}
             value={editableEmployees[item.id].full_name}
             onChangeText={(text) => handleEmployeeDataChange(item.id, 'full_name', text)}
+            placeholder="ФИО"
           />
           <TextInput
             style={styles.cell}
             value={editableEmployees[item.id].phone_number}
             onChangeText={(text) => handleEmployeeDataChange(item.id, 'phone_number', text)}
+            placeholder="Телефон"
           />
           <TextInput
             style={styles.cell}
             value={editableEmployees[item.id].email}
             onChangeText={(text) => handleEmployeeDataChange(item.id, 'email', text)}
+            placeholder="Почта"
           />
           <TextInput
             style={styles.cell}
             value={editableEmployees[item.id].position}
             onChangeText={(text) => handleEmployeeDataChange(item.id, 'position', text)}
+            placeholder="Должность"
           />
           <TextInput
             style={styles.cell}
             value={editableEmployees[item.id].username}
             onChangeText={(text) => handleEmployeeDataChange(item.id, 'username', text)}
+            placeholder="Логин"
           />
           <TextInput
             style={styles.cell}
-            value={passwordEdited[item.id] ? editableEmployees[item.id].password : "12345"}
+            value={passwordEdited[item.id] ? editableEmployees[item.id].password : ""}
             onChangeText={(text) => handleEmployeeDataChange(item.id, 'password', text)}
             placeholder="Пароль"
             secureTextEntry
@@ -313,6 +320,7 @@ const EmployeesScreen = () => {
             style={styles.cell}
             value={editableEmployees[item.id].isResponsible}
             onChangeText={(text) => handleEmployeeDataChange(item.id, 'isResponsible', text)}
+            placeholder="Роль"
           />
         </React.Fragment>
       ) : (
@@ -321,8 +329,8 @@ const EmployeesScreen = () => {
           <Text style={styles.cell}>{item.phone_number}</Text>
           <Text style={styles.cell}>{item.email}</Text>
           <Text style={styles.cell}>{item.position}</Text>
-          <Text style={styles.cell}>{item.username || 'N/A'}</Text>
-          <Text style={styles.cell}>{item.password ? "******" : 'N/A'}</Text>
+          <Text style={styles.cell}>{item.username}</Text>
+          <Text style={styles.cell}>{item.password}</Text>
           <Text style={styles.cell}>{item.isResponsible}</Text>
         </React.Fragment>
       )}
@@ -389,8 +397,8 @@ const EmployeesScreen = () => {
             onClose={() => setIsHistoryModalVisible(false)}
           />
         )}
-        <ScrollView horizontal overScrollMode="never">
-          <SafeAreaView>
+        <ScrollView horizontal overScrollMode="never" >
+          <SafeAreaView style={{marginBottom: 80}}>
             <FlatList
               data={employees}
               keyExtractor={(item) => String(item.id)}

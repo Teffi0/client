@@ -1,6 +1,6 @@
 import React, { useState, useRef, useLayoutEffect, useEffect, useCallback } from 'react';
 import { View, Text, FlatList, Modal, Animated, PanResponder, Dimensions, ScrollView } from 'react-native';
-import { format, addMonths, startOfMonth, parseISO } from 'date-fns';
+import { format, addMonths, startOfYear, parseISO, isSameYear } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import styles from '../styles/styles';
 import RenderMonth from './RenderMonth';
@@ -9,17 +9,18 @@ import PropTypes from 'prop-types';
 
 const screenHeight = Dimensions.get('window').height;
 
-const VerticalCalendar = ({ tasks, taskDates, renderAddButton }) => {
+const VerticalCalendar = ({ tasks, taskDates, selectedYear }) => {
+  const currentMonth = new Date().getMonth();
+  const currentYear = new Date().getFullYear();
   const flatListRef = useRef(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [modalVisible, setModalVisible] = useState(false);
   const [expandedClients, setExpandedClients] = useState(new Set());
 
-  const data = Array.from({ length: 5 }, (_, i) => addMonths(startOfMonth(new Date()), i - 2));
+  const startYear = startOfYear(new Date());
+  const data = Array.from({ length: 12 }, (_, i) => addMonths(startYear, i));
   const tasksBySelectedDate = tasks.filter(task => format(parseISO(task.start_date), 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd'))
     .reduce((acc, task) => ((acc[task.fullname_client] = acc[task.fullname_client] || []).push(task), acc), {});
-
-  useLayoutEffect(() => flatListRef.current?.scrollToIndex({ index: 1, animated: false }), []);
 
   const handleDatePress = day => {
     setSelectedDate(day);
@@ -76,11 +77,11 @@ const VerticalCalendar = ({ tasks, taskDates, renderAddButton }) => {
 
   const animateModal = useCallback((value, fullSize) => {
     Animated.spring(modalHeight.current, {
-        toValue: value,
-        useNativeDriver: true, // Изменено здесь
-        bounciness: 0
+      toValue: value,
+      useNativeDriver: true, // Изменено здесь
+      bounciness: 0
     }).start(() => setIsFullSize(fullSize));
-}, []);
+  }, []);
 
   const openFullModal = useCallback(() => animateModal(ModalFullHeight, true), [ModalFullHeight, animateModal]);
   const openModal = useCallback(() => animateModal(ModalHeight, false), [ModalHeight, animateModal]);
@@ -90,6 +91,10 @@ const VerticalCalendar = ({ tasks, taskDates, renderAddButton }) => {
     setModalVisible(false);
   }, [ModalHeight, screenHeight, animateModal]);
 
+  let initialScrollIndex = currentMonth;
+  if (selectedYear && !isSameYear(selectedYear, currentYear)) {
+    initialScrollIndex = 0; // Если год выбранного месяца отличается от текущего, начнем с января
+  }
 
   return (
     <>
@@ -105,7 +110,7 @@ const VerticalCalendar = ({ tasks, taskDates, renderAddButton }) => {
         onEndReachedThreshold={0.5}
         showsVerticalScrollIndicator={false}
         removeClippedSubviews={true}
-        initialScrollIndex={2}
+        initialScrollIndex={initialScrollIndex} // Установка начального индекса прокрутки
       />
       <Modal
         animationType="slide"
@@ -139,6 +144,7 @@ VerticalCalendar.propTypes = {
   tasks: PropTypes.array.isRequired,
   taskDates: PropTypes.object.isRequired,
   renderAddButton: PropTypes.func.isRequired,
+  selectedYear: PropTypes.number,
 };
 
 export default VerticalCalendar;

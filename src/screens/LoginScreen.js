@@ -218,13 +218,10 @@ const LoginScreen = () => {
                         </View>
                     )}
 
-                    <Button title="Зарегистрироваться" onPress={handleRegister} />
-                    <Button title="Уже есть аккаунт? Войти" onPress={() => setIsRegistering(false)} />
                 </>
             ) : (
                 <>
                     <Button title="Войти" onPress={handleLogin} />
-                    <Button title="Регистрация" onPress={() => setIsRegistering(true)} />
                 </>
             )}
         </View>

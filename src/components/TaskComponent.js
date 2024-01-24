@@ -15,6 +15,8 @@ const getStatusColor = (status) => {
       return colors.inProcessStatus;
     case 'выполнено':
       return colors.finishedStatus;
+    case 'отменено':
+      return colors.error; // Добавлен новый статус с цветом error
     case 'черновик':
       return colors.grey;
     default:

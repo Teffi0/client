@@ -39,18 +39,29 @@ const FeedScreen = () => {
     }
   };
 
+  const loadAndUpdateTasks = async () => {
+    try {
+      const tasksResponse = await axios.get('http://31.129.101.174/tasks');
+      const validTasks = tasksResponse.data.filter(task => task.status !== 'черновик');
+      setTasks(validTasks);
+      setFilteredTasks(validTasks); // Обновляем отфильтрованные задачи
+    } catch (error) {
+      console.error('Ошибка при загрузке задач:', error);
+    }
+  };
+  
+  useEffect(() => {
+    loadAndUpdateTasks(); // Первоначальная загрузка задач
+  }, [tasks]);
+
   useEffect(() => {
     const fetchTasks = async () => {
       try {
-        const tasksResponse = await axios.get('http://31.129.101.174/tasks');
         const responsiblesResponse = await axios.get('http://31.129.101.174/responsibles');
         const clientsResponse = await axios.get('http://31.129.101.174/clients');
         const employeesResponse = await axios.get('http://31.129.101.174/employees');
         const paymentsResponse = await axios.get('http://31.129.101.174/paymentmethods');
 
-        const validTasks = tasksResponse.data.filter(task => task.status !== 'черновик');
-        setTasks(validTasks);
-        setFilteredTasks(validTasks);
         setResponsibles(responsiblesResponse.data);
         setClients(clientsResponse.data);
         setEmployees(employeesResponse.data);
