@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, TouchableOpacity, Modal } from 'react-native';
-import ModalDropdown from 'react-native-modal-dropdown';
+import DropDownPicker from 'react-native-dropdown-picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { format, getYear } from 'date-fns';
 import { ru } from 'date-fns/locale';
@@ -67,7 +67,7 @@ const TasksScreen = () => {
     setViewMode(prevMode => prevMode === VIEW_MODES.TODAY ? VIEW_MODES.CALENDAR : VIEW_MODES.TODAY);
   }, []);
 
-  const handleYearChange = (year) => {
+  const handleYearChange = (year) => { // Добавляем функцию для обработки изменения года
     setSelectedYear(year);
   };
 
@@ -85,32 +85,19 @@ const TasksScreen = () => {
     setNewTaskScreenVisible(true);
   }, []);
 
-  const years = [getYear(new Date()) - 2, getYear(new Date()) - 1, getYear(new Date())];
+  const years = [
+    getYear(new Date()) - 2,
+    getYear(new Date()) - 1,
+    getYear(new Date()),
+  ];
 
   const renderYearPicker = () => {
     return (
-      <View style={styles.yearPickerContainer}>
-        <View style={styles.dropdownArrow}>
-          <Text>↓</Text>
-        </View>
-        <ModalDropdown
-          options={years.map(year => year.toString())}
-          defaultValue={selectedYear.toString()}
-          onSelect={(index, value) => handleYearChange(Number(value))}
-          style={styles.dropdownStyle}
-          textStyle={styles.dropdownTextStyle}
-          dropdownTextStyle={styles.dropdownTextItemStyle}
-          dropdownStyle={styles.dropdown}
-          renderSeparator={() => <View style={styles.dropdownSeparator} />}
-          renderRow={(option) => (
-            console.log(years.map(year => year.toString())),
-            console.log(option),
-            <View style={styles.dropdownRow}>
-              <Text style={styles.dropdownTextItemStyle}>{option}</Text>
-            </View>
-          )}
-        />
-      </View>
+      <DropDownPicker
+        items={years.map(year => ({ label: year.toString(), value: year }))}
+        defaultValue={selectedYear}
+        onChangeItem={item => handleYearChange(item.value)}
+      />
     );
   };
 
