@@ -10,15 +10,21 @@ import PropTypes from 'prop-types';
 const screenHeight = Dimensions.get('window').height;
 
 const VerticalCalendar = ({ tasks, taskDates, selectedYear }) => {
+  const displayYear = selectedYear ? new Date(selectedYear, 0, 1) : new Date();
+
   const currentMonth = new Date().getMonth();
   const currentYear = new Date().getFullYear();
+  let initialYear = selectedYear || currentYear;
+  let initialMonth = currentYear === initialYear ? new Date().getMonth() : 0;
+
   const flatListRef = useRef(null);
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(new Date(initialYear, initialMonth, 1));
   const [modalVisible, setModalVisible] = useState(false);
   const [expandedClients, setExpandedClients] = useState(new Set());
 
-  const startYear = startOfYear(new Date());
+  const startYear = startOfYear(displayYear);
   const data = Array.from({ length: 12 }, (_, i) => addMonths(startYear, i));
+
   const tasksBySelectedDate = tasks.filter(task => format(parseISO(task.start_date), 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd'))
     .reduce((acc, task) => ((acc[task.fullname_client] = acc[task.fullname_client] || []).push(task), acc), {});
 
@@ -91,9 +97,13 @@ const VerticalCalendar = ({ tasks, taskDates, selectedYear }) => {
     setModalVisible(false);
   }, [ModalHeight, screenHeight, animateModal]);
 
-  let initialScrollIndex = currentMonth;
-  if (selectedYear && !isSameYear(selectedYear, currentYear)) {
-    initialScrollIndex = 0; // Если год выбранного месяца отличается от текущего, начнем с января
+  let initialScrollIndex = 0; // Устанавливаем начальное значение 0
+
+  // Условие для определения начального индекса прокрутки
+  if (selectedYear && selectedYear === currentYear) {
+    initialScrollIndex = currentMonth;
+  } else if (selectedYear) {
+    initialScrollIndex = 0; // Установка начального индекса на начало года, если выбран не текущий год
   }
 
   return (

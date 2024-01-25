@@ -6,8 +6,8 @@ import styles from '../styles/styles';
 import PropTypes from 'prop-types';
 
 const calculateWeeks = (date) => {
-    const start = startOfWeek(startOfMonth(date));
-    const end = endOfWeek(endOfMonth(date));
+    const start = startOfWeek(startOfMonth(date), { weekStartsOn: 1 });
+    const end = endOfWeek(endOfMonth(date), { weekStartsOn: 1 });
     let currentDay = start;
     const weeks = [];
 
@@ -20,6 +20,7 @@ const calculateWeeks = (date) => {
     }
     return weeks;
 };
+
 
 const Day = memo(({ day, handleDatePress, isSelectedDay, hasTask }) => (
     <View style={styles.dayContainer}>

@@ -516,6 +516,39 @@ const styles = StyleSheet.create({
     color: colors.grey,
     ...baseTextStyles,
   },
+  dropdownStyle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingRight: 12,
+    backgroundColor: 'white',
+  },
+  yearPickerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+  },
+  dropdownArrow: {
+    // Настройки стиля для стрелки
+    marginRight: 4,
+  },
+  dropdownRow: {
+    // Настройки стиля для строки в выпадающем списке
+    padding: 10,
+    backgroundColor: 'white',
+  },
+  dropdownSeparator: {
+    // Настройки стиля для разделителя между строками
+    height: 1,
+    backgroundColor: 'grey',
+  },
+  dropdownTextStyle: {
+    fontSize: 16, // или другой размер, соответствующий твоему дизайну
+    color: 'black', // или другой цвет
+  },
+  dropdownTextItemStyle: {
+    fontSize: 14, // или другой размер, соответствующий твоему дизайну
+    color: 'black', // или другой цвет
+  },
   searchContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',

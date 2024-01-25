@@ -12,7 +12,9 @@
     "updates": {
       "fallbackToCacheTimeout": 0
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "userInterfaceStyle": "automatic",
     "android": {
       "package": "com.iskrussian.iskcrm",
@@ -35,9 +37,16 @@
       },
       "build": {
         "babel": {
-          "include": ["@react-navigation", "react-native-safe-area-context"]
+          "include": [
+            "@react-navigation",
+            "react-native-safe-area-context"
+          ]
         }
       }
+    },
+    "owner": "mateniaku",
+    "ios": {
+      "bundleIdentifier": "com.iskrussian.iskcrm"
     }
   }
 }

@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, TouchableOpacity, Modal } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
+import ModalDropdown from 'react-native-modal-dropdown';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { format, subYears, getYear } from 'date-fns';
+import { format, getYear } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import styles from '../styles/styles';
 import { CalendarIcon, TodayIcon } from '../icons';
@@ -67,7 +67,7 @@ const TasksScreen = () => {
     setViewMode(prevMode => prevMode === VIEW_MODES.TODAY ? VIEW_MODES.CALENDAR : VIEW_MODES.TODAY);
   }, []);
 
-  const handleYearChange = (year) => { // Добавляем функцию для обработки изменения года
+  const handleYearChange = (year) => {
     setSelectedYear(year);
   };
 
@@ -85,6 +85,35 @@ const TasksScreen = () => {
     setNewTaskScreenVisible(true);
   }, []);
 
+  const years = [getYear(new Date()) - 2, getYear(new Date()) - 1, getYear(new Date())];
+
+  const renderYearPicker = () => {
+    return (
+      <View style={styles.yearPickerContainer}>
+        <View style={styles.dropdownArrow}>
+          <Text>↓</Text>
+        </View>
+        <ModalDropdown
+          options={years.map(year => year.toString())}
+          defaultValue={selectedYear.toString()}
+          onSelect={(index, value) => handleYearChange(Number(value))}
+          style={styles.dropdownStyle}
+          textStyle={styles.dropdownTextStyle}
+          dropdownTextStyle={styles.dropdownTextItemStyle}
+          dropdownStyle={styles.dropdown}
+          renderSeparator={() => <View style={styles.dropdownSeparator} />}
+          renderRow={(option) => (
+            console.log(years.map(year => year.toString())),
+            console.log(option),
+            <View style={styles.dropdownRow}>
+              <Text style={styles.dropdownTextItemStyle}>{option}</Text>
+            </View>
+          )}
+        />
+      </View>
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.contentContainer}>
@@ -92,17 +121,7 @@ const TasksScreen = () => {
           <Text style={styles.titleMedium}>{viewMode === VIEW_MODES.TODAY ? headerTitle : 'Календарь'}</Text>
           <View style={styles.calendarBlock}>
             {viewMode === VIEW_MODES.TODAY && <Text style={styles.title}>{format(selectedDate, 'MMMM, yyyy', { locale: ru })}</Text>}
-            {viewMode === VIEW_MODES.CALENDAR && (
-              <Picker
-                selectedValue={selectedYear}
-                style={{ height: 50, width: 150 }}
-                onValueChange={(itemValue) => handleYearChange(itemValue)}
-              >
-                <Picker.Item label={`${currentYear - 2}`} value={currentYear - 2} />
-                <Picker.Item label={`${currentYear - 1}`} value={currentYear - 1} />
-                <Picker.Item label={`${currentYear}`} value={currentYear} />
-              </Picker>
-            )}
+            {viewMode === VIEW_MODES.CALENDAR && renderYearPicker()}
             <TouchableOpacity onPress={handleViewModeToggle}>
               {viewMode === VIEW_MODES.TODAY ? <CalendarIcon /> : <TodayIcon />}
             </TouchableOpacity>
