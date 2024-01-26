@@ -2,7 +2,6 @@ import React, { useState, useReducer, useEffect, useCallback } from 'react';
 import { View, TouchableOpacity, Text, Alert } from 'react-native';
 import styles from '../styles/styles';
 import TaskForm from '../components/TaskForm';
-import { SuccessModal } from '../components/SuccessModal';
 import { formReducer, initialState } from '../reducers/formReducer';
 import { fetchOptions, handleSaveTask, updateDraft, validateFormData } from '../utils/taskScreenHelpers';
 import PropTypes from 'prop-types';
@@ -11,7 +10,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 function NewTaskScreen({ onClose, draftData, selectedDate }) {
   const [userId, setUserId] = useState(null);
-  const [isSuccessModalVisible, setIsSuccessModalVisible] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
   const addButtonTextStyles = styles.addButtonText;
   const [formData, dispatchFormData] = useReducer(formReducer, initialState);
@@ -35,7 +33,6 @@ function NewTaskScreen({ onClose, draftData, selectedDate }) {
       // Валидируем обновленные данные
       if (validateFormData(updatedFormData)) {
         await updateDraft(draftData.id, updatedFormData);
-        setIsSuccessModalVisible(true); // Показываем модальное окно об успешном добавлении
       }
     } else {
       // В противном случае обновляем статус и вызываем handleSaveTask
@@ -52,11 +49,6 @@ function NewTaskScreen({ onClose, draftData, selectedDate }) {
       dispatchFormData({ type: 'SET_FORM', payload: draftData });
     }
   }, [draftData, dispatchFormData]);
-
-  const closeSuccessModal = () => {
-    setIsSuccessModalVisible(false);
-    onClose();
-  };
 
   useEffect(() => {
     if (userId) {
@@ -91,7 +83,6 @@ function NewTaskScreen({ onClose, draftData, selectedDate }) {
       <TouchableOpacity style={addButtonStyles} onPress={handleSave}>
         <Text style={addButtonTextStyles}>{addButtonTitle}</Text>
       </TouchableOpacity>
-      <SuccessModal isVisible={isSuccessModalVisible} onClose={closeSuccessModal} />
     </SafeAreaView>
   );
 }

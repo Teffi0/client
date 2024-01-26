@@ -11,13 +11,12 @@ import InventoryScreen from './screens/InventoryScreen';
 import NotificationsScreen from './screens/NotificationsScreen';
 import TasksScreen from './screens/TasksScreen';
 import FeedScreen from './screens/FeedScreen';
-import FinanceScreen from './screens/FinanceScreen';
 import TaskDetailScreen from './screens/TaskDetailScreen';
 import LoginScreen from './screens/LoginScreen';
 
 import TabIconLabel from './components/TabIconLabel';
 import styles from './styles/styles';
-import { TasksIcon, FeedIcon, FinanceIcon, ProfileIcon } from './icons';
+import { TasksIcon, FeedIcon, ProfileIcon } from './icons';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -25,7 +24,6 @@ const Tab = createBottomTabNavigator();
 const TabScreens = [
   { name: 'Tasks', component: TasksScreen, IconComponent: TasksIcon, label: 'Задачи' },
   { name: 'Feed', component: FeedScreen, IconComponent: FeedIcon, label: 'Лента' },
-  { name: 'Finance', component: FinanceScreen, IconComponent: FinanceIcon, label: 'Доходы' },
   { name: 'Profile', component: ProfileScreen, IconComponent: ProfileIcon, label: 'Профиль', nestedScreens: [ClientBaseScreen, EmployeesScreen, InventoryScreen, NotificationsScreen] }
 ];
 
