@@ -86,10 +86,6 @@ const TaskComponent = React.memo((props) => {
           </View>
           <View style={styles.taskFooter}>
             <View style={styles.taskFooterBlock}>
-              <ProfileIcon />
-              <Text style={styles.taskFooterText}>{employeesText}</Text>
-            </View>
-            <View style={styles.taskFooterBlock}>
               <LocationIcon />
               <Text style={styles.taskFooterText}>{addressText}</Text>
             </View>

@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, TouchableOpacity, Modal } from 'react-native';
-import DropDownPicker from 'react-native-dropdown-picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { format, getYear } from 'date-fns';
 import { ru } from 'date-fns/locale';
@@ -13,6 +12,7 @@ import NewTaskScreen from './NewTaskScreen';
 import { isToday, fetchTaskDates, fetchTasksForSelectedDate } from '../utils/tasks';
 import { taskEventEmitter } from '../Events';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import YearPicker from '../components/YearPicker';
 
 const VIEW_MODES = {
   TODAY: 'today',
@@ -27,13 +27,13 @@ const TasksScreen = () => {
   const [viewMode, setViewMode] = useState(VIEW_MODES.TODAY);
   const [headerTitle, setHeaderTitle] = useState(format(selectedDate, 'd MMMM', { locale: ru }));
   const [isUserResponsible, setIsUserResponsible] = useState(false);
-  const [currentYear, setCurrentYear] = useState(getYear(new Date())); // Текущий год
+  const currentYear = getYear(new Date());
   const [selectedYear, setSelectedYear] = useState(currentYear);
+  const [isYearPickerVisible, setYearPickerVisible] = useState(false);
 
   const checkIfUserIsResponsible = async () => {
     try {
       const userId = await AsyncStorage.getItem('userId');
-      // Замените URL на ваш серверный API для проверки
       const response = await fetch(`http://31.129.101.174/responsibles/check/${userId}`);
       const data = await response.json();
 
@@ -67,9 +67,17 @@ const TasksScreen = () => {
     setViewMode(prevMode => prevMode === VIEW_MODES.TODAY ? VIEW_MODES.CALENDAR : VIEW_MODES.TODAY);
   }, []);
 
-  const handleYearChange = (year) => { // Добавляем функцию для обработки изменения года
-    setSelectedYear(year);
+  const handleYearChange = (year) => {
+    setSelectedYear(Number(year));
   };
+
+  const DaysOfWeek = () => (
+    <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
+      {['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'].map(day => (
+        <Text key={day}>{day}</Text>
+      ))}
+    </View>
+  );
 
   const renderCalendar = () => (
     viewMode === VIEW_MODES.TODAY
@@ -85,40 +93,45 @@ const TasksScreen = () => {
     setNewTaskScreenVisible(true);
   }, []);
 
-  const years = [
-    getYear(new Date()) - 2,
-    getYear(new Date()) - 1,
-    getYear(new Date()),
-  ];
+  const years = [currentYear - 2, currentYear - 1, currentYear];
 
-  const renderYearPicker = () => {
-    return (
-      <DropDownPicker
-        items={years.map(year => ({ label: year.toString(), value: year }))}
-        defaultValue={selectedYear}
-        onChangeItem={item => handleYearChange(item.value)}
-      />
-    );
-  };
+  const renderYearPickerButton = () => (
+    <TouchableOpacity onPress={() => setYearPickerVisible(true)} style={styles.yearPickerButton}>
+      <Text style={{ paddingRight: 16 }}>{selectedYear}</Text>
+    </TouchableOpacity>
+  );
+
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.contentContainer}>
-        <View style={styles.taskHeader}>
+      <View style={[styles.contentContainer, { padding: 0 }]}>
+        <View style={[styles.taskHeader, { paddingHorizontal: 16, paddingTop: 16 }]}>
           <Text style={styles.titleMedium}>{viewMode === VIEW_MODES.TODAY ? headerTitle : 'Календарь'}</Text>
           <View style={styles.calendarBlock}>
-            {viewMode === VIEW_MODES.TODAY && <Text style={styles.title}>{format(selectedDate, 'MMMM, yyyy', { locale: ru })}</Text>}
-            {viewMode === VIEW_MODES.CALENDAR && renderYearPicker()}
+            {viewMode === VIEW_MODES.TODAY && <Text style={{ paddingRight: 16 }}>{format(selectedDate, 'MMMM, yyyy', { locale: ru })}</Text>}
+            {viewMode === VIEW_MODES.CALENDAR && renderYearPickerButton()}
             <TouchableOpacity onPress={handleViewModeToggle}>
               {viewMode === VIEW_MODES.TODAY ? <CalendarIcon /> : <TodayIcon />}
             </TouchableOpacity>
           </View>
         </View>
+        {viewMode === VIEW_MODES.CALENDAR && <DaysOfWeek />}
         {renderCalendar()}
         {viewMode === VIEW_MODES.TODAY && renderAddButton()}
       </View>
       <Modal visible={isNewTaskScreenVisible} onRequestClose={() => setNewTaskScreenVisible(false)}>
-        <NewTaskScreen onClose={() => setNewTaskScreenVisible(false)} />
+        <NewTaskScreen onClose={() => setNewTaskScreenVisible(false)} selectedDate={selectedDate} />
+      </Modal>
+
+      <Modal visible={isYearPickerVisible} onRequestClose={() => setYearPickerVisible(false)}>
+        <YearPicker
+          years={years}
+          selectedYear={selectedYear}
+          onYearChange={(year) => {
+            setYearPickerVisible(false);
+            handleYearChange(year);
+          }}
+        />
       </Modal>
     </SafeAreaView>
   );

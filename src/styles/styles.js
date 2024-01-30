@@ -173,10 +173,7 @@ const styles = StyleSheet.create({
   calendarBlock: {
     flexDirection: 'row',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 1.41,
+    boxShadow: '0px 1px 1.41px rgba(0, 0, 0, 0.2)',
     elevation: 2,
   },
   calendar: {
@@ -664,9 +661,8 @@ const styles = StyleSheet.create({
     borderRadius: sizes.borderRadiusMedium,
     borderWidth: 1,
     borderColor: colors.grey,
-    textAlignVertical: 'top',
+    verticalAlign: 'top', // Изменено с textAlignVertical на verticalAlign
   },
-
   costInput: {
     fontSize: sizes.fontSizeLarge,
     color: colors.black,
@@ -754,13 +750,10 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 16,
-    shadowColor: 'black',
-    shadowOffset: { width: 0, height: -1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
+    boxShadow: '0px -1px 4px rgba(0, 0, 0, 0.2)',
     elevation: 5,
     maxHeight: '60%',
-  },
+  },  
   filterModalHeader: {
     textAlign: 'center',
     fontSize: 18,
@@ -906,6 +899,22 @@ const styles = StyleSheet.create({
   removeIcon: {
     fontSize: 24, // Регулируем размер крестика
     color: 'white', // Цвет крестика
+  },
+  button: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 10,
+    // Ваши стили для кнопки
+  },
+  arrow: {
+    marginRight: 5,
+    fontSize: 14,
+    // Ваши стили для стрелки
+  },
+  year: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    // Ваши стили для текста года
   },
 });
 

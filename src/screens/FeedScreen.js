@@ -15,7 +15,7 @@ const FeedScreen = () => {
   const [tasks, setTasks] = useState([]);
   const [filteredTasks, setFilteredTasks] = useState([]);
   const [filters, setFilters] = useState([]); // Объявляем переменную фильтров
-  const [isFilterModalVisible, setFilterModalVisible] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
   const [responsibles, setResponsibles] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [paymentmethods, setPaymentMethods] = useState([]);
@@ -49,7 +49,7 @@ const FeedScreen = () => {
       console.error('Ошибка при загрузке задач:', error);
     }
   };
-  
+
   useEffect(() => {
     loadAndUpdateTasks(); // Первоначальная загрузка задач
   }, [tasks]);
@@ -234,8 +234,8 @@ const FeedScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <FilterModal
-        visible={isFilterModalVisible}
-        onClose={() => setFilterModalVisible(false)}
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
         currentFilters={filters}
         setFilters={setFilters}
         applyFilter={applyFilter}
@@ -265,7 +265,7 @@ const FeedScreen = () => {
       <View style={styles.contentContainer}>
         <View style={styles.taskHeader}>
           <Text style={styles.titleMedium}>Лента</Text>
-          <TouchableOpacity onPress={() => setFilterModalVisible(true)}>
+          <TouchableOpacity onPress={() => setModalVisible(true)}>
             <FilterIcon />
           </TouchableOpacity>
         </View>
@@ -313,29 +313,19 @@ const FilterModal = ({ visible, onClose, currentFilters, filterTasks, setFilters
   const [participantFilter, setParticipantFilter] = useState('');
   const [paymentMethodFilter, setPaymentMethodFilter] = useState('');
   const [currentPage, setCurrentPage] = useState('main');
-  const [isClosing, setIsClosing] = useState(false);
-  const [modalVisible, setModalVisible] = useState(false);
+
+  const ModalFullHeight = screenHeight * 0.05;
+  const ModalHeight = screenHeight * 0.35;
+  const modalHeight = useRef(new Animated.Value(ModalHeight));
   const [isFullSize, setIsFullSize] = useState(false);
 
-  const ModalFullHeight = screenHeight * 0.25;
-  const ModalHeight = screenHeight * 0.35;
-  const modalHeight = useRef(new Animated.Value(ModalFullHeight));
-
   useEffect(() => {
-    if (isFullSize) {
-      Animated.timing(modalHeight.current, {
-        toValue: ModalFullHeight,
-        duration: 300,
-        useNativeDriver: false,
-      }).start();
-    } else {
-      Animated.timing(modalHeight.current, {
-        toValue: ModalFullHeight,
-        duration: 300,
-        useNativeDriver: false,
-      }).start();
-    }
-  }, [isFullSize]);
+    Animated.timing(modalHeight.current, {
+      toValue: isFullSize ? ModalFullHeight : ModalHeight,
+      duration: 300,
+      useNativeDriver: true, // Изменено здесь
+    }).start();
+  }, [isFullSize, ModalFullHeight, ModalHeight]);
 
   const panResponder = useRef(
     PanResponder.create({
@@ -346,62 +336,37 @@ const FilterModal = ({ visible, onClose, currentFilters, filterTasks, setFilters
       },
       onPanResponderMove: Animated.event(
         [null, { dy: modalHeight.current }],
-        {
-          useNativeDriver: false,
-          listener: (event, gestureState) => {
-            const currentHeight = modalHeight.current.__getValue();
-            if (currentHeight < ModalFullHeight) {
-              modalHeight.current.setValue(0);
-            }
-          },
-        }
+        { useNativeDriver: false } // Изменил здесь на false
       ),
-
       onPanResponderRelease: (event, gestureState) => {
         modalHeight.current.flattenOffset();
         const currentHeight = modalHeight.current._value + gestureState.dy;
         const upwardThreshold = ModalHeight + (screenHeight - ModalHeight) / 2;
 
-        if (gestureState.dy < 40) {
-          if (currentHeight < upwardThreshold) {
-            openFullModal();
-          } else {
-            closeModal();
-          }
+        if (gestureState.dy < 0) {
+          currentHeight < upwardThreshold ? openFullModal() : openModal();
         } else {
-          if (currentHeight < ModalFullHeight) {
-            closeModal();
-          } else {
-            closeModal();
-          }
+          currentHeight > ModalHeight ? closeModal() : openModal();
         }
       },
-
-
     })
   ).current;
 
-  const openFullModal = useCallback(() => {
+  const animateModal = useCallback((value, fullSize) => {
     Animated.spring(modalHeight.current, {
-      toValue: ModalFullHeight,
-      useNativeDriver: false,
+      toValue: value,
+      useNativeDriver: true, // Изменено здесь
       bounciness: 0
-    }).start(() => setIsFullSize(true));
-  }, [ModalFullHeight]);
+    }).start(() => setIsFullSize(fullSize));
+  }, []);
 
+  const openFullModal = useCallback(() => animateModal(ModalFullHeight, true), [ModalFullHeight, animateModal]);
+  const openModal = useCallback(() => animateModal(ModalHeight, false), [ModalHeight, animateModal]);
   const closeModal = useCallback(() => {
-    setIsClosing(true);
-    Animated.spring(modalHeight.current, {
-      toValue: screenHeight,
-      useNativeDriver: false,
-      bounciness: 0
-    }).start(() => {
-      setIsFullSize(false);
-      modalHeight.current.setValue(ModalFullHeight); // Сбросить высоту модального окна
-      setIsClosing(false);
-      onClose(); // Обратите внимание, что теперь onClose вызывается здесь
-    });
-  }, [screenHeight, ModalFullHeight, onClose]);
+    animateModal(screenHeight, false);
+    modalHeight.current.setValue(ModalHeight);
+    onClose();
+  }, [ModalHeight, screenHeight, animateModal]);
 
   const handleSelectStatus = (status) => {
     if (selectedStatus === status) {
@@ -642,7 +607,7 @@ const FilterModal = ({ visible, onClose, currentFilters, filterTasks, setFilters
       visible={visible}
       onRequestClose={onClose}
     >
-      <Animated.View style={[styles.modalOverlay, { top: modalHeight.current }]} {...panResponder.panHandlers}>
+      <Animated.View style={[styles.modalOverlay, { transform: [{ translateY: modalHeight.current }] }]} {...panResponder.panHandlers}>
         <View style={styles.container}>
           <View style={styles.contentContainer}>
             <View style={styles.taskHeader}>

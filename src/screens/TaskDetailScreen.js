@@ -10,6 +10,9 @@ import { fetchTaskParticipants, fetchDraftData } from '../utils/tasks';
 import { BackIcon, EditIcon, None } from '../icons';
 import NewTaskScreen from './NewTaskScreen';
 import * as ImagePicker from 'expo-image-picker';
+import axios from 'axios';
+import * as FileSystem from 'expo-file-system';
+import * as MediaLibrary from 'expo-media-library';
 
 const TaskDetailScreen = ({ route }) => {
   const navigation = useNavigation();
@@ -25,14 +28,31 @@ const TaskDetailScreen = ({ route }) => {
   const [fullScreenImageModalVisible, setFullScreenImageModalVisible] = useState(false);
   const [currentImage, setCurrentImage] = useState(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [loadedPhotos, setLoadedPhotos] = useState([]);
 
-  const openFullScreenImage = (index) => {
-    setCurrentImageIndex(index);
-    setFullScreenImageModalVisible(true);
+  const downloadImage = async (uri) => {
+    try {
+      const { status } = await MediaLibrary.requestPermissionsAsync();
+      if (status !== 'granted') {
+        alert('Нужен доступ к галерее для сохранения изображения');
+        return;
+      }
+
+      const fileUri = FileSystem.documentDirectory + uri.split('/').pop();
+      const { uri: downloadedUri } = await FileSystem.downloadAsync(uri, fileUri);
+      const asset = await MediaLibrary.createAssetAsync(downloadedUri);
+      await MediaLibrary.createAlbumAsync('Download', asset, false);
+
+      Alert.alert('Уведомление', 'Изображение сохранено в галерее');
+    } catch (error) {
+      console.error('Ошибка при сохранении изображения:', error);
+    }
   };
 
+
   const showNextImage = () => {
-    if (currentImageIndex < selectedImages.length - 1) {
+    const maxIndex = task.status === 'выполнено' ? loadedPhotos.length - 1 : selectedImages.length - 1;
+    if (currentImageIndex < maxIndex) {
       setCurrentImageIndex(currentImageIndex + 1);
     }
   };
@@ -43,8 +63,17 @@ const TaskDetailScreen = ({ route }) => {
     }
   };
 
+  const openFullScreenImage = (index) => {
+    setCurrentImageIndex(index);
+    setFullScreenImageModalVisible(true);
+  };
+
   const FullScreenImageModal = ({ isVisible, onClose }) => {
-    const imageUri = selectedImages[currentImageIndex]?.uri;
+    const imageUri = task.status === 'выполнено'
+      ? loadedPhotos[currentImageIndex]?.uri
+      : selectedImages[currentImageIndex]?.uri;
+
+    const maxIndex = task.status === 'выполнено' ? loadedPhotos.length - 1 : selectedImages.length - 1;
 
     return (
       <Modal
@@ -60,25 +89,51 @@ const TaskDetailScreen = ({ route }) => {
               style={{ width: '100%', height: '100%', resizeMode: 'contain' }}
             />
           )}
-          <TouchableOpacity style={{ position: 'absolute', top: 40, right: 20 }} onPress={onClose}>
+          <TouchableOpacity
+            style={{ position: 'absolute', top: 40, right: 20, padding: 10 }}
+            onPress={onClose}
+          >
             <Text style={{ color: 'white', fontSize: 30 }}>×</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={{ position: 'absolute', top: 40, left: 20, padding: 10 }}
+            onPress={() => downloadImage(imageUri)}
+          >
+            <Text style={{ color: 'white', fontSize: 30 }}>⇓</Text>
           </TouchableOpacity>
 
           {currentImageIndex > 0 && (
             <TouchableOpacity
-              style={{ position: 'absolute', left: 0, top: 0, bottom: 0, right: '50%', justifyContent: 'center' }}
+              style={{
+                position: 'absolute',
+                left: 0,
+                height: '20%',
+                top: '40%',
+                bottom: '40%',
+                justifyContent: 'center',
+                paddingLeft: 20,
+              }}
               onPress={showPreviousImage}
             >
-              <Text style={{ color: 'white', fontSize: 42, textAlign: 'left', marginLeft: 20 }}>‹</Text>
+              <Text style={{ color: 'white', fontSize: 42, textAlign: 'left' }}>‹</Text>
             </TouchableOpacity>
           )}
 
-          {currentImageIndex < selectedImages.length - 1 && (
+          {currentImageIndex < maxIndex && (
             <TouchableOpacity
-              style={{ position: 'absolute', right: 0, top: 0, bottom: 0, left: '50%', justifyContent: 'center' }}
+              style={{
+                position: 'absolute',
+                right: 0,
+                height: '20%',
+                top: '40%',
+                bottom: '40%',
+                justifyContent: 'center',
+                paddingRight: 20,
+              }}
               onPress={showNextImage}
             >
-              <Text style={{ color: 'white', fontSize: 42, textAlign: 'right', marginRight: 20 }}>›</Text>
+              <Text style={{ color: 'white', fontSize: 42, textAlign: 'right' }}>›</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -102,7 +157,6 @@ const TaskDetailScreen = ({ route }) => {
 
       if (!pickerResult.canceled) {
         setSelectedImages(prevImages => [...prevImages, ...(pickerResult.assets || [])]);
-        console.log(selectedImages);
       }
     } catch (error) {
       Alert.alert('Ошибка', 'Произошла ошибка при выборе фотографий');
@@ -145,6 +199,33 @@ const TaskDetailScreen = ({ route }) => {
   const handleRemoveImage = (index) => {
     setSelectedImages(currentImages => currentImages.filter((_, i) => i !== index));
   };
+
+  const processServerImages = (serverImages) => {
+    return serverImages.map(img => ({
+      uri: `http://31.129.101.174${img.photo_url}`, // Добавляем базовый URL сервера
+      width: null, // Ширина и высота обычно неизвестны для серверных изображений, если только сервер их не предоставляет
+      height: null,
+      type: 'image', // Тип можно установить статически, если все файлы являются изображениями
+    }));
+  };
+
+  const fetchTaskPhotos = async (taskId) => {
+    try {
+      const response = await axios.get(`http://31.129.101.174/tasks/${taskId}/photos`);
+      if (response.data && Array.isArray(response.data)) {
+        const serverImages = processServerImages(response.data);
+        setLoadedPhotos(prevImages => [...prevImages, ...serverImages]);
+      }
+    } catch (error) {
+      console.error('Ошибка при загрузке изображений задачи:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (task.status === 'выполнено') {
+      fetchTaskPhotos(task.id);
+    }
+  }, [task.status, task.id]);
 
   const handleCancelTaskPress = () => {
     Alert.alert(
@@ -385,7 +466,10 @@ const TaskDetailScreen = ({ route }) => {
           )}
         </View>
         <ScrollView contentContainerStyle={styles.scrollViewContent} showsVerticalScrollIndicator={false} overScrollMode="never">
-          <Text style={styles.headlineMedium}>{serviceName}</Text>
+
+          <Section title="Детали">
+            <Row title="Услуги:" value={serviceName} />
+          </Section>
 
           <Section title="Клиент">
             <Row title="ФИО:" value={task.fullname_client} />
@@ -406,15 +490,29 @@ const TaskDetailScreen = ({ route }) => {
           </Section>
 
           {task.status === 'выполнено' && (
-            <Section title="Расходники">
-              {taskInventory.length > 0 ? (
-                taskInventory.map((item, index) => (
-                  <Row key={index} title={item.name} value={`Количество: ${item.quantity}`} />
-                ))
-              ) : (
-                <Text style={styles.bodyMedium}>Расходники не использовались.</Text>
-              )}
-            </Section>
+            <>
+              {task.status === 'выполнено' &&
+                <Section title="Фотографии">
+                  <ScrollView horizontal style={styles.imagePreviewContainer} showsHorizontalScrollIndicator={false}>
+                    {loadedPhotos.map((image, index) => (
+                      <View key={index} style={styles.imageContainer}>
+                        <TouchableOpacity onPress={() => openFullScreenImage(index)} style={styles.imagePreview}>
+                          <Image source={{ uri: image.uri }} style={styles.image} />
+                        </TouchableOpacity>
+                      </View>
+                    ))}
+                  </ScrollView>
+                </Section>}
+              <Section title="Расходники">
+                {taskInventory.length > 0 ? (
+                  taskInventory.map((item, index) => (
+                    <Row key={index} title={item.name} value={`Количество: ${item.quantity}`} />
+                  ))
+                ) : (
+                  <Text style={styles.bodyMedium}>Расходники не использовались.</Text>
+                )}
+              </Section>
+            </>
           )}
 
           <Section title="Описание">
@@ -463,15 +561,15 @@ const TaskDetailScreen = ({ route }) => {
 
         {task.status !== 'выполнено' && task.status !== 'отменено' && (
           <>
-          <TouchableOpacity style={[styles.addButton, { marginBottom: 68 }]} onPress={handleAddTaskPress}>
-            <Text style={styles.addButtonText}>
-              {task.status === 'в процессе' ? 'Добавить расходники' : 'Начать выполнение'}
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.addButton, { backgroundColor: 'black' }]} onPress={handleCancelTaskPress}>
-            <Text style={styles.addButtonText}>Отменить задачу</Text>
-          </TouchableOpacity>
-        </>
+            <TouchableOpacity style={[styles.addButton, { marginBottom: 68 }]} onPress={handleAddTaskPress}>
+              <Text style={styles.addButtonText}>
+                {task.status === 'в процессе' ? 'Добавить расходники' : 'Начать выполнение'}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.addButton, { backgroundColor: 'black' }]} onPress={handleCancelTaskPress}>
+              <Text style={styles.addButtonText}>Отменить задачу</Text>
+            </TouchableOpacity>
+          </>
         )}
       </View>
       <Modal

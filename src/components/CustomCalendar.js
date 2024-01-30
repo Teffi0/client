@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { ScrollView, View, PanResponder, Animated, Dimensions } from 'react-native';
-import { startOfWeek, endOfWeek, addDays, subWeeks, addWeeks, format, parseISO } from 'date-fns';
+import { View, PanResponder, Animated, Dimensions, ScrollView } from 'react-native';
+import { startOfWeek, endOfWeek, addDays, addWeeks, subWeeks, format, parseISO } from 'date-fns';
 import styles from '../styles/styles';
 import DayDotsComponent from './DayDotsComponent';
 import TasksForSelectedDateComponent from './TasksForSelectedDateComponent';
@@ -10,45 +10,71 @@ const screenWidth = Dimensions.get('window').width;
 const CustomCalendar = ({ selectedDate, onDateChange, tasks, taskDates }) => {
   const [expandedClients, setExpandedClients] = useState(new Set());
   const translateX = useMemo(() => new Animated.Value(0), []);
+  const [currentWeekDate, setCurrentWeekDate] = useState(selectedDate);
 
   useEffect(() => {
-    translateX.setValue(0);
-  }, []);
+    setCurrentWeekDate(startOfWeek(selectedDate, { weekStartsOn: 1 }));
+  }, [selectedDate]);
 
   const panResponder = useMemo(() => PanResponder.create({
-    onMoveShouldSetPanResponder: (_, { dx }) => Math.abs(dx) > 10,
+    onMoveShouldSetPanResponder: (_, gestureState) => Math.abs(gestureState.dx) > 10,
     onPanResponderGrant: () => {
-      translateX.setOffset(translateX._value);
-      translateX.setValue(0);
-    },
-    onPanResponderMove: (_, { dx }) => translateX.setValue(dx),
+      translateX.stopAnimation(); // Остановка текущей анимации
+      translateX.setOffset(0);    // Сброс смещения
+      translateX.setValue(0);     // Сброс значения
+    },    
+    onPanResponderMove: (_, { dx }) => {
+      Animated.timing(translateX, {
+        toValue: dx,
+        duration: 0, // Мгновенное обновление положения
+        useNativeDriver: true
+      }).start();
+    },    
     onPanResponderRelease: (_, { dx }) => {
       translateX.flattenOffset();
-      let newDate = dx > 50 ? subWeeks(selectedDate, 1) : (dx < -50 ? addWeeks(selectedDate, 1) : selectedDate);
-      let toValue = dx > 50 ? screenWidth : (dx < -50 ? -screenWidth : 0);
-
+      let newWeekDate;
+      let toValue;
+    
+      if (dx > 50) { // Свайп вправо
+        newWeekDate = subWeeks(currentWeekDate, 1);
+        toValue = screenWidth;
+      } else if (dx < -50) { // Свайп влево
+        newWeekDate = addWeeks(currentWeekDate, 1);
+        toValue = -screenWidth;
+      } else {
+        newWeekDate = currentWeekDate;
+        toValue = 0;
+      }
+    
       Animated.timing(translateX, {
         toValue: toValue,
         duration: 250,
         useNativeDriver: true,
       }).start(() => {
         if (toValue !== 0) {
-          onDateChange(newDate);
+          setCurrentWeekDate(newWeekDate); // Обновление даты текущей недели после завершения анимации
         }
-        translateX.setValue(0);
+        translateX.setValue(0); // Обнуление translateX независимо от значения toValue
       });
-    },
-  }), [selectedDate, translateX]);
+    },     
+  }), [currentWeekDate, translateX, screenWidth]);
 
   const handleDateChange = useCallback((day) => {
     onDateChange(day);
   }, [onDateChange]);
 
-  const currentWeek = useMemo(() => {
-    const start = startOfWeek(selectedDate);
-    const end = endOfWeek(selectedDate);
-    return Array.from({length: 7}, (_, index) => addDays(start, index));
-  }, [selectedDate]);
+  const weeks = useMemo(() => {
+    const previousWeekStart = startOfWeek(subWeeks(currentWeekDate, 1), { weekStartsOn: 1 });
+    const nextWeekStart = startOfWeek(addWeeks(currentWeekDate, 1), { weekStartsOn: 1 });
+
+    return {
+      previous: Array.from({ length: 7 }, (_, index) => addDays(previousWeekStart, index)),
+      current: Array.from({ length: 7 }, (_, index) => addDays(currentWeekDate, index)),
+      next: Array.from({ length: 7 }, (_, index) => addDays(nextWeekStart, index)),
+    };
+  }, [currentWeekDate]);
+
+  console.log(selectedDate);
 
   const tasksByClient = useMemo(() => {
     return tasks.reduce((acc, task) => {
@@ -78,23 +104,41 @@ const CustomCalendar = ({ selectedDate, onDateChange, tasks, taskDates }) => {
     <View style={{ flex: 1 }}>
       <Animated.View
         {...panResponder.panHandlers}
-        style={{ flexDirection: 'row', transform: [{ translateX }], marginBottom: 24 }}
+        style={{ 
+          flexDirection: 'row', 
+          width: screenWidth * 3, // Увеличиваем ширину, чтобы вместить 3 недели
+          transform: [{ translateX: translateX.interpolate({
+            inputRange: [0, screenWidth],
+            outputRange: [-screenWidth, 0] // Сдвигаем влево на ширину экрана
+          }) }] 
+        }}
       >
         <DayDotsComponent
-          days={currentWeek}
-          onDateChange={handleDateChange}
+          days={weeks.previous}
+          onDateChange={onDateChange}
+          selectedDate={selectedDate}
+          taskDates={taskDates}
+        />
+        <DayDotsComponent
+          days={weeks.current}
+          onDateChange={onDateChange}
+          selectedDate={selectedDate}
+          taskDates={taskDates}
+        />
+        <DayDotsComponent
+          days={weeks.next}
+          onDateChange={onDateChange}
           selectedDate={selectedDate}
           taskDates={taskDates}
         />
       </Animated.View>
 
-      <ScrollView showsVerticalScrollIndicator={false} overScrollMode="never">
+      <ScrollView showsVerticalScrollIndicator={false} overScrollMode="never" style={{paddingHorizontal: 16, paddingTop: 20}}>
         <TasksForSelectedDateComponent
           tasksByClient={tasksByClient}
           expandedClients={expandedClients}
           toggleClient={toggleClient}
         />
-
       </ScrollView>
     </View>
   );

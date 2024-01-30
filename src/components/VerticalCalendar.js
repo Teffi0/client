@@ -58,14 +58,7 @@ const VerticalCalendar = ({ tasks, taskDates, selectedYear }) => {
       },
       onPanResponderMove: Animated.event(
         [null, { dy: modalHeight.current }],
-        {
-          useNativeDriver: false,
-          listener: (event, gestureState) => {
-            if (modalHeight.current.__getValue() < ModalFullHeight) {
-              modalHeight.current.setValue(0);
-            }
-          },
-        }
+        { useNativeDriver: false } // Изменил здесь на false
       ),
       onPanResponderRelease: (event, gestureState) => {
         modalHeight.current.flattenOffset();
