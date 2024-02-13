@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Modal, ScrollView, View, Text, TouchableOpacity, Dimensions, PanResponder, Animated } from 'react-native';
+import { Modal, ScrollView, View, Text, TouchableOpacity, Dimensions, PanResponder, Animated, TextInput } from 'react-native';
 import DateInput from '../components/DateInput';
 import axios from 'axios';
 import TaskComponent from '../components/TaskComponent';
@@ -14,7 +14,7 @@ const screenHeight = Dimensions.get('window').height;
 const FeedScreen = () => {
   const [tasks, setTasks] = useState([]);
   const [filteredTasks, setFilteredTasks] = useState([]);
-  const [filters, setFilters] = useState([]); // Объявляем переменную фильтров
+  const [filters, setFilters] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [responsibles, setResponsibles] = useState([]);
   const [employees, setEmployees] = useState([]);
@@ -27,9 +27,9 @@ const FeedScreen = () => {
   const [selectedStatus, setSelectedStatus] = useState('');
   const [selectedStartDate, setSelectedStartDate] = useState('');
   const [selectedEndDate, setSelectedEndDate] = useState('');
+  const [searchText, setSearchText] = useState('');
 
   const updateFilters = (newFilters) => {
-    // Убедитесь, что newFilters является объектом с нужными свойствами
     if (typeof newFilters === 'object' && newFilters !== null) {
       setFilters(Array.isArray(newFilters.filters) ? newFilters.filters : []);
       setSelectedParticipants(newFilters.selectedParticipants || []);
@@ -39,20 +39,23 @@ const FeedScreen = () => {
     }
   };
 
-  const loadAndUpdateTasks = async () => {
-    try {
-      const tasksResponse = await axios.get('http://31.129.101.174/tasks');
-      const validTasks = tasksResponse.data.filter(task => task.status !== 'черновик');
-      setTasks(validTasks);
-      setFilteredTasks(validTasks); // Обновляем отфильтрованные задачи
-    } catch (error) {
-      console.error('Ошибка при загрузке задач:', error);
-    }
-  };
+  useEffect(() => {
+    const loadTasks = async () => {
+      try {
+        const tasksResponse = await axios.get('http://31.129.101.174/tasks');
+        const validTasks = tasksResponse.data.filter(task => task.status !== 'черновик');
+        setTasks(validTasks);
+      } catch (error) {
+        console.error('Ошибка при загрузке задач:', error);
+      }
+    };
+
+    loadTasks();
+  }, []);
 
   useEffect(() => {
-    loadAndUpdateTasks(); // Первоначальная загрузка задач
-  }, [tasks]);
+    filterTasks();
+  }, [tasks, filters]);
 
   useEffect(() => {
     const fetchTasks = async () => {
@@ -75,7 +78,6 @@ const FeedScreen = () => {
   }, []);
 
   const applyFilter = (filterType, filterValue) => {
-    console.log(filterValue);
     if (filterType === 'status') {
       setSelectedStatus(filterValue);
     } else if (filterType === 'client') {
@@ -110,71 +112,64 @@ const FeedScreen = () => {
     filterTasks(updatedFilters);
   };
 
-  const filterTasks = async (updatedFilters) => {
-    let filtered = [...tasks];
-    for (const filter of updatedFilters) {
-      switch (filter.type) {
-        case 'status':
-          console.log(filter.value);
-          filtered = filtered.filter(task => task.status === filter.value);
-          break;
-        case 'responsible':
-          filtered = filtered.filter(task => task.responsible === filter.value);
-          break;
-        case 'client':
-          filtered = filtered.filter(task => task.fullname_client === filter.value);
-          break;
-        case 'participant':
-          if (Array.isArray(filter.value)) {
-            filtered = await filterByParticipants(filtered, filter.value);
-          }
-          break;
-        case 'paymentMethod':
-          filtered = filtered.filter(task => task.payment === filter.value);
-          break;
-        case 'dateRange':
-          const { start, end } = filter.value;
-          const startDate = start ? new Date(start) : null;
-          const endDate = end ? new Date(end) : null;
-
-          filtered = filtered.filter(task => {
-            const taskDate = new Date(task.start_date);
-            if (startDate && endDate) {
-              return taskDate >= startDate && taskDate <= endDate;
-            } else if (startDate) {
-              return taskDate >= startDate;
-            } else if (endDate) {
-              return taskDate <= endDate;
+  const filterTasks = useCallback(() => {
+    const performFiltering = async () => {
+      let filtered = [...tasks];
+      for (const filter of filters) {
+        switch (filter.type) {
+          case 'status':
+            filtered = filtered.filter(task => task.status === filter.value);
+            break;
+          case 'responsible':
+            filtered = filtered.filter(task => task.responsible === filter.value);
+            break;
+          case 'client':
+            filtered = filtered.filter(task => task.fullname_client === filter.value);
+            break;
+          case 'participant':
+            if (Array.isArray(filter.value)) {
+              filtered = await filterByParticipants(filtered, filter.value);
             }
-            return true;
-          });
-          break;
+            break;
+          case 'paymentMethod':
+            filtered = filtered.filter(task => task.payment === filter.value);
+            break;
+          case 'dateRange':
+            if (filter.value.start) {
+              filtered = filtered.filter(task => new Date(task.start_date) >= new Date(filter.value.start));
+            }
+            if (filter.value.end) {
+              filtered = filtered.filter(task => new Date(task.end_date) <= new Date(filter.value.end));
+            }
+            break;
+        }
       }
-    }
+      if (searchText.trim()) {
+        filtered = filtered.filter(task => task.title.toLowerCase().includes(searchText.toLowerCase()));
+      }
+      setFilteredTasks(filtered);
+    };
 
-    setFilteredTasks(filtered);
-  };
+    performFiltering();
+  }, [tasks, filters, searchText]);
+
 
   const filterByParticipants = async (tasks, selectedEmployeeIds) => {
     if (selectedEmployeeIds.length > 0) {
       try {
-        // Получаем задачи для каждого участника
         const participantTasksPromises = selectedEmployeeIds.map(employeeId =>
           axios.get(`http://31.129.101.174/task_employees/${employeeId}`)
         );
         const responses = await Promise.all(participantTasksPromises);
 
-        // Преобразовываем ответы в массивы идентификаторов задач
         const participantTasks = responses.map(response =>
           response.data.map(taskEmployee => taskEmployee)
         );
 
-        // Находим общие задачи для всех участников
         const commonTasks = participantTasks.reduce((acc, tasks) =>
           acc.filter(taskId => tasks.includes(taskId))
         );
 
-        // Фильтруем исходные задачи, оставляя только общие
         return tasks.filter(task => commonTasks.includes(task.id));
       } catch (error) {
         console.error('Ошибка при фильтрации задач по участникам:', error);
@@ -184,32 +179,32 @@ const FeedScreen = () => {
     return tasks;
   };
 
-  const removeFilter = (filterType, filterIndex) => {
-    if (!Array.isArray(filters)) {
-      console.error('filters должен быть массивом');
-      return;
-    }
-
-    const newFilters = filters.filter((filter, index) => index !== filterIndex);
+  const removeFilter = (filterType) => {
+    const newFilters = filters.filter(filter => filter.type !== filterType);
     setFilters(newFilters);
 
-    if (filterType === 'client') {
-      setSelectedClients('');
-    } else if (filterType === 'responsible') {
-      setSelectedResponsibles('');
-    } else if (filterType === 'participant') {
-      const filterToRemove = filters[filterIndex];
-      if (filterToRemove && Array.isArray(filterToRemove.value)) {
-        setSelectedParticipants(selectedParticipants.filter(id => !filterToRemove.value.includes(id)));
-      }
-    } else if (filterType === 'paymentMethod') {
-      setSelectedPaymentMethod('');
-    } else if (filterType === 'status') {
-      setSelectedStatus('');
-    } else if (filterType === 'dateRange') {
-      setSelectedStartDate('');
-      setSelectedEndDate('');
+    switch (filterType) {
+      case 'client':
+        setSelectedClients('');
+        break;
+      case 'responsible':
+        setSelectedResponsibles('');
+        break;
+      case 'participant':
+        setSelectedParticipants([]);
+        break;
+      case 'paymentMethod':
+        setSelectedPaymentMethod('');
+        break;
+      case 'status':
+        setSelectedStatus('');
+        break;
+      case 'dateRange':
+        setSelectedStartDate('');
+        setSelectedEndDate('');
+        break;
     }
+
     filterTasks(newFilters);
   };
 
@@ -241,6 +236,8 @@ const FeedScreen = () => {
         applyFilter={applyFilter}
         onResetFilters={resetFilters}
         onUpdateFilters={updateFilters}
+        searchText={searchText}
+        setSearchText={setSearchText}
         responsibles={responsibles}
         clients={clients}
         employees={employees}
@@ -305,7 +302,7 @@ const FeedScreen = () => {
   );
 };
 
-const FilterModal = ({ visible, onClose, currentFilters, filterTasks, setFilters, applyFilter, removeFilter, onResetFilters, responsibles, clients, employees, onUpdateFilters, payments, selectedStatus, setSelectedStatus, selectedClients, selectedResponsibles, setSelectedClients, setSelectedResponsibles, selectedParticipants, setSelectedParticipants, selectedPaymentMethod, setSelectedPaymentMethod, selectedStartDate, setSelectedStartDate, selectedEndDate, setSelectedEndDate }) => {
+const FilterModal = ({ visible, onClose, currentFilters, filterTasks, setFilters, applyFilter, removeFilter, onResetFilters, searchText, setSearchText, responsibles, clients, employees, onUpdateFilters, payments, selectedStatus, setSelectedStatus, selectedClients, selectedResponsibles, setSelectedClients, setSelectedResponsibles, selectedParticipants, setSelectedParticipants, selectedPaymentMethod, setSelectedPaymentMethod, selectedStartDate, setSelectedStartDate, selectedEndDate, setSelectedEndDate }) => {
   const [statusFilter, setStatusFilter] = useState('');
   const [dateFilter, setDateFilter] = useState('');
   const [clientFilter, setClientFilter] = useState('');
@@ -323,7 +320,7 @@ const FilterModal = ({ visible, onClose, currentFilters, filterTasks, setFilters
     Animated.timing(modalHeight.current, {
       toValue: isFullSize ? ModalFullHeight : ModalHeight,
       duration: 300,
-      useNativeDriver: true, // Изменено здесь
+      useNativeDriver: false,
     }).start();
   }, [isFullSize, ModalFullHeight, ModalHeight]);
 
@@ -336,11 +333,24 @@ const FilterModal = ({ visible, onClose, currentFilters, filterTasks, setFilters
       },
       onPanResponderMove: Animated.event(
         [null, { dy: modalHeight.current }],
-        { useNativeDriver: false } // Изменил здесь на false
+        {
+          useNativeDriver: false,
+          listener: (event, gestureState) => {
+            const currentHeight = modalHeight.current.__getValue();
+            if (currentHeight < ModalFullHeight) {
+              modalHeight.current.setValue(0);
+            }
+          },
+        }
       ),
       onPanResponderRelease: (event, gestureState) => {
         modalHeight.current.flattenOffset();
-        const currentHeight = modalHeight.current._value + gestureState.dy;
+        let currentHeight = modalHeight.current._value + gestureState.dy;
+
+        if (currentHeight < ModalFullHeight) {
+          currentHeight = ModalFullHeight;
+        }
+
         const upwardThreshold = ModalHeight + (screenHeight - ModalHeight) / 2;
 
         if (gestureState.dy < 0) {
@@ -355,7 +365,7 @@ const FilterModal = ({ visible, onClose, currentFilters, filterTasks, setFilters
   const animateModal = useCallback((value, fullSize) => {
     Animated.spring(modalHeight.current, {
       toValue: value,
-      useNativeDriver: true, // Изменено здесь
+      useNativeDriver: false,
       bounciness: 0
     }).start(() => setIsFullSize(fullSize));
   }, []);
@@ -371,17 +381,16 @@ const FilterModal = ({ visible, onClose, currentFilters, filterTasks, setFilters
   const handleSelectStatus = (status) => {
     if (selectedStatus === status) {
       removeFilter('status');
-      setSelectedStatus('');
     } else {
       setSelectedStatus(status);
-      const newFilters = currentFilters.filter(f => f.type !== 'status');
-      newFilters.push({ type: 'status', value: status, label: `Статус: ${status}` });
-      setFilters(newFilters);
-      applyFilter('status', status);
+      setFilters(prevFilters => {
+        const newFilters = prevFilters.filter(f => f.type !== 'status');
+        newFilters.push({ type: 'status', value: status, label: `Статус: ${status}` });
+        return newFilters;
+      });
     }
   };
 
-  // Функция для форматирования даты
   const formatDate = (dateString) => {
     if (!dateString) return '';
     return format(dateString, 'dd.MM.yyyy');
@@ -434,22 +443,21 @@ const FilterModal = ({ visible, onClose, currentFilters, filterTasks, setFilters
 
     setSelectedParticipants(newSelectedParticipants);
 
-    // Формирование обновленных фильтров
     let updatedFilters = currentFilters.filter(filter => filter.type !== 'participant');
 
-    // Если есть выбранные участники, добавляем их в фильтры
     if (newSelectedParticipants.length > 0) {
       updatedFilters.push({ type: 'participant', value: newSelectedParticipants, label: `Участники: ${newSelectedParticipants.length}` });
     }
-    setFilters(updatedFilters); // Обновляем фильтры в состоянии
+    setFilters(updatedFilters);
 
-    // Вызываем filterTasks с обновленными фильтрами
     filterTasks(updatedFilters);
   };
 
   const onDateChange = (dateType, selectedDate) => {
     let newStartDate = selectedStartDate;
     let newEndDate = selectedEndDate;
+
+    console.log(selectedDate);
 
     if (dateType === 'startDate') {
       newStartDate = selectedDate;
@@ -459,28 +467,30 @@ const FilterModal = ({ visible, onClose, currentFilters, filterTasks, setFilters
       setSelectedEndDate(selectedDate);
     }
 
-    // Формирование метки и значения для фильтра
-    let label = '';
-    let value = {};
-    if (newStartDate && newEndDate) {
-      label = `С: ${formatDate(newStartDate)} До: ${formatDate(newEndDate)}`;
-      value = { start: newStartDate, end: newEndDate };
-    } else if (newStartDate) {
-      label = `С: ${formatDate(newStartDate)}`;
-      value = { start: newStartDate };
-    } else if (newEndDate) {
-      label = `До: ${formatDate(newEndDate)}`;
-      value = { end: newEndDate };
-    }
-
-    setFilters(prevFilters => {
-      const newFilters = prevFilters.filter(filter => filter.type !== 'dateRange');
-      if (label) {
-        newFilters.push({ type: 'dateRange', value, label });
-        filterTasks(newFilters);
+    if (!newStartDate && !newEndDate) {
+      removeFilter('dateRange');
+    } else {
+      let label = '';
+      let value = {};
+      if (newStartDate && newEndDate) {
+        label = `С: ${formatDate(newStartDate)} До: ${formatDate(newEndDate)}`;
+        value = { start: newStartDate, end: newEndDate };
+      } else if (newStartDate) {
+        label = `С: ${formatDate(newStartDate)}`;
+        value = { start: newStartDate };
+      } else if (newEndDate) {
+        label = `До: ${formatDate(newEndDate)}`;
+        value = { end: newEndDate };
       }
-      return newFilters;
-    });
+
+      setFilters(prevFilters => {
+        const newFilters = prevFilters.filter(filter => filter.type !== 'dateRange');
+        if (label) {
+          newFilters.push({ type: 'dateRange', value, label });
+        }
+        return newFilters;
+      });
+    }
   };
 
   const renderFilterOption = (title, filterValue, setPage) => {
@@ -508,7 +518,7 @@ const FilterModal = ({ visible, onClose, currentFilters, filterTasks, setFilters
   );
 
   const renderStatusPage = () => {
-    const statuses = ['новая', 'в процессе', 'выполнено'];
+    const statuses = ['новая', 'в процессе', 'выполнено', 'отменено'];
     return statuses.map(status => (
       <TouchableOpacity
         key={status}
@@ -544,43 +554,69 @@ const FilterModal = ({ visible, onClose, currentFilters, filterTasks, setFilters
 
   const renderClientPage = () => (
     <View>
-      {clients.map((client, index) => (
-        <TouchableOpacity key={index} style={styles.optionButton} onPress={() => handleClientChange(client.full_name)}>
-          <Text style={styles.title}>{client.full_name}</Text>
-          <View style={styles.radioButton}>
-            {selectedClients === client.full_name && <View style={styles.radioButtonSelected} />}
-          </View>
-        </TouchableOpacity>
-      ))}
+      <TextInput
+        style={styles.searchInput}
+        placeholder="Поиск по названию..."
+        value={searchText}
+        onChangeText={handleSearchTextChange}
+      />
+      <ScrollView>
+        {clients.filter(client => client.full_name && client.full_name.toLowerCase().includes(searchText.toLowerCase())).map((client, index) => (
+          <TouchableOpacity key={index} style={styles.optionButton} onPress={() => handleClientChange(client.full_name)}>
+            <Text style={styles.title}>{client.full_name}</Text>
+            <View style={styles.radioButton}>
+              {selectedClients === client.full_name && <View style={styles.radioButtonSelected} />}
+            </View>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
     </View>
   );
 
-
   const renderResponsiblePage = () => (
     <View>
-      {responsibles.map((responsible, index) => (
-        <TouchableOpacity key={index} style={styles.optionButton} onPress={() => handleResponsibleChange(responsible)}>
-          <Text style={styles.title}>{responsible}</Text>
-          <View style={styles.radioButton}>
-            {selectedResponsibles === responsible && <View style={styles.radioButtonSelected} />}
-          </View>
-        </TouchableOpacity>
-      ))}
+      <TextInput
+        style={styles.searchInput}
+        placeholder="Поиск по названию..."
+        value={searchText}
+        onChangeText={handleSearchTextChange}
+      />
+      <ScrollView>
+        {responsibles.filter(responsible => responsible && responsible.toLowerCase().includes(searchText.toLowerCase())).map((responsible, index) => (
+          <TouchableOpacity key={index} style={styles.optionButton} onPress={() => handleResponsibleChange(responsible)}>
+            <Text style={styles.title}>{responsible}</Text>
+            <View style={styles.radioButton}>
+              {selectedResponsibles === responsible && <View style={styles.radioButtonSelected} />}
+            </View>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
     </View>
   );
 
   const renderParticipantPage = () => (
     <View>
-      {employees.map(employee => (
-        <TouchableOpacity key={employee.id} onPress={() => toggleParticipantSelection(employee.id)}>
-          <View style={styles.checkboxContainer}>
-            <Text style={styles.title}>{employee.full_name}</Text>
-            <View style={styles.checkbox}>
-              {selectedParticipants.includes(employee.id) && <View style={styles.checkboxSelected} />}
-            </View>
-          </View>
-        </TouchableOpacity>
-      ))}
+      <TextInput
+        style={styles.searchInput}
+        placeholder="Поиск по названию..."
+        value={searchText}
+        onChangeText={handleSearchTextChange}
+      />
+      <ScrollView>
+        {employees
+          .filter(employee => employee.full_name && employee.full_name.toLowerCase().includes(searchText.toLowerCase()))
+          .map(employee => (
+            <TouchableOpacity key={employee.id} onPress={() => toggleParticipantSelection(employee.id)}>
+              <View style={styles.checkboxContainer}>
+                <Text style={styles.title}>{employee.full_name}</Text>
+                <View style={styles.checkbox}>
+                  {selectedParticipants.includes(employee.id) && <View style={styles.checkboxSelected} />}
+                </View>
+              </View>
+            </TouchableOpacity>
+          ))
+        }
+      </ScrollView>
     </View>
   );
 
@@ -599,7 +635,9 @@ const FilterModal = ({ visible, onClose, currentFilters, filterTasks, setFilters
     ));
   };
 
-  //  <TouchableOpacity style={styles.backgroundStyle} onPress={onClose} activeOpacity={1} />
+  const handleSearchTextChange = (text) => {
+    setSearchText(text);
+  };
   return (
     <Modal
       animationType="slide"
@@ -607,7 +645,7 @@ const FilterModal = ({ visible, onClose, currentFilters, filterTasks, setFilters
       visible={visible}
       onRequestClose={onClose}
     >
-      <Animated.View style={[styles.modalOverlay, { transform: [{ translateY: modalHeight.current }] }]} {...panResponder.panHandlers}>
+      <Animated.View style={[styles.modalOverlay, { top: modalHeight.current }]} {...panResponder.panHandlers}>
         <View style={styles.container}>
           <View style={styles.contentContainer}>
             <View style={styles.taskHeader}>

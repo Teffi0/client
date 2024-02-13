@@ -32,7 +32,7 @@ const Day = memo(({ day, handleDatePress, isSelectedDay, hasTask }) => (
                 <Text style={[styles.dayText, isSelectedDay && styles.today]}>
                     {format(day, 'd', { locale: ru })}
                 </Text>
-                {hasTask && <View style={styles.taskDotActive} />}
+                <View style={[styles.taskDot, hasTask && styles.taskDotActive]} />
             </TouchableOpacity>
         ) : null}
     </View>
@@ -66,7 +66,7 @@ const RenderMonth = memo(({ date, handleDatePress, taskDates }) => {
                                 day={day}
                                 handleDatePress={handleDatePress}
                                 isSelectedDay={!!day && format(day, 'yyyy-MM-dd') === todayFormatted}
-                                hasTask={day ? ['в процессе', 'новая'].includes(taskDates[format(day, 'yyyy-MM-dd')]) : false}
+                                hasTask={day ? Object.keys(taskDates).includes(format(day, 'yyyy-MM-dd')) : false}
                             />
                         ))}
                     </View>

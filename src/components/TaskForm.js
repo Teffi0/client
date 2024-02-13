@@ -774,6 +774,20 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
         });
     }, [dispatchFormData]);
 
+    const ExclamationCircle = () => {
+        return (
+            <View style={{
+                width: 16,
+                height: 24,
+                justifyContent: 'center',
+                alignItems: 'center',
+                marginBottom: 4,
+            }}>
+                <Text style={{ color: 'grey', fontWeight: 'bold' }}>!</Text>
+            </View>
+        );
+    };
+
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.contentContainerTask}>
@@ -803,7 +817,10 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
                         {tryRender(() => (
                             <View>
                                 <View style={{ flex: 1, marginBottom: 24 }}>
-                                    <Text style={styles.label}>Способ оплаты</Text>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                        <Text style={styles.label}>Услуги</Text>
+                                        <ExclamationCircle />
+                                    </View>
                                     <DropdownService
                                         options={service}
                                         selectedValues={selectedService}
@@ -813,7 +830,10 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
                                 </View>
                                 <View style={{ flexDirection: 'row', marginBottom: 24 }}>
                                     <View style={{ flex: 1 }}>
-                                        <Text style={styles.label}>Способ оплаты</Text>
+                                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                            <Text style={styles.label}>Способ оплаты</Text>
+                                            <ExclamationCircle />
+                                        </View>
                                         <DropdownWithSearch
                                             options={formData.paymentMethodOptions}
                                             selectedValue={formData.paymentMethod}
@@ -836,7 +856,10 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
                         {tryRender(() => (
                             <View style={{ flexDirection: 'row', marginBottom: 24 }}>
                                 <View style={{ flex: 1, marginRight: 8 }}>
-                                    <Text style={styles.label}>Начальная дата</Text>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                        <Text style={styles.label}>Начальная дата</Text>
+                                        <ExclamationCircle />
+                                    </View>
                                     <DateInput
                                         date={formData.startDate}
                                         placeholder="ГГГГ-ММ-ДД"
@@ -860,7 +883,10 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
                         {tryRender(() => (
                             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                                 <View style={{ flex: 1, marginRight: 8 }}>
-                                    <Text style={styles.label}>Начало работы</Text>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                        <Text style={styles.label}>Время начала</Text>
+                                        <ExclamationCircle />
+                                    </View>
                                     <TouchableOpacity onPress={toggleStartPicker} style={styles.dateInputContainer}>
                                         <TextInput
                                             value={formData.startDateTime ? format(formData.startDateTime, 'HH:mm') : ''}
@@ -872,7 +898,7 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
                                 </View>
 
                                 <View style={{ flex: 1 }}>
-                                    <Text style={styles.label}>Конец работы</Text>
+                                    <Text style={styles.label}>Время конца</Text>
                                     <TouchableOpacity onPress={toggleEndPicker} style={styles.dateInputContainer}>
                                         <TextInput
                                             value={formData.endDateTime ? format(formData.endDateTime, 'HH:mm') : ''}
@@ -907,7 +933,10 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
                             <>
                                 <Text style={[styles.headlineMedium, { marginBottom: 24 }]}>Команда</Text>
                                 <View style={{ marginBottom: 24 }}>
-                                    <Text style={styles.label}>Ответственный</Text>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                        <Text style={styles.label}>Ответственный</Text>
+                                        <ExclamationCircle />
+                                    </View>
                                     <DropdownWithSearch
                                         options={formData.responsibleOptions}
                                         selectedValue={formData.selectedResponsible}
@@ -916,7 +945,10 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
 
                                 </View>
                                 <View>
-                                    <Text style={styles.label}>Участники</Text>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                        <Text style={styles.label}>Участники</Text>
+                                        <ExclamationCircle />
+                                    </View>
                                     <DropdownEmployee
                                         options={formData.employeesOptions}
                                         selectedValues={selectedEmployee}
@@ -931,7 +963,10 @@ function TaskForm({ formData, dispatchFormData, onClose, draftData }) {
                             <View>
                                 <Text style={[styles.headlineMedium, { marginBottom: 24 }]}>Данные клиента</Text>
                                 <View style={{ marginBottom: 24 }}>
-                                    <Text style={styles.label}>ФИО клиента</Text>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                        <Text style={styles.label}>ФИО клиента</Text>
+                                        <ExclamationCircle />
+                                    </View>
                                     <DropdownClient
                                         options={formData.fullnameClientOptions}
                                         selectedValue={formData.fullnameClient}

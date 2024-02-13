@@ -82,6 +82,18 @@ export default function Navigation() {
   useEffect(() => {
     const checkToken = async () => {
       const token = await AsyncStorage.getItem('userToken');
+      const userId = await AsyncStorage.getItem('userId');
+      const apiUrl = 'http://31.129.101.174/login';
+      fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-User-Id': userId
+        },
+        body: JSON.stringify({
+            // тело запроса
+        })
+    })
       if (token) {
         setInitialRouteName('Tabs');
       }

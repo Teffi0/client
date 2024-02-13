@@ -1,30 +1,52 @@
 {
   "expo": {
-    "name": "iskcrm",
-    "slug": "iskcrm",
+    "name": "ИСК crm",
+    "slug": "myapp",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "icon": "./assets/logo.png",
     "splash": {
-      "image": "./assets/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
+    },
+    "updates": {
+      "fallbackToCacheTimeout": 0
     },
     "assetBundlePatterns": [
       "**/*"
     ],
-    "ios": {
-      "supportsTablet": true
-    },
+    "userInterfaceStyle": "automatic",
     "android": {
+      "package": "com.iskrussian.iskcrm",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/logo.png",
+        "backgroundColor": "#FFFFFF"
+      },
+      "versionCode": 1
+    },
+    "extra": {
+      "eas": {
+        "projectId": "e43a04ea-f40d-4a19-abd7-42dfb694f139"
       }
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "splash": {
+        "resizeMode": "contain",
+        "backgroundColor": "#ffffff"
+      },
+      "build": {
+        "babel": {
+          "include": [
+            "@react-navigation",
+            "react-native-safe-area-context"
+          ]
+        }
+      }
+    },
+    "owner": "mateniaku",
+    "ios": {
+      "bundleIdentifier": "com.iskrussian.iskcrm"
     }
   }
 }

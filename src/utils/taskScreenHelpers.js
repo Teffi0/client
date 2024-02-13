@@ -15,11 +15,30 @@ export async function updateTaskStatus(taskId, taskData) {
     }
 }
 
-
 export const validateFormData = (formData) => {
-    const requiredFields = ['selectedService', 'paymentMethod', 'cost', 'startDate', 'endDate', 'startDateTime', 'endDateTime', 'selectedEmployee', 'selectedResponsible', 'fullnameClient'];
-    if (requiredFields.some(field => !formData[field])) {
-        alert('Пожалуйста, заполните все обязательные поля.');
+    const requiredFields = ['selectedService', 'paymentMethod', 'startDate', 'startDateTime', 'selectedEmployee', 'selectedResponsible', 'fullnameClient'];
+    const fieldNames = {
+        selectedService: 'Услуга',
+        paymentMethod: 'Способ оплаты',
+        startDate: 'Дата начала',
+        startDateTime: 'Время начала',
+        selectedEmployee: 'Сотрудник',
+        selectedResponsible: 'Ответственный',
+        fullnameClient: 'ФИО клиента'
+    };
+
+    // Дополнительная проверка для массивов
+    const isEmpty = (field) => {
+        if (Array.isArray(formData[field])) {
+            return formData[field].length === 0;
+        }
+        return !formData[field];
+    };
+
+    const missingFields = requiredFields.filter(field => isEmpty(field)).map(field => fieldNames[field]);
+
+    if (missingFields.length > 0) {
+        alert(`Пожалуйста, заполните все обязательные поля. Не заполнено: ${missingFields.join(', ')}.`);
         return false;
     }
     return true;
@@ -50,70 +69,79 @@ const formatTaskData = (formData) => {
 
 export const fetchOptions = async (userId, dispatchFormData) => {
     try {
-      const url = `http://31.129.101.174/responsibles?userId=${userId}`;
-      const [servicesResponse, paymentMethodsResponse, employeesResponse, responsiblesResponse, clientsResponse] = await Promise.all([
-        axios.get('http://31.129.101.174/services'),
-        axios.get('http://31.129.101.174/paymentmethods'),
-        axios.get('http://31.129.101.174/employees'),
-        axios.get(url),
-        axios.get('http://31.129.101.174/clients')
-      ]);
-      dispatchFormData({
-        type: 'UPDATE_FORM',
-        payload: {
-          serviceOptions: servicesResponse.data,
-          paymentMethodOptions: paymentMethodsResponse.data,
-          responsibleOptions: responsiblesResponse.data,
-          employeesOptions: employeesResponse.data,
-          fullnameClientOptions: clientsResponse.data.map(client => client.full_name)
-        }
-      });
+        const url = `http://31.129.101.174/responsibles?userId=${userId}`;
+        const [servicesResponse, paymentMethodsResponse, employeesResponse, responsiblesResponse, clientsResponse] = await Promise.all([
+            axios.get('http://31.129.101.174/services'),
+            axios.get('http://31.129.101.174/paymentmethods'),
+            axios.get('http://31.129.101.174/employees'),
+            axios.get(url),
+            axios.get('http://31.129.101.174/clients')
+        ]);
+        dispatchFormData({
+            type: 'UPDATE_FORM',
+            payload: {
+                serviceOptions: servicesResponse.data,
+                paymentMethodOptions: paymentMethodsResponse.data,
+                responsibleOptions: responsiblesResponse.data,
+                employeesOptions: employeesResponse.data,
+                fullnameClientOptions: clientsResponse.data.map(client => client.full_name)
+            }
+        });
     } catch (error) {
-      console.error('Ошибка при получении данных:', error);
+        console.error('Ошибка при получении данных:', error);
     }
-  };  
+};
 
 export const handleSaveTask = async (formData) => {
-    if (formData.status !== 'черновик' && !validateFormData(formData)) return;
-
-    const serviceString = formData.selectedService.join(', ');
-    const employees = formData.employeesOptions.map(employee => employee.id);
-
-    const formattedData = {
-        ...formatTaskData({ ...formData, service: serviceString }),
-        employees: formData.selectedEmployee || employees
-    };
-
-    const taskId = formData.id || (await axios.post(`${SERVER_URL}/tasks`, formattedData)).data.task_id;
-
-    if (formData.selectedService?.length > 0) {
-        await axios.post(`${SERVER_URL}/tasks/${taskId}/services`, { services: formData.selectedService });
-        console.log('Услуги успешно добавлены к задаче');
-    }
-
-    if (formData.status === 'выполнено') {
-        const filteredInventory = formData.selectedInventory.filter(item => item.quantity > 0);
-        const inventoryData = filteredInventory.map(({ id, quantity }) => ({ inventory_id: id, quantity }));
-
-        await axios.put(`${SERVER_URL}/tasks/${taskId}/inventory`, { inventory: inventoryData });
-
-        if (formData.selectedImages?.length > 0) {
-            const imagesFormData = new FormData();
-            formData.selectedImages.forEach((imageUri, index) => {
-                imagesFormData.append('photos', {
-                    name: `photo_${index}.jpg`,
-                    type: 'image/jpeg',
-                    uri: Platform.OS === 'android' ? imageUri : imageUri.replace('file://', ''),
-                });
-            });
-            await axios.post(`${SERVER_URL}/tasks/${taskId}/photos`, imagesFormData, {
-                headers: { 'Content-Type': 'multipart/form-data' },
-            });
-            console.log('Изображения успешно загружены на сервер');
+    try {
+        if (formData.status !== 'черновик' && !validateFormData(formData)) {
+            return false; // Валидация данных формы не пройдена
         }
-    }
 
-    taskEventEmitter.emit('taskUpdated');
+        const serviceString = formData.selectedService.join(', ');
+        const employees = formData.employeesOptions.map(employee => employee.id);
+
+        const formattedData = {
+            ...formatTaskData({ ...formData, service: serviceString }),
+            employees: formData.selectedEmployee || employees
+        };
+
+        const taskId = formData.id || (await axios.post(`${SERVER_URL}/tasks`, formattedData)).data.task_id;
+
+        if (formData.selectedService?.length > 0) {
+            await axios.post(`${SERVER_URL}/tasks/${taskId}/services`, { services: formData.selectedService });
+            console.log('Услуги успешно добавлены к задаче');
+        }
+
+        if (formData.status === 'выполнено') {
+            const filteredInventory = formData.selectedInventory.filter(item => item.quantity > 0);
+            const inventoryData = filteredInventory.map(({ id, quantity }) => ({ inventory_id: id, quantity }));
+
+            await axios.put(`${SERVER_URL}/tasks/${taskId}/inventory`, { inventory: inventoryData });
+
+            if (formData.selectedImages?.length > 0) {
+                const imagesFormData = new FormData();
+                formData.selectedImages.forEach((imageUri, index) => {
+                    imagesFormData.append('photos', {
+                        name: `photo_${index}.jpg`,
+                        type: 'image/jpeg',
+                        uri: Platform.OS === 'android' ? imageUri : imageUri.replace('file://', ''),
+                    });
+                });
+                await axios.post(`${SERVER_URL}/tasks/${taskId}/photos`, imagesFormData, {
+                    headers: { 'Content-Type': 'multipart/form-data' },
+                });
+                console.log('Изображения успешно загружены на сервер');
+            }
+        }
+
+        taskEventEmitter.emit('taskUpdated');
+
+        return true; // Все операции успешно выполнены
+    } catch (error) {
+        console.error('Ошибка при сохранении задачи:', error);
+        return false; // Возникла ошибка при выполнении операций
+    }
 };
 
 export const updateDraft = async (draftId, formData) => {

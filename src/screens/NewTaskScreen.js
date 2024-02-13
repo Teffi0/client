@@ -35,11 +35,12 @@ function NewTaskScreen({ onClose, draftData, selectedDate }) {
         await updateDraft(draftData.id, updatedFormData);
       }
     } else {
-      // В противном случае обновляем статус и вызываем handleSaveTask
-      const isValid = await handleSaveTask(formData);
-      Alert.alert("Успешно", "Задача успешно добавлена", [
-        { text: "OK", onPress: () => onClose() } // Закрытие формы при нажатии OK
-      ]);
+      const success = await handleSaveTask(formData);
+      if (success) {
+        Alert.alert("Успех", "Задача успешно добавлена", [
+          { text: "OK", onPress: () => onClose() }
+        ]);
+      }
     }
   }, [formData, draftData, userId]);
 

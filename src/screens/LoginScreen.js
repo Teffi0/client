@@ -89,7 +89,7 @@ const LoginScreen = () => {
     
                         setUserId(data.userId.toString());
                         await AsyncStorage.setItem('userId', data.userId.toString());
-    
+
                         // Получаем и сохраняем данные пользователя
                         const userData = await fetchUserData(data.userId);
                         if (userData && userData.employee) {

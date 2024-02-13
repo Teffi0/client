@@ -74,8 +74,6 @@ const CustomCalendar = ({ selectedDate, onDateChange, tasks, taskDates }) => {
     };
   }, [currentWeekDate]);
 
-  console.log(selectedDate);
-
   const tasksByClient = useMemo(() => {
     return tasks.reduce((acc, task) => {
       const client = task.status === 'черновик' ? 'Черновик' : task.fullname_client || 'Неизвестный клиент';

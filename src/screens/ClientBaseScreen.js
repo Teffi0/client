@@ -32,7 +32,11 @@ const ChangeHistoryModal = ({ isVisible, onClose }) => {
     const fetchHistory = async () => {
       try {
         const response = await axios.get(`http://31.129.101.174/clients/changes/all`);
-        setHistory(response.data);
+        const formattedHistory = response.data.map(change => ({
+          ...change,
+          change_timestamp: new Date(change.change_timestamp).toLocaleString()
+        }));
+        setHistory(formattedHistory);
       } catch (error) {
         console.error('Ошибка при получении истории изменений:', error);
       }
@@ -44,28 +48,32 @@ const ChangeHistoryModal = ({ isVisible, onClose }) => {
   }, [isVisible]);
 
   return (
-    <Modal isVisible={isVisible} onBackdropPress={onClose}>
+    <Modal visible={isVisible} onRequestClose={onClose} animationType="slide" transparent={true}>
       <SafeAreaView style={styles.container}>
-        <ScrollView>
-          <View style={styles.contentContainerTask}>
-            <View style={styles.taskHeader}>
-              <TouchableOpacity onPress={onClose}>
-                <BackIcon />
-              </TouchableOpacity>
-              <Text style={[styles.titleMedium, { flex: 1, textAlign: 'center' }]}>Журнал изменений</Text>
-              <TouchableOpacity>
-                <None />
-              </TouchableOpacity>
+        <View>
+          <ScrollView>
+            <View style={styles.contentContainerTask}>
+              <View style={styles.taskHeader}>
+                <TouchableOpacity onPress={onClose}>
+                  <BackIcon />
+                </TouchableOpacity>
+                <Text style={[styles.titleMedium, { flex: 1, textAlign: 'center' }]}>Журнал изменений</Text>
+                <TouchableOpacity>
+                  <None />
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
-          {history.map((change, index) => (
-            <View key={index} style={styles.historyItem}>
-              <Text>Дата: {change.change_timestamp}</Text>
-              <Text>Описание: {change.change_description}</Text>
-              <Text>Пользователь: {change.user_id}</Text>
+            <View style={{marginHorizontal: 8}}>
+              {history.map((change, index) => (
+                <View key={index} style={[styles.historyItem, { backgroundColor: '#f9f9f9', margin: 8, padding: 16, borderRadius: 10, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 3.84, elevation: 5 }]}>
+                  <Text style={{ marginBottom: 4 }}>{change.change_timestamp}</Text>
+                  <Text style={{ marginBottom: 4 }}>{change.change_description} ({change.client_full_name})</Text>
+                  <Text>{change.user_full_name}</Text>
+                </View>
+              ))}
             </View>
-          ))}
-        </ScrollView>
+          </ScrollView>
+        </View>
       </SafeAreaView>
     </Modal>
   );

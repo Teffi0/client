@@ -6,10 +6,11 @@ import styles from '../styles/styles';
 import RenderMonth from './RenderMonth';
 import TasksForSelectedDateComponent from './TasksForSelectedDateComponent';
 import PropTypes from 'prop-types';
+import AddButton from './AddButton';
 
 const screenHeight = Dimensions.get('window').height;
 
-const VerticalCalendar = ({ tasks, taskDates, selectedYear }) => {
+const VerticalCalendar = ({ tasks, taskDates, selectedYear, renderAddButton }) => {
   const displayYear = selectedYear ? new Date(selectedYear, 0, 1) : new Date();
 
   const currentMonth = new Date().getMonth();
@@ -45,7 +46,7 @@ const VerticalCalendar = ({ tasks, taskDates, selectedYear }) => {
     Animated.timing(modalHeight.current, {
       toValue: isFullSize ? ModalFullHeight : ModalHeight,
       duration: 300,
-      useNativeDriver: true, // Изменено здесь
+      useNativeDriver: false, // Изменено здесь
     }).start();
   }, [isFullSize, ModalFullHeight, ModalHeight]);
 
@@ -58,11 +59,24 @@ const VerticalCalendar = ({ tasks, taskDates, selectedYear }) => {
       },
       onPanResponderMove: Animated.event(
         [null, { dy: modalHeight.current }],
-        { useNativeDriver: false } // Изменил здесь на false
+        {
+          useNativeDriver: false,
+          listener: (event, gestureState) => {
+            const currentHeight = modalHeight.current.__getValue();
+            if (currentHeight < ModalFullHeight) {
+              modalHeight.current.setValue(0);
+            }
+          },
+        }
       ),
       onPanResponderRelease: (event, gestureState) => {
         modalHeight.current.flattenOffset();
-        const currentHeight = modalHeight.current._value + gestureState.dy;
+        let currentHeight = modalHeight.current._value + gestureState.dy;
+
+        if (currentHeight < ModalFullHeight) {
+          currentHeight = ModalFullHeight;
+        }
+
         const upwardThreshold = ModalHeight + (screenHeight - ModalHeight) / 2;
 
         if (gestureState.dy < 0) {
@@ -77,7 +91,7 @@ const VerticalCalendar = ({ tasks, taskDates, selectedYear }) => {
   const animateModal = useCallback((value, fullSize) => {
     Animated.spring(modalHeight.current, {
       toValue: value,
-      useNativeDriver: true, // Изменено здесь
+      useNativeDriver: false, // Изменено здесь
       bounciness: 0
     }).start(() => setIsFullSize(fullSize));
   }, []);
@@ -121,7 +135,7 @@ const VerticalCalendar = ({ tasks, taskDates, selectedYear }) => {
         visible={modalVisible}
         onRequestClose={() => closeModal()}
       >
-        <Animated.View style={[styles.modalOverlay, { transform: [{ translateY: modalHeight.current }] }]} {...panResponder.panHandlers}>
+        <Animated.View style={[styles.modalOverlay, { top: modalHeight.current }]} {...panResponder.panHandlers}>
           <View style={styles.container}>
             <View style={styles.contentContainer}>
               <View style={styles.taskHeader}>
@@ -134,10 +148,10 @@ const VerticalCalendar = ({ tasks, taskDates, selectedYear }) => {
                   toggleClient={handleToggleClient}
                 />
               </ScrollView>
-
             </View>
           </View>
         </Animated.View>
+        {modalVisible && renderAddButton()}
       </Modal>
     </>
   );
